@@ -1,5 +1,7 @@
 import { mockBuild } from "../data/mockBuild";
 import StatCard from "../components/StatCard";
+import IssueCard from "../components/IssueCard";
+import UpgradeCard from "../components/UpgradeCard";
 
 function Dashboard() {
   return (
@@ -26,7 +28,29 @@ function Dashboard() {
         title="EHP"
         value={mockBuild.ehp}
       />
+
+      <h2>Problems</h2>
+
+      {mockBuild.issues.map((issue) => (
+        <IssueCard
+          key={issue.id}
+          title={issue.title}
+          description={issue.description}
+        />
+      ))}
+
+
+      <h2>Recommended Upgrade</h2>
+      <UpgradeCard
+        title={mockBuild.recommendedUpgrade.title}
+        description={mockBuild.recommendedUpgrade.description}
+        dpsIncrease={mockBuild.recommendedUpgrade.dpsIncrease}
+        ehpIncrease={mockBuild.recommendedUpgrade.ehpIncrease}
+/>
+      
     </div>
+
+    
   );
 }
 
