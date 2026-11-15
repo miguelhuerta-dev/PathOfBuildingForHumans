@@ -16,16 +16,22 @@ function Dashboard() {
           Build Health: Excellent
         </p>
 
+        <p className="text-slate-400 text-sm">
+          Priority: Fix Chaos Resistance
+        </p>
+
         <p className="text-slate-400 mt-2">
           {mockBuild.ascendancy} • Level {mockBuild.level}
         </p>
 
 
-        <div className="grid grid-cols-3 gap-4 mt-8">
-          <StatCard
-            title="Build Score"
-            value={`${mockBuild.score} / 10`}
-          />
+        <div className="grid grid-cols-4 gap-4 mt-8">
+          <div className="col-span-2">
+            <StatCard
+              title="Build Score"
+              value={`${mockBuild.score} / 10`}
+            />
+          </div>
 
           <StatCard
             title="DPS"
