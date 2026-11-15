@@ -5,19 +5,16 @@ interface StatCardProps {
 
 function StatCard({ title, value }: StatCardProps) {
   return (
-    <div
-      style={{
-        border: "3px solid red",
-        padding: "20px",
-        margin: "20px",
-      }}
-    >
-      <h3>{title}</h3>
-      <p>{value}</p>
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+      <h3 className="text-slate-400 text-sm uppercase">
+        {title}
+      </h3>
+
+      <p className="text-3xl font-bold mt-2">
+        {value}
+      </p>
     </div>
   );
 }
-
-
 
 export default StatCard;

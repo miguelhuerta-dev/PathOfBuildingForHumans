@@ -2,55 +2,66 @@ import { mockBuild } from "../data/mockBuild";
 import StatCard from "../components/StatCard";
 import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
+import { formatNumber } from "../utils/formatNumber";
 
 function Dashboard() {
   return (
-    <div>
-      <h1>{mockBuild.name}</h1>
+    <div className="min-h-screen bg-slate-950 text-white p-8">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-5xl font-bold">
+          {mockBuild.name}
+        </h1>
 
-      <p>Ascendancy: {mockBuild.ascendancy}</p>
+        <p className="text-emerald-400 mt-2">
+          Build Health: Excellent
+        </p>
 
-      <p>Level: {mockBuild.level}</p>
+        <p className="text-slate-400 mt-2">
+          {mockBuild.ascendancy} • Level {mockBuild.level}
+        </p>
 
-      <hr />
 
-      <StatCard
-        title="Build Score"
-        value={mockBuild.score}
-      />
+        <div className="grid grid-cols-3 gap-4 mt-8">
+          <StatCard
+            title="Build Score"
+            value={`${mockBuild.score} / 10`}
+          />
 
-      <StatCard
-        title="DPS"
-        value={mockBuild.dps}
-      />
+          <StatCard
+            title="DPS"
+            value={formatNumber(mockBuild.dps)}
+          />
 
-      <StatCard
-        title="EHP"
-        value={mockBuild.ehp}
-      />
+          <StatCard
+            title="EHP"
+            value={formatNumber(mockBuild.ehp)}
+          />
+        </div>
 
-      <h2>Problems</h2>
+        <h2 className="text-2xl font-bold mt-10 mb-4">
+          Problems
+        </h2>
 
-      {mockBuild.issues.map((issue) => (
-        <IssueCard
-          key={issue.id}
-          title={issue.title}
-          description={issue.description}
+        {mockBuild.issues.map((issue) => (
+          <IssueCard
+            key={issue.id}
+            title={issue.title}
+            description={issue.description}
+          />
+        ))}
+
+        <h2 className="text-2xl font-bold mt-10 mb-4">
+          Recommended Upgrade
+        </h2>
+
+        <UpgradeCard
+          title={mockBuild.recommendedUpgrade.title}
+          description={mockBuild.recommendedUpgrade.description}
+          dpsIncrease={mockBuild.recommendedUpgrade.dpsIncrease}
+          ehpIncrease={mockBuild.recommendedUpgrade.ehpIncrease}
         />
-      ))}
-
-
-      <h2>Recommended Upgrade</h2>
-      <UpgradeCard
-        title={mockBuild.recommendedUpgrade.title}
-        description={mockBuild.recommendedUpgrade.description}
-        dpsIncrease={mockBuild.recommendedUpgrade.dpsIncrease}
-        ehpIncrease={mockBuild.recommendedUpgrade.ehpIncrease}
-/>
-      
+      </div>
     </div>
-
-    
   );
 }
 
