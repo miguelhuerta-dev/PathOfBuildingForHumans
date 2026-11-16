@@ -1,4 +1,6 @@
 import AtlasDivider from "./AtlasDivider";
+import AtlasFrame from "./AtlasFrame";
+
 interface UpgradeCardProps {
   title: string;
   description: string;
@@ -13,77 +15,72 @@ function UpgradeCard({
   ehpIncrease,
 }: UpgradeCardProps) {
   return (
-    <div className="bg-[#1E1812] border border-[#A8864B] p-5 relative">
-
-      <p
-        className="
-        text-xs
-        uppercase
-        tracking-widest
-        text-amber-500
-        text-center
-        mb-2
-        ">
-
-       ✦ Rare Item ✦
-
-
-      </p>
-
+    <AtlasFrame>
       <div
         className="
-        absolute
-        inset-2
+        bg-[#1E1812]
         border
-        border-[#3A2F22]
-        pointer-events-none
+        border-[#A8864B]
+        p-5
+        relative
         "
-      />
-
-      <AtlasDivider />
-
-
-
-
-
-      <h3 className="
-        text-amber-300
-        text-2xl
-        font-bold
-        text-center
-        "
-        style={{ fontFamily: "Cinzel" }}
-
       >
-        {title.toUpperCase()}
-      </h3>
+        <div
+          className="
+          absolute
+          inset-2
+          border
+          border-[#3A2F22]
+          pointer-events-none
+          "
+        />
 
-      <AtlasDivider />
+        <p
+          className="
+          text-xs
+          uppercase
+          tracking-widest
+          text-amber-500
+          text-center
+          mb-2
+          "
+        >
+          ✦ Rare Item ✦
+        </p>
 
-      
+        <AtlasDivider />
 
+        <h3
+          className="
+          text-amber-300
+          text-2xl
+          font-bold
+          text-center
+          "
+          style={{
+            fontFamily: "Cinzel",
+          }}
+        >
+          {title.toUpperCase()}
+        </h3>
 
-      <p className="text-center
-      text-slate-300 mt-3">
-        {description}
-      </p>
+        <AtlasDivider />
 
+        <p className="text-center text-slate-300 mt-3">
+          {description}
+        </p>
 
-      <div className="flex 
-      justify-center gap-6 mt-4">
-        <span className="text-emerald-400">
-          +{dpsIncrease}% DPS
-        </span>
+        <div className="flex justify-center gap-6 mt-4">
+          <span className="text-emerald-400">
+            +{dpsIncrease}% DPS
+          </span>
 
-        <span className="text-sky-400">
-          +{ehpIncrease}% EHP
-        </span>
-
-
-
-
+          <span className="text-sky-400">
+            +{ehpIncrease}% EHP
+          </span>
+        </div>
       </div>
-    </div>
+    </AtlasFrame>
   );
 }
 

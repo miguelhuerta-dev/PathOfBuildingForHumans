@@ -190,6 +190,56 @@ function AtlasBackground() {
                 opacity="0.12"
             />
 
+            {/* Navigation Network */}
+
+            <path
+                d="M 200 250 Q 450 200 650 380"
+                stroke="#A8864B"
+                strokeWidth="1"
+                opacity="0.05"
+                fill="none"
+            />
+
+            <path
+                d="M 650 380 Q 900 500 1200 350"
+                stroke="#A8864B"
+                strokeWidth="1"
+                opacity="0.05"
+                fill="none"
+            />
+
+            <path
+                d="M 400 850 Q 700 700 1050 850"
+                stroke="#A8864B"
+                strokeWidth="1"
+                opacity="0.05"
+                fill="none"
+            />
+
+            <circle
+                cx="650"
+                cy="380"
+                r="4"
+                fill="#D4AF6A"
+                opacity="0.15"
+            />
+
+            <circle
+                cx="1200"
+                cy="350"
+                r="4"
+                fill="#D4AF6A"
+                opacity="0.15"
+            />
+
+            <circle
+                cx="1050"
+                cy="850"
+                r="4"
+                fill="#D4AF6A"
+                opacity="0.15"
+            />
+
 
 
         </svg>
