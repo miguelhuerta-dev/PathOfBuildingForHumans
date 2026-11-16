@@ -1,167 +1,172 @@
+import { atlasArt } from "../assets/atlas";
 import { mockBuild } from "../data/mockBuild";
-import StatCard from "../components/StatCard";
+import { formatNumber } from "../utils/formatNumber";
+import AtlasBackground from "../components/AtlasBackground";
+import AtlasScene from "../components/AtlasScene";
+import AtlasFrame from "../components/AtlasFrame";
+import AtlasSectionHeader from "../components/AtlasSectionHeader";
+import AnalysisCard from "../components/AnalysisCard";
+import { ScoreCard, StatCard } from "../components/StatCard";
 import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
-import { formatNumber } from "../utils/formatNumber";
-import AnalysisCard from "../components/AnalysisCard";
-import AtlasSeal from "../components/AtlasSeal";
-import AtlasSectionHeader from "../components/AtlasSectionHeader";
-import AtlasBackground from "../components/AtlasBackground";
+import Medallion from "../components/Medallion";
+import { AtlasStarIcon, ShieldIcon, SigilIcon, SkullIcon, SwordIcon } from "../components/icons";
 
+const navLinks = ["Builds", "Analyze", "Atlas", "Guides", "About"];
 
+function TopNav() {
+  return (
+    <header className="nav-plate relative z-20 -mx-4 -mt-2 px-5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-2">
+        <a href="#" className="title-text font-display text-[21px] font-semibold tracking-[0.05em]">
+          Path of Building for Humans
+        </a>
 
+        <nav aria-label="Main" className="flex flex-wrap items-center gap-x-10 gap-y-1">
+          {navLinks.map((link) => (
+            <a
+              key={link}
+              href="#"
+              className="engraved font-display text-[15px] font-semibold tracking-[0.18em] text-[#dccca6] transition-colors hover:text-gold focus-visible:text-gold"
+            >
+              {link.toUpperCase()}
+            </a>
+          ))}
+          <Medallion size={46}>
+            <AtlasStarIcon className="h-5 w-5" />
+          </Medallion>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function Motto({ lines, align }: { lines: string[]; align: "left" | "right" }) {
+  return (
+    <p
+      className={`hidden font-display text-[13px] engraved font-medium leading-relaxed tracking-[0.22em] text-parchment-dim lg:block ${
+        align === "right" ? "text-right" : ""
+      }`}
+    >
+      {lines.map((line) => (
+        <span key={line} className="block">
+          {line}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+function BuildHeader() {
+  return (
+    <AtlasFrame pendant>
+      <div className="grid items-center gap-6 md:grid-cols-[200px_1fr_auto_auto]">
+        <div className="relative hidden h-40 md:block">
+          <img
+            src={atlasArt.portraitInquisitor}
+            alt={`${mockBuild.ascendancy} portrait`}
+            className="absolute -left-14 -top-14 h-[270px] w-[270px] max-w-none object-cover brightness-90 saturate-[0.85] [mask-image:radial-gradient(ellipse_70%_75%_at_45%_42%,black_55%,transparent_100%)]"
+          />
+        </div>
+
+        <div>
+          <h1 className="title-text font-display text-[clamp(34px,4.2vw,56px)] font-semibold leading-tight lg:whitespace-nowrap">
+            {mockBuild.name}
+          </h1>
+          <p className="mt-1 font-display text-[17px] tracking-[0.16em] text-gold-dim">
+            {mockBuild.ascendancy.toUpperCase()} • LEVEL {mockBuild.level}
+          </p>
+          <p className="mt-3 max-w-xs text-[18px] italic leading-snug text-gold-dim">
+            “{mockBuild.quote}”
+          </p>
+        </div>
+
+        <div className="hidden h-40 flex-col items-center md:flex" aria-hidden="true">
+          <div className="w-px flex-1 bg-gradient-to-b from-transparent to-gold-dim" />
+          <SigilIcon className="my-2 h-10 w-10 text-gold-dim" />
+          <div className="w-px flex-1 bg-gradient-to-t from-transparent to-gold-dim" />
+        </div>
+
+        <dl className="min-w-60 pr-2">
+          <dt className="font-display text-[14px] tracking-[0.18em] text-parchment-dim">BUILD HEALTH</dt>
+          <dd className="engraved font-display text-[28px] font-semibold text-verdigris">
+            {mockBuild.health.toUpperCase()}
+          </dd>
+          <div className="my-3 h-px bg-gradient-to-r from-gold-dim/60 to-transparent" aria-hidden="true" />
+          <dt className="font-display text-[14px] tracking-[0.18em] text-parchment-dim">PRIORITY</dt>
+          <dd className="text-[22px] font-medium text-ember">{mockBuild.priority}</dd>
+        </dl>
+      </div>
+    </AtlasFrame>
+  );
+}
 
 function Dashboard() {
   return (
-    <div className="
-    
-    min-h-screen 
-    bg-gradient-to-b
-    from-[#0B0907]
-    via-black
-    to-[#0B0907]
-    relative  
-    overflow-hidden
-    text-white 
-    p-8">
-
-
+    <div className="relative isolate min-h-screen overflow-hidden px-2 py-3 sm:px-4">
       <AtlasBackground />
+      <div className="film-grain pointer-events-none absolute inset-0 z-30" aria-hidden="true" />
+      <AtlasScene />
 
+      <AtlasFrame variant="outer" className="relative z-10 mx-auto max-w-[1320px]">
+        <TopNav />
 
+        <div className="flex items-start justify-between pb-10 pt-5 md:min-h-[150px]">
+          <Motto align="left" lines={["EXILES", "STUDY", "ADAPT", "CONQUER"]} />
+          <Motto align="right" lines={["KNOWLEDGE", "BUILDS", "SURVIVAL"]} />
+        </div>
 
+        <main className="flex flex-col gap-4">
+          <BuildHeader />
 
-      <div className="max-w-7xl mx-auto relative z-10">
-        <div
-          className="
-            bg-[#16120E]
-            border
-            border-amber-700
-            rounded-none
-            p-8
-            mb-8
-            shadow-[0-0-60px-rgba(212,175,55,0.12)]
-            "
-        >
+          <AnalysisCard analysis={mockBuild.analysis} />
 
-          <div className="flex justify-between items-start gap-8">
+          <section aria-label="Key stats" className="grid gap-4 md:grid-cols-[1.75fr_1fr_1fr]">
+            <ScoreCard score={mockBuild.score} />
+            <StatCard title="DPS" value={formatNumber(mockBuild.dps)} icon={<SwordIcon className="h-4 w-4" />} />
+            <StatCard title="EHP" value={formatNumber(mockBuild.ehp)} icon={<ShieldIcon className="h-4 w-4" />} />
+          </section>
 
-            <div className="flex items-center gap-6">
-              <AtlasSeal label="INQ" />
-
-              <div>
-                <h1
-                  className="
-                  text-6xl
-                  font-black
-                  tracking-tight
-                  text-white
-                  "
-                  style={{
-                    fontFamily: "Cinzel",
-                  }}
-                >
-                  {mockBuild.name}
-                </h1>
-
-                <p className="text-slate-300 mt-4">
-                  {mockBuild.ascendancy} • Level {mockBuild.level}
-                </p>
+          <div className="mt-4 grid items-stretch gap-x-5 gap-y-10 lg:grid-cols-[1.12fr_1fr]">
+            <AtlasFrame className="flex flex-col" contentClassName="flex flex-1 flex-col">
+              <AtlasSectionHeader
+                title="Critical Issues"
+                tone="blood"
+                icon={<SkullIcon className="h-7 w-7" />}
+              />
+              <div className="flex flex-col gap-3">
+                {mockBuild.issues.map((issue) => (
+                  <IssueCard
+                    key={issue.id}
+                    title={issue.title}
+                    description={issue.description}
+                    severity={issue.severity}
+                  />
+                ))}
               </div>
-            </div>
+              <figure className="mt-auto pt-8 text-center">
+                <blockquote className="text-[19px] italic text-gold-dim">
+                  “A single weakness can undo an empire.”
+                </blockquote>
+                <figcaption className="mt-1 font-display text-[12px] tracking-[0.24em] text-parchment-faint">
+                  — THE ATLAS ARCHIVIST
+                </figcaption>
+              </figure>
+            </AtlasFrame>
 
-            <div className="text-right">
-              <p className="text-[#A8864B] text-sm tracking-widest">
-                BUILD HEALTH
-              </p>
-
-              <p
-                className="text-3xl"
-                style={{
-                  fontFamily: "Cinzel",
-                }}
-              >
-                EXCELLENT
-              </p>
-
-              <div className="mt-4" />
-
-              <p className="text-[#A8864B] text-sm tracking-widest">
-                PRIORITY
-              </p>
-
-              <p className="text-amber-300">
-                Fix Chaos Resistance
-              </p>
-            </div>
-
+            <AtlasFrame>
+              <AtlasSectionHeader title="Next Best Upgrade" icon={<AtlasStarIcon className="h-7 w-7" />} />
+              <UpgradeCard {...mockBuild.recommendedUpgrade} />
+            </AtlasFrame>
           </div>
 
-          <div
-            className="
-            mt-6
-            h-px
-            bg-gradient-to-r
-            from-transparent
-            via-[#A8864B]
-            to-transparent
-            "
-          />
-
-
-
-          
-
-        </div>
-
-        <AnalysisCard />
-
-
-
-        <div className="grid grid-cols-4 gap-4 mt-8">
-          <div className="col-span-2">
-            <StatCard
-              hero
-              title="ATLAS RATING"
-              value={`${mockBuild.score} / 10`}
-            />
-          </div>
-
-          <StatCard
-            title="DAMAGE OUTPUT"
-            value={formatNumber(mockBuild.dps)}
-          />
-
-          <StatCard
-            title="SURVIVABILITY"
-            value={formatNumber(mockBuild.ehp)}
-          />
-        </div>
-
-        <AtlasSectionHeader
-          title="THREAT REGISTER"
-        />
-
-        {mockBuild.issues.map((issue) => (
-          <IssueCard
-            key={issue.id}
-            title={issue.title}
-            description={issue.description}
-            severity={issue.severity}
-          />
-        ))}
-
-        <AtlasSectionHeader
-          title="RECOMMENDED ARTIFACT"
-        />
-
-        <UpgradeCard
-          title={mockBuild.recommendedUpgrade.title}
-          description={mockBuild.recommendedUpgrade.description}
-          dpsIncrease={mockBuild.recommendedUpgrade.dpsIncrease}
-          ehpIncrease={mockBuild.recommendedUpgrade.ehpIncrease}
-        />
-      </div>
+          <p className="pb-4 pt-14 text-center font-display text-[14px] leading-relaxed tracking-[0.24em] text-parchment-faint md:pb-24">
+            SAME BUILDS.
+            <br />
+            A DEEPER UNDERSTANDING.
+          </p>
+        </main>
+      </AtlasFrame>
     </div>
   );
 }

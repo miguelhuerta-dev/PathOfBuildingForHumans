@@ -1,32 +1,35 @@
-import AtlasCorner from "./AtlasCorner";
+import type { ReactNode } from "react";
+import { atlasArt } from "../assets/atlas";
 
 interface AtlasFrameProps {
-  children: React.ReactNode;
+  children: ReactNode;
+  variant?: "outer" | "panel" | "card";
+  pendant?: boolean;
+  className?: string;
+  contentClassName?: string;
 }
 
 function AtlasFrame({
   children,
+  variant = "panel",
+  pendant = false,
+  className = "",
+  contentClassName = "",
 }: AtlasFrameProps) {
   return (
-    <div className="relative">
+    <div className={`atlas-frame atlas-frame--${variant} ${className}`}>
+      <div className="atlas-frame__surface" aria-hidden="true" />
+      <div className="atlas-frame__border" aria-hidden="true" />
 
-      <div className="absolute top-0 left-0 z-10">
-        <AtlasCorner />
-      </div>
+      {pendant && (
+        <img
+          src={atlasArt.pendant}
+          alt=""
+          className="pointer-events-none absolute left-1/2 top-0 z-10 w-14 -translate-x-1/2 -translate-y-[38%] drop-shadow-[0_4px_6px_rgba(0,0,0,0.8)]"
+        />
+      )}
 
-      <div className="absolute top-0 right-0 z-10">
-        <AtlasCorner flipX />
-      </div>
-
-      <div className="absolute bottom-0 left-0 z-10">
-        <AtlasCorner flipY />
-      </div>
-
-      <div className="absolute bottom-0 right-0 z-10">
-        <AtlasCorner flipX flipY />
-      </div>
-
-      {children}
+      <div className={`relative ${contentClassName}`}>{children}</div>
     </div>
   );
 }
