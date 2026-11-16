@@ -7,6 +7,7 @@ import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import AnalysisCard from "../components/AnalysisCard";
 import ConnectPanel from "../components/ConnectPanel";
+import EquipmentPanel from "../components/EquipmentPanel";
 import { ScoreCard, StatCard } from "../components/StatCard";
 import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
@@ -174,6 +175,8 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
               )}
             </AtlasFrame>
           </div>
+
+          <EquipmentPanel items={build.items} />
         </>
       )}
 

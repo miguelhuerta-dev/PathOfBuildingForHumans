@@ -5,6 +5,8 @@ export interface EngineItem {
   name: string;
   base?: string;
   rarity?: string;
+  /** Official icon URL (web.poecdn.com); only present for the character's own items. */
+  icon?: string;
   implicits: string[];
   explicits: string[];
 }
@@ -74,6 +76,7 @@ export interface Upgrade {
   slot: string;
   item: Omit<EngineItem, "slot">;
   current?: string;
+  currentIcon?: string;
   dps: number;
   ehp: number;
   dpsChange: number;

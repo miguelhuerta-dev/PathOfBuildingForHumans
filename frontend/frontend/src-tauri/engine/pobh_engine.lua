@@ -231,7 +231,31 @@ local function equippedItem(slot)
 	end
 end
 
-local function summarize(extra)
+-- Official icon URLs that pathofexile.com sends with the character's items,
+-- keyed by Path of Building slot name. Only these URLs are ever shown; the
+-- art is never copied into the app.
+local INVENTORY_SLOTS = {
+	Weapon = "Weapon 1", Offhand = "Weapon 2", Weapon2 = "Weapon 1 Swap", Offhand2 = "Weapon 2 Swap",
+	Helm = "Helmet", BodyArmour = "Body Armour", Gloves = "Gloves", Boots = "Boots",
+	Belt = "Belt", Amulet = "Amulet", Ring = "Ring 1", Ring2 = "Ring 2", Ring3 = "Ring 3",
+}
+
+local function iconsBySlot(equipment)
+	local icons = {}
+	for _, item in ipairs(equipment or {}) do
+		local icon = type(item.icon) == "string" and item.icon:match("^https://web%.poecdn%.com/") and item.icon
+		local slot = INVENTORY_SLOTS[item.inventoryId]
+		if item.inventoryId == "Flask" and tonumber(item.x) then
+			slot = "Flask " .. (tonumber(item.x) + 1)
+		end
+		if icon and slot then
+			icons[slot] = icon
+		end
+	end
+	return icons
+end
+
+local function summarize(extra, icons)
 	local out = build.calcsTab.mainOutput or {}
 
 	local stats = {}
@@ -248,6 +272,7 @@ local function summarize(extra)
 		if item then
 			local described = describeItem(item)
 			described.slot = entry.name
+			described.icon = icons and icons[entry.name] or nil
 			items[#items + 1] = described
 		end
 	end
@@ -303,7 +328,7 @@ end
 
 -- Tries every item of the guide on the character, one slot at a time, and
 -- measures how DPS and EHP change. Returns the candidates sorted by gain.
-local function findUpgrades(guideItems)
+local function findUpgrades(guideItems, icons)
 	local baseline = recalc()
 	local baseDps, baseEhp = dps(baseline), ehp(baseline)
 	local slotsByName = {}
@@ -341,6 +366,7 @@ local function findUpgrades(guideItems)
 					slot = guideItem.slot,
 					item = guideItem.info,
 					current = currentName,
+					currentIcon = icons and icons[guideItem.slot] or nil,
 					dps = newDps,
 					ehp = newEhp,
 					dpsChange = pct(newDps, baseDps),
@@ -420,7 +446,7 @@ end
 local result
 if request.kind == "character" then
 	loadCharacter(request.character)
-	result = summarize({ name = request.character.name, league = request.character.league })
+	result = summarize({ name = request.character.name, league = request.character.league }, iconsBySlot(request.character.equipment))
 elseif request.kind == "build" then
 	local stages = loadGuide(request.xml, request.name, request.stage, nil)
 	result = summarize()
@@ -440,9 +466,10 @@ elseif request.kind == "compare" then
 	end
 
 	loadCharacter(request.character)
-	local character = summarize({ name = request.character.name, league = request.character.league })
+	local icons = iconsBySlot(request.character.equipment)
+	local character = summarize({ name = request.character.name, league = request.character.league }, icons)
 	local passives = comparePassives(guideNodes, allocatedPassives())
-	result = { character = character, guide = guide, upgrades = findUpgrades(guideItems), passives = passives }
+	result = { character = character, guide = guide, upgrades = findUpgrades(guideItems, icons), passives = passives }
 else
 	error("unknown request kind: " .. tostring(request.kind))
 end
