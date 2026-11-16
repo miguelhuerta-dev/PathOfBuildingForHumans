@@ -9,37 +9,8 @@ import AnalysisCard from "../components/AnalysisCard";
 import { ScoreCard, StatCard } from "../components/StatCard";
 import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
-import Medallion from "../components/Medallion";
+import TopNav from "../components/TopNav";
 import { AtlasStarIcon, ShieldIcon, SigilIcon, SkullIcon, SwordIcon } from "../components/icons";
-
-const navLinks = ["Builds", "Analyze", "Atlas", "Guides", "About"];
-
-function TopNav() {
-  return (
-    <header className="nav-plate relative z-20 -mx-4 -mt-2 px-5 py-3">
-      <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-2">
-        <a href="#" className="title-text font-display text-[21px] font-semibold tracking-[0.05em]">
-          Path of Building for Humans
-        </a>
-
-        <nav aria-label="Main" className="flex flex-wrap items-center gap-x-10 gap-y-1">
-          {navLinks.map((link) => (
-            <a
-              key={link}
-              href="#"
-              className="engraved font-display text-[15px] font-semibold tracking-[0.18em] text-[#dccca6] transition-colors hover:text-gold focus-visible:text-gold"
-            >
-              {link.toUpperCase()}
-            </a>
-          ))}
-          <Medallion size={46}>
-            <AtlasStarIcon className="h-5 w-5" />
-          </Medallion>
-        </nav>
-      </div>
-    </header>
-  );
-}
 
 function Motto({ lines, align }: { lines: string[]; align: "left" | "right" }) {
   return (

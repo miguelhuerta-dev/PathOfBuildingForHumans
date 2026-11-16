@@ -1,0 +1,49 @@
+name: Desktop app (Windows portable)
+
+on:
+  push:
+    branches: [main, "feat/**"]
+    paths:
+      - "frontend/frontend/**"
+      - ".github/workflows/desktop.yml"
+  workflow_dispatch:
+
+jobs:
+  windows-portable:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: frontend/frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/frontend/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: frontend/frontend/src-tauri -> target
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build desktop app
+        run: npx tauri build
+
+      - name: Collect portable executable
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path portable | Out-Null
+          Copy-Item "src-tauri/target/release/path-of-building-for-humans.exe" "portable/PathOfBuildingForHumans.exe"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PathOfBuildingForHumans-windows-portable
+          path: frontend/frontend/portable/PathOfBuildingForHumans.exe
+          if-no-files-found: error
