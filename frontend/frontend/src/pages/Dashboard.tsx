@@ -44,7 +44,7 @@ function TopNav() {
 function Motto({ lines, align }: { lines: string[]; align: "left" | "right" }) {
   return (
     <p
-      className={`hidden font-display text-[13px] font-medium leading-relaxed tracking-[0.22em] text-parchment-faint lg:block ${
+      className={`hidden font-display text-[13px] engraved font-medium leading-relaxed tracking-[0.22em] text-parchment-dim lg:block ${
         align === "right" ? "text-right" : ""
       }`}
     >
@@ -128,7 +128,7 @@ function Dashboard() {
           </section>
 
           <div className="mt-4 grid items-stretch gap-x-5 gap-y-10 lg:grid-cols-[1.12fr_1fr]">
-            <AtlasFrame>
+            <AtlasFrame className="flex flex-col" contentClassName="flex flex-1 flex-col">
               <AtlasSectionHeader
                 title="Critical Issues"
                 tone="blood"
@@ -144,7 +144,7 @@ function Dashboard() {
                   />
                 ))}
               </div>
-              <figure className="mt-8 text-center">
+              <figure className="mt-auto pt-8 text-center">
                 <blockquote className="text-[19px] italic text-gold-dim">
                   “A single weakness can undo an empire.”
                 </blockquote>

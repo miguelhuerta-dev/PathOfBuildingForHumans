@@ -28,7 +28,7 @@ function UpgradeCard({ title, rarity, description, dpsIncrease, ehpIncrease }: U
         <img
           src={atlasArt.itemRareRing}
           alt={title}
-          className="absolute inset-[16%] h-[68%] w-[68%] object-contain drop-shadow-[0_0_14px_rgba(100,150,255,0.45)]"
+          className="absolute inset-[12%] h-[76%] w-[76%] object-contain drop-shadow-[0_0_14px_rgba(100,150,255,0.45)]"
         />
         <img
           src={atlasArt.frameItem}

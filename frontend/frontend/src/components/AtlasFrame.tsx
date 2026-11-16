@@ -6,6 +6,7 @@ interface AtlasFrameProps {
   variant?: "outer" | "panel" | "card";
   pendant?: boolean;
   className?: string;
+  contentClassName?: string;
 }
 
 function AtlasFrame({
@@ -13,6 +14,7 @@ function AtlasFrame({
   variant = "panel",
   pendant = false,
   className = "",
+  contentClassName = "",
 }: AtlasFrameProps) {
   return (
     <div className={`atlas-frame atlas-frame--${variant} ${className}`}>
@@ -27,7 +29,7 @@ function AtlasFrame({
         />
       )}
 
-      <div className="relative">{children}</div>
+      <div className={`relative ${contentClassName}`}>{children}</div>
     </div>
   );
 }
