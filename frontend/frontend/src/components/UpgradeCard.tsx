@@ -1,3 +1,4 @@
+import AtlasDivider from "./AtlasDivider";
 interface UpgradeCardProps {
   title: string;
   description: string;
@@ -12,7 +13,7 @@ function UpgradeCard({
   ehpIncrease,
 }: UpgradeCardProps) {
   return (
-    <div className="bg-slate-900 border border-amber-700 rounded-2xl p-5">
+    <div className="bg-[#1E1812] border border-[#A8864B] p-5 relative">
 
       <p
         className="
@@ -23,47 +24,64 @@ function UpgradeCard({
         text-center
         mb-2
         ">
-        
-        Rare Item
 
-        
+       ✦ Rare Item ✦
+
+
       </p>
+
+      <div
+        className="
+        absolute
+        inset-2
+        border
+        border-[#3A2F22]
+        pointer-events-none
+        "
+      />
+
+      <AtlasDivider />
+
 
 
 
 
       <h3 className="
-      text-amber-300
-      text-xl
-      font-bold
-      text-center
-      "
+        text-amber-300
+        text-2xl
+        font-bold
+        text-center
+        "
+        style={{ fontFamily: "Cinzel" }}
+
       >
-        {title.toUpperCase()  }
+        {title.toUpperCase()}
       </h3>
+
+      <AtlasDivider />
+
+      
 
 
       <p className="text-center
-      text-slate-300 mt-3-">
+      text-slate-300 mt-3">
         {description}
       </p>
 
-    
+
       <div className="flex 
-      justify-center gap-6 mt-42">  
-        <span className="text-
-        emerald-400">
+      justify-center gap-6 mt-4">
+        <span className="text-emerald-400">
           +{dpsIncrease}% DPS
         </span>
 
-        <span className="text-
-        sky-400">
+        <span className="text-sky-400">
           +{ehpIncrease}% EHP
         </span>
 
 
 
-      
+
       </div>
     </div>
   );

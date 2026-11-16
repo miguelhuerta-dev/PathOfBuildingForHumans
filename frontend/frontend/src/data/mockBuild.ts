@@ -19,19 +19,19 @@ export const mockBuild: Build = {
     {
       id: "1",
       title: "Chaos Resistance",
-      description: "Below resistance cap",
+      description: "High Chaos Damage Taken",
       severity: "high",
     },
     {
       id: "2",
       title: "Chance To Hit",
-      description: "Only 89%",
+      description: "Reduced Damage Output%",
       severity: "medium",
     },
   ],
 
   recommendedUpgrade: {
-    title: "Rare Ring",
+    title: "✦ Rare Ring ✦",
     dpsIncrease: 12,
     ehpIncrease: 6,
     description: "Adds chaos resistance and life",

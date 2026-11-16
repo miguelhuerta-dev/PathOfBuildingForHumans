@@ -1,24 +1,21 @@
+import AtlasSectionHeader from "./AtlasSectionHeader";
 function AnalysisCard() {
     return (
         <div
             className="
-        bg-slate-900
+        bg-[#16120E]
         border
-        border-slate-800
-        rounded-3x1
+        border-[#A8864B]
+        rounded-none
         p-6
         mt-8
         "
         >
 
-            <h2 className="
-            text-2xl 
-            font-bold 
-            text-amber-300
-            tracking-wide
-            ">
-                BUILD ANALYSIS
-            </h2>
+            <AtlasSectionHeader
+                title="SCHOLAR'S VERDICT"
+            />
+
 
             <div className="mt-6 grid grid-cols-2 gap-6">
 

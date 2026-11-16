@@ -4,6 +4,9 @@ import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
 import { formatNumber } from "../utils/formatNumber";
 import AnalysisCard from "../components/AnalysisCard";
+import AtlasSeal from "../components/AtlasSeal";
+import AtlasSectionHeader from "../components/AtlasSectionHeader";
+import AtlasBackground from "../components/AtlasBackground";
 
 
 
@@ -11,69 +14,104 @@ import AnalysisCard from "../components/AnalysisCard";
 function Dashboard() {
   return (
     <div className="
+    
     min-h-screen 
     bg-gradient-to-b
-    from-slate-950
+    from-[#0B0907]
     via-black
-    to-slate-950
+    to-[#0B0907]
+    relative  
+    overflow-hidden
     text-white 
     p-8">
 
 
+      <AtlasBackground />
 
 
 
 
-
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto relative z-10">
         <div
           className="
-            bg-slate-900
+            bg-[#16120E]
             border
             border-amber-700
-            rounded-3xl
+            rounded-none
             p-8
             mb-8
             shadow-[0-0-60px-rgba(212,175,55,0.12)]
             "
-          >
-        
-          <h1 className="
-          inline-block
-          text-8xl 
-          font-black 
-          tracking-tight 
-          text-white
-          
-          "
-            style={{ 
-              fontFamily: "Cinzel", 
-            }}
-          >
-            {mockBuild.name}
-          </h1>
+        >
 
+          <div className="flex justify-between items-start gap-8">
 
+            <div className="flex items-center gap-6">
+              <AtlasSeal label="INQ" />
 
-          <p className="text-amber-300 mt-2 text-lg font-semibold">
-            BUILD HEALTH: EXCELLENT
-          </p>
+              <div>
+                <h1
+                  className="
+                  text-8xl
+                  font-black
+                  tracking-tight
+                  text-white
+                  "
+                  style={{
+                    fontFamily: "Cinzel",
+                  }}
+                >
+                  {mockBuild.name}
+                </h1>
 
-          <p className="text-amber-400 text-sm mt-1 font-medium tracking-wide">
-            PRIORITY: Fix Chaos Resistance
-          </p>
+                <p className="text-slate-300 mt-4">
+                  {mockBuild.ascendancy} • Level {mockBuild.level}
+                </p>
+              </div>
+            </div>
 
-          <div className="
-          mt-4
-          h-px
-          bg-gradient-to-r
-          from-transparent
-          via-amber-500
-          to-transparent
-          "
+            <div className="text-right">
+              <p className="text-[#A8864B] text-sm tracking-widest">
+                BUILD HEALTH
+              </p>
+
+              <p
+                className="text-2xl"
+                style={{
+                  fontFamily: "Cinzel",
+                }}
+              >
+                EXCELLENT
+              </p>
+
+              <div className="mt-4" />
+
+              <p className="text-[#A8864B] text-sm tracking-widest">
+                PRIORITY
+              </p>
+
+              <p className="text-amber-300">
+                Fix Chaos Resistance
+              </p>
+            </div>
+
+          </div>
+
+          <div
+            className="
+            mt-6
+            h-px
+            bg-gradient-to-r
+            from-transparent
+            via-[#A8864B]
+            to-transparent
+            "
           />
-            {mockBuild.ascendancy} • Level {mockBuild.level}
+
+
+
           
+
         </div>
 
         <AnalysisCard />
@@ -84,37 +122,38 @@ function Dashboard() {
           <div className="col-span-2">
             <StatCard
               hero
-              title="Build Score"
+              title="ATLAS RATING"
               value={`${mockBuild.score} / 10`}
             />
           </div>
 
           <StatCard
-            title="DPS"
+            title="DAMAGE OUTPUT"
             value={formatNumber(mockBuild.dps)}
           />
 
           <StatCard
-            title="EHP"
+            title="SURVIVABILITY"
             value={formatNumber(mockBuild.ehp)}
           />
         </div>
 
-        <h2 className="text-2xl font-bold mt-10 mb-4 text-amber-300">
-          Critical Issues
-        </h2>
+        <AtlasSectionHeader
+          title="THREAT REGISTER"
+        />
 
         {mockBuild.issues.map((issue) => (
           <IssueCard
             key={issue.id}
             title={issue.title}
             description={issue.description}
+            severity={issue.severity}
           />
         ))}
 
-        <h2 className="text-2xl font-bold mt-10 mb-4">
-          Next Best Upgrade
-        </h2>
+        <AtlasSectionHeader
+          title="RECOMMENDED ARTIFACT"
+        />
 
         <UpgradeCard
           title={mockBuild.recommendedUpgrade.title}

@@ -8,26 +8,39 @@ function StatCard({ title, value, hero = false }: StatCardProps) {
   return (
     <div
       className={`
-    bg-slate-900
-    border
-    rounded-2xl
-    p-6
-    transition
-    ${hero
-          ? "border-amber-500 bg-gradient-to-br from-slate-900 to-slate-800"
-          : "border-slate-800 hover:border-slate-600"
+      relative
+      bg-[#16120E]
+      border
+      rounded-none
+      p-6
+      transition
+      
+      ${hero
+          ? "border-[#A8864B] bg-[#16120E]"
+          : "border-[#3A2F22] hover:border-[#A8864B]"
         }
-  `}
+     `}
     >
+
+      <div
+        className="
+        absolute
+        inset-1
+        border
+        border-[#3A2F22]
+        pointer-events-none
+        "
+      />
       <h3
         className="
-        text-slate-500
-        text-xs
+        text-[#8C7F68]
+        text-sm
         uppercase
         tracking-widest
+        font-semibold
         "
       >
-        {title}
+        {hero ? `✦ ${title} ✦` : title}
       </h3>
 
       <p
