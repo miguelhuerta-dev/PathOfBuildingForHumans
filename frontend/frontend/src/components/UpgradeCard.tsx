@@ -1,59 +1,91 @@
 import { atlasArt } from "../assets/atlas";
-import type { Upgrade } from "../types/Build";
+import type { Upgrade } from "../types/Engine";
+import { changeTone, formatSignedPercent } from "../utils/format";
 import AtlasFrame from "./AtlasFrame";
+import { AtlasStarIcon } from "./icons";
 
-const rarityStyles = {
-  normal: { label: "NORMAL ITEM", title: "text-parchment" },
-  magic: { label: "MAGIC ITEM", title: "text-[#8fa8ff]" },
-  rare: { label: "RARE ITEM", title: "text-[#f2d27a]" },
-  unique: { label: "UNIQUE ITEM", title: "text-[#e08a3c]" },
+const rarityStyles: Record<string, { label: string; title: string }> = {
+  NORMAL: { label: "NORMAL ITEM", title: "text-parchment" },
+  MAGIC: { label: "MAGIC ITEM", title: "text-[#8fa8ff]" },
+  RARE: { label: "RARE ITEM", title: "text-[#f2d27a]" },
+  UNIQUE: { label: "UNIQUE ITEM", title: "text-[#e08a3c]" },
+  RELIC: { label: "RELIC ITEM", title: "text-[#8fe0a0]" },
 };
 
-function UpgradeCard({ title, rarity, description, dpsIncrease, ehpIncrease }: Upgrade) {
-  const style = rarityStyles[rarity];
+
+interface UpgradeCardProps {
+  upgrade: Upgrade;
+  onViewDetails?: () => void;
+}
+
+/** The guide's item for one slot, with the measured effect of equipping it. */
+function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
+  const style = rarityStyles[(upgrade.item.rarity ?? "RARE").toUpperCase()] ?? rarityStyles.RARE;
+  const isRing = upgrade.slot.startsWith("Ring");
+  const mods = [...upgrade.item.implicits, ...upgrade.item.explicits].slice(0, 6);
 
   return (
     <AtlasFrame variant="card" className="text-center">
-      <p className="font-display text-[13px] tracking-[0.3em] text-parchment-dim">{style.label}</p>
-      <h3 className={`engraved font-display text-[30px] font-semibold tracking-[0.06em] ${style.title}`}>
-        {title.toUpperCase()}
+      <p className="font-display text-[13px] tracking-[0.3em] text-parchment-dim">
+        {style.label} · {upgrade.slot.toUpperCase()}
+      </p>
+      <h3 className={`engraved font-display text-[26px] font-semibold tracking-[0.04em] ${style.title}`}>
+        {upgrade.item.name.toUpperCase()}
       </h3>
+      {upgrade.item.base && upgrade.item.base !== upgrade.item.name && (
+        <p className="text-[16px] text-parchment-dim">{upgrade.item.base}</p>
+      )}
       <div
         className="mx-auto mt-2 h-px w-4/5 bg-gradient-to-r from-transparent via-gold-dim to-transparent"
         aria-hidden="true"
       />
 
-      <div className="relative mx-auto mt-6 h-44 w-44">
-        <div className="absolute inset-[18%] bg-[radial-gradient(circle,rgba(90,140,230,0.28),transparent_70%)]" />
-        <img
-          src={atlasArt.itemRareRing}
-          alt={title}
-          className="absolute inset-[12%] h-[76%] w-[76%] object-contain drop-shadow-[0_0_14px_rgba(100,150,255,0.45)]"
-        />
-        <img
-          src={atlasArt.frameItem}
-          alt=""
-          className="pointer-events-none absolute inset-0 h-full w-full"
-        />
+      <div className="relative mx-auto mt-5 h-36 w-36">
+        <div className="absolute inset-[18%] bg-[radial-gradient(circle,rgba(220,170,90,0.25),transparent_70%)]" />
+        {isRing ? (
+          <img
+            src={atlasArt.itemRareRing}
+            alt=""
+            className="absolute inset-[12%] h-[76%] w-[76%] object-contain drop-shadow-[0_0_14px_rgba(100,150,255,0.45)]"
+          />
+        ) : (
+          <div className="absolute inset-0 grid place-items-center text-gold-dim">
+            <AtlasStarIcon className="h-14 w-14" />
+          </div>
+        )}
+        <img src={atlasArt.frameItem} alt="" className="pointer-events-none absolute inset-0 h-full w-full" />
       </div>
 
-      <p className="mt-5 text-[19px] text-parchment/90">{description}</p>
+      {mods.length > 0 && (
+        <ul className="mx-auto mt-4 max-w-sm space-y-0.5 text-[16px] text-[#9fb6e8]">
+          {mods.map((mod) => (
+            <li key={mod}>{mod}</li>
+          ))}
+        </ul>
+      )}
 
       <div className="mx-auto mt-4 grid max-w-sm grid-cols-2 border-y border-gold-dim/40 py-3">
-        <p className="border-r border-gold-dim/40 font-display text-[22px] text-verdigris">
-          +{dpsIncrease}% <span className="text-[15px]">DPS</span>
+        <p className={`border-r border-gold-dim/40 font-display text-[22px] ${changeTone(upgrade.dpsChange)}`}>
+          {formatSignedPercent(upgrade.dpsChange)} <span className="text-[15px]">DPS</span>
         </p>
-        <p className="font-display text-[22px] text-arcane">
-          +{ehpIncrease}% <span className="text-[15px]">EHP</span>
+        <p className={`font-display text-[22px] ${changeTone(upgrade.ehpChange)}`}>
+          {formatSignedPercent(upgrade.ehpChange)} <span className="text-[15px]">EHP</span>
         </p>
       </div>
 
-      <button
-        type="button"
-        className="ui-button mx-auto mt-6 block h-14 w-full max-w-sm font-display text-[15px] tracking-[0.2em] text-parchment transition hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
-      >
-        VIEW DETAILS
-      </button>
+      <p className="mt-3 text-[16px] text-parchment-faint">
+        Replaces {upgrade.current ? <span className="text-parchment-dim">{upgrade.current}</span> : "an empty slot"}
+      </p>
+
+      {onViewDetails && (
+        <button
+          type="button"
+          onClick={onViewDetails}
+          className="ui-button mx-auto mt-5 block h-14 w-full max-w-sm font-display text-[15px] tracking-[0.2em] text-parchment transition hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
+        >
+          VIEW IN GUIDE
+        </button>
+      )}
     </AtlasFrame>
   );
 }

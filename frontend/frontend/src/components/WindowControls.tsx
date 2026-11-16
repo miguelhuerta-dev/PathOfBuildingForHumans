@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-
-/** True when running inside the desktop app rather than a browser tab. */
-export const isDesktopApp = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+import { isDesktopApp } from "../lib/desktop";
 
 const buttonBase =
   "grid h-9 w-11 place-items-center text-[#cdb78a] transition-colors focus-visible:outline-1 focus-visible:outline-gold";

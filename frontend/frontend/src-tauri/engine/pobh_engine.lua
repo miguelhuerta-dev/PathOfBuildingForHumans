@@ -371,6 +371,52 @@ local function findUpgrades(guideItems)
 	return upgrades
 end
 
+-- Allocated passives of the active tree, keyed by node id.
+local function allocatedPassives()
+	local nodes = {}
+	for id, node in pairs(build.spec and build.spec.allocNodes or {}) do
+		if node.type ~= "ClassStart" and node.type ~= "AscendClassStart" then
+			nodes[id] = { name = node.dn or node.name, type = node.type, ascendancy = node.ascendancyName ~= nil }
+		end
+	end
+	return nodes
+end
+
+-- What the character still lacks from the guide's tree at the chosen stage.
+local function comparePassives(guideNodes, characterNodes)
+	local guideCount, shared = 0, 0
+	local missing, extra = {}, 0
+	for id, node in pairs(guideNodes) do
+		guideCount = guideCount + 1
+		if characterNodes[id] then
+			shared = shared + 1
+		elseif node.type == "Notable" or node.type == "Keystone" or node.type == "Mastery" then
+			missing[#missing + 1] = node
+		end
+	end
+	local characterCount = 0
+	for id in pairs(characterNodes) do
+		characterCount = characterCount + 1
+		if not guideNodes[id] then
+			extra = extra + 1
+		end
+	end
+	local rank = { Keystone = 1, Notable = 2, Mastery = 3 }
+	table.sort(missing, function(a, b)
+		if a.ascendancy ~= b.ascendancy then return a.ascendancy end
+		local ra, rb = rank[a.type] or 4, rank[b.type] or 4
+		if ra ~= rb then return ra < rb end
+		return (a.name or "") < (b.name or "")
+	end)
+	return {
+		guidePoints = guideCount,
+		characterPoints = characterCount,
+		shared = shared,
+		extra = extra,
+		missing = missing,
+	}
+end
+
 local result
 if request.kind == "character" then
 	loadCharacter(request.character)
@@ -384,6 +430,7 @@ elseif request.kind == "compare" then
 	local stages = loadGuide(request.xml, request.name, request.stage, level)
 	local guide = summarize()
 	guide.stages = stages
+	local guideNodes = allocatedPassives()
 	local guideItems = {}
 	for _, entry in ipairs(gearSlots()) do
 		local item = equippedItem(entry.slot)
@@ -394,7 +441,8 @@ elseif request.kind == "compare" then
 
 	loadCharacter(request.character)
 	local character = summarize({ name = request.character.name, league = request.character.league })
-	result = { character = character, guide = guide, upgrades = findUpgrades(guideItems) }
+	local passives = comparePassives(guideNodes, allocatedPassives())
+	result = { character = character, guide = guide, upgrades = findUpgrades(guideItems), passives = passives }
 else
 	error("unknown request kind: " .. tostring(request.kind))
 end

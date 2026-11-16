@@ -3,13 +3,25 @@ import Medallion from "./Medallion";
 import WindowControls from "./WindowControls";
 import { AtlasStarIcon } from "./icons";
 
-const navLinks = ["Builds", "Analyze", "Atlas", "Guides", "About"];
+export type Page = "character" | "guide" | "atlas" | "about";
+
+const navLinks: { page: Page; label: string }[] = [
+  { page: "character", label: "Character" },
+  { page: "guide", label: "Guide" },
+  { page: "atlas", label: "Atlas" },
+  { page: "about", label: "About" },
+];
+
+interface NavProps {
+  page: Page;
+  onNavigate: (page: Page) => void;
+}
 
 const linkClass =
   "engraved font-display text-[15px] font-semibold tracking-[0.18em] text-[#dccca6] transition-colors hover:text-gold focus-visible:text-gold";
 
 /** Collapsed navigation for narrow windows, styled as a framed parchment list. */
-function NavMenu() {
+function NavMenu({ page, onNavigate }: NavProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -53,10 +65,18 @@ function NavMenu() {
           <div className="atlas-frame__border" aria-hidden="true" />
           <ul className="relative flex flex-col gap-1">
             {navLinks.map((link) => (
-              <li key={link}>
-                <a href="#" className={`${linkClass} block px-2 py-2`} onClick={() => setOpen(false)}>
-                  {link.toUpperCase()}
-                </a>
+              <li key={link.page}>
+                <button
+                  type="button"
+                  aria-current={page === link.page ? "page" : undefined}
+                  className={`${linkClass} block w-full px-2 py-2 text-left ${page === link.page ? "text-gold" : ""}`}
+                  onClick={() => {
+                    onNavigate(link.page);
+                    setOpen(false);
+                  }}
+                >
+                  {link.label.toUpperCase()}
+                </button>
               </li>
             ))}
           </ul>
@@ -70,23 +90,33 @@ function NavMenu() {
  * Top bar. In the desktop app it is also the window title bar:
  * empty areas drag the window and double-click maximizes.
  */
-function TopNav() {
+function TopNav({ page, onNavigate }: NavProps) {
   return (
     <header data-tauri-drag-region className="nav-plate relative z-20 -mx-4 -mt-2 select-none px-5 py-2.5">
       <div data-tauri-drag-region className="flex items-center justify-between gap-6">
-        <a href="#" className="title-text whitespace-nowrap font-display text-[19px] font-semibold tracking-[0.05em] xl:text-[21px]">
+        <button
+          type="button"
+          onClick={() => onNavigate("character")}
+          className="title-text whitespace-nowrap font-display text-[19px] font-semibold tracking-[0.05em] xl:text-[21px]"
+        >
           Path of Building for Humans
-        </a>
+        </button>
 
         <div data-tauri-drag-region className="flex items-center gap-6">
           <nav aria-label="Main" data-tauri-drag-region className="hidden items-center gap-x-9 xl:flex">
             {navLinks.map((link) => (
-              <a key={link} href="#" className={linkClass}>
-                {link.toUpperCase()}
-              </a>
+              <button
+                key={link.page}
+                type="button"
+                aria-current={page === link.page ? "page" : undefined}
+                onClick={() => onNavigate(link.page)}
+                className={`${linkClass} border-b pb-0.5 ${page === link.page ? "border-gold text-gold" : "border-transparent"}`}
+              >
+                {link.label.toUpperCase()}
+              </button>
             ))}
           </nav>
-          <NavMenu />
+          <NavMenu page={page} onNavigate={onNavigate} />
           <Medallion size={44}>
             <AtlasStarIcon className="h-5 w-5" />
           </Medallion>

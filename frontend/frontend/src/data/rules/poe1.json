@@ -1,0 +1,48 @@
+{
+  "$comment": "Diagnostic rules for Path of Exile 1. Edit this file with each patch; no code changes needed. Stages are matched by character level (first stage whose maxLevel is >= level).",
+  "game": "poe1",
+  "patch": "3.27",
+  "resistCap": 75,
+  "stages": [
+    {
+      "id": "early-campaign",
+      "label": "Early campaign",
+      "maxLevel": 44,
+      "elementalResist": { "warnBelow": 0, "criticalBelow": -20 },
+      "chaosResist": null,
+      "ehp": { "warnBelow": 600, "criticalBelow": 300 },
+      "dps": { "goodAbove": 1500, "lowBelow": 300 }
+    },
+    {
+      "id": "late-campaign",
+      "label": "Late campaign",
+      "maxLevel": 67,
+      "elementalResist": { "warnBelow": 60, "criticalBelow": 40 },
+      "chaosResist": null,
+      "ehp": { "warnBelow": 4000, "criticalBelow": 2500 },
+      "dps": { "goodAbove": 40000, "lowBelow": 10000 }
+    },
+    {
+      "id": "early-maps",
+      "label": "Early maps",
+      "maxLevel": 84,
+      "elementalResist": { "warnBelow": 75, "criticalBelow": 65 },
+      "chaosResist": { "warnBelow": -30, "criticalBelow": -60 },
+      "ehp": { "warnBelow": 8000, "criticalBelow": 5000 },
+      "dps": { "goodAbove": 300000, "lowBelow": 80000 }
+    },
+    {
+      "id": "red-maps",
+      "label": "Red maps and bosses",
+      "maxLevel": 100,
+      "elementalResist": { "warnBelow": 75, "criticalBelow": 70 },
+      "chaosResist": { "warnBelow": 0, "criticalBelow": -30 },
+      "ehp": { "warnBelow": 15000, "criticalBelow": 9000 },
+      "dps": { "goodAbove": 2000000, "lowBelow": 500000 }
+    }
+  ],
+  "hitChance": { "warnBelow": 90, "criticalBelow": 80 },
+  "spellSuppression": { "investedFrom": 40 },
+  "movementSpeed": { "lowBelow": 1.2, "fromLevel": 68 },
+  "chaosImmunityKeystones": ["Chaos Inoculation"]
+}

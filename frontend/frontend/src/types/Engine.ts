@@ -84,11 +84,27 @@ export interface Upgrade {
   lightningResist?: number;
 }
 
+export interface PassiveNode {
+  name: string;
+  type: "Notable" | "Keystone" | "Mastery" | "Normal" | string;
+  ascendancy?: boolean;
+}
+
+/** The character's passive tree compared with the guide's tree at the chosen stage. */
+export interface PassiveComparison {
+  guidePoints: number;
+  characterPoints: number;
+  shared: number;
+  extra: number;
+  missing: PassiveNode[];
+}
+
 /** What `load_character`, `load_guide` and `select_guide_stage` return. */
 export interface EngineResult {
   character?: EngineBuild;
   guide?: EngineBuild;
   upgrades?: Upgrade[];
+  passives?: PassiveComparison;
 }
 
 export interface CharacterSummary {
