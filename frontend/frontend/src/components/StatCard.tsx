@@ -1,102 +1,62 @@
+import type { ReactNode } from "react";
 import AtlasFrame from "./AtlasFrame";
-import AtlasGlyph from "./AtlasGlyph";
+import Medallion from "./Medallion";
+import { AtlasStarIcon } from "./icons";
 
 interface StatCardProps {
   title: string;
-  value: string | number;
-  hero?: boolean;
+  value: string;
+  icon: ReactNode;
 }
 
-function StatCard({
-  title,
-  value,
-  hero = false,
-}: StatCardProps) {
+export function StatCard({ title, value, icon }: StatCardProps) {
   return (
-    <AtlasFrame>
-      <div
-        className={`
-        relative
-        bg-gradient-to-b
-        from-[#231911]
-        via-[#17120E]
-        to-[#0F0C09]
-        border
-        p-6
-        shadow-[inset_0_0_18px_rgba(0,0,0,0.65)]
-        ${hero
-            ? "border-[#8C6A34]"
-            : "border-[#3A2F22]"
-          }
-        `}
-      >
-        <div
-          className="
-          absolute
-          inset-2
-          border
-          border-[#2A2118]
-          pointer-events-none
-          "
-        />
-
-        <h3
-          className="
-          text-[#8C7F68]
-          text-sm
-          uppercase
-          tracking-widest
-          font-semibold
-          "
-        >
-          {hero ? `✦ ${title} ✦` : title}
-        </h3>
-
-        {hero ? (
-          <div className="mt-4 text-center">
-            <div
-              className="text-[#D4AF6A]"
-              style={{
-                fontFamily: "Cinzel",
-              }}
-            >
-              ✦
-            </div>
-
-            <div className="flex justify-center mb-3">
-              <AtlasGlyph />
-            </div>
-
-            <p
-              className="
-              text-8xl
-              text-[#D4AF6A]
-              font-bold
-              leading-none
-              "
-            >
-              8.4
-            </p>
-
-            <p className="text-[#8C7F68] text-lg">
-              / 10
-            </p>
-          </div>
-        ) : (
-          <p
-            className="
-            text-5xl
-            text-[#C6B18A]
-            font-bold
-            mt-4
-            "
-          >
-            {value}
-          </p>
-        )}
+    <AtlasFrame variant="card" className="h-full">
+      <div className="absolute -left-1 -top-1 text-gold-dim" aria-hidden="true">
+        {icon}
+      </div>
+      <div className="flex h-full flex-col items-center justify-center py-3 text-center">
+        <p className="font-display text-[15px] tracking-[0.18em] text-parchment-dim">{title}</p>
+        <p className="engraved mt-1 font-display text-[46px] leading-none text-parchment">{value}</p>
       </div>
     </AtlasFrame>
   );
 }
 
-export default StatCard;
+interface ScoreCardProps {
+  score: number;
+  max?: number;
+}
+
+export function ScoreCard({ score, max = 10 }: ScoreCardProps) {
+  const percent = Math.max(0, Math.min(100, (score / max) * 100));
+
+  return (
+    <AtlasFrame variant="card" className="h-full">
+      <div className="flex items-center gap-6 py-2">
+        <Medallion size={104}>
+          <AtlasStarIcon className="h-11 w-11" />
+        </Medallion>
+
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-[15px] tracking-[0.18em] text-parchment-dim">BUILD SCORE</p>
+          <p className="font-display leading-none">
+            <span className="gold-text text-[64px]">{score.toFixed(1)}</span>
+            <span className="ml-2 text-[26px] text-parchment-dim">/ {max}</span>
+          </p>
+
+          <div
+            className="mt-3 h-3 border border-[#4a3a22] bg-[#060403] p-[2px] shadow-[inset_0_2px_4px_#000]"
+            role="meter"
+            aria-label="Build score"
+            aria-valuenow={score}
+            aria-valuemin={0}
+            aria-valuemax={max}
+          >
+            <div className="metal-bar h-full" style={{ width: `${percent}%` }} />
+          </div>
+        </div>
+      </div>
+    </AtlasFrame>
+  );
+}

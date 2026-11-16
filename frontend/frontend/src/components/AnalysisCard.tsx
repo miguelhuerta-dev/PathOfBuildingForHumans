@@ -1,76 +1,41 @@
-import AtlasSectionHeader from "./AtlasSectionHeader";
+import type { BuildAnalysis } from "../types/Build";
 import AtlasFrame from "./AtlasFrame";
+import AtlasSectionHeader from "./AtlasSectionHeader";
+import { QuillIcon } from "./icons";
 
-function AnalysisCard() {
+interface AnalysisCardProps {
+  analysis: BuildAnalysis;
+}
+
+function Stat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div>
+      <p className="text-[17px] text-parchment-dim">{label}</p>
+      <p className={`text-[21px] font-medium ${tone}`}>{value}</p>
+    </div>
+  );
+}
+
+function AnalysisCard({ analysis }: AnalysisCardProps) {
   return (
     <AtlasFrame>
-      <div
-        className="
-        bg-[#16120E]
-        border
-        border-[#A8864B]
-        p-6
-        relative
-        "
-      >
-        <div
-          className="
-          absolute
-          inset-2
-          border
-          border-[#3A2F22]
-          pointer-events-none
-          "
-        />
-
-        <AtlasSectionHeader
-          title="SCHOLAR'S VERDICT"
-        />
-
-        <div className="mt-6 grid grid-cols-2 gap-6">
-
-          <div>
-            <p className="text-slate-500 text-sm uppercase tracking-wide">
-              Mapping Performance
-            </p>
-
-            <p className="text-emerald-400 font-semibold mt-1">
-              Excellent
-            </p>
-          </div>
-
-          <div>
-            <p className="text-slate-500 text-sm uppercase tracking-wide">
-              Primary Weakness
-            </p>
-
-            <p className="text-orange-400 font-semibold mt-1">
-              Chaos Resistance
-            </p>
-          </div>
-
-          <div>
-            <p className="text-slate-500 text-sm uppercase tracking-wide">
-              Estimated Gain
-            </p>
-
-            <p className="text-amber-300 font-semibold mt-1">
-              +18% Survivability
-            </p>
-          </div>
-
-          <div>
-            <p className="text-slate-500 text-sm uppercase tracking-wide">
-              Recommended Action
-            </p>
-
-            <p className="text-sky-400 font-semibold mt-1">
-              Replace Current Ring
-            </p>
-          </div>
-
+      <div className="grid gap-8 md:grid-cols-[1fr_auto_1.1fr] md:items-center">
+        <div>
+          <AtlasSectionHeader title="Scholar's Verdict" icon={<QuillIcon className="h-6 w-6" />} />
+          <p className="text-[19px] leading-snug text-parchment/90">{analysis.summary}</p>
         </div>
 
+        <div
+          className="hidden h-28 w-px bg-gradient-to-b from-transparent via-gold-dim to-transparent md:block"
+          aria-hidden="true"
+        />
+
+        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+          <Stat label="Mapping Performance" value={analysis.mappingPerformance} tone="text-verdigris" />
+          <Stat label="Primary Weakness" value={analysis.primaryWeakness} tone="text-ember" />
+          <Stat label="Estimated Gain" value={analysis.estimatedGain} tone="text-gold" />
+          <Stat label="Recommended Action" value={analysis.recommendedAction} tone="text-arcane" />
+        </div>
       </div>
     </AtlasFrame>
   );

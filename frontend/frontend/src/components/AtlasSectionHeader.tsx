@@ -1,30 +1,22 @@
-import AtlasGlyph from "./AtlasGlyph";
+import type { ReactNode } from "react";
+import Medallion from "./Medallion";
 
 interface AtlasSectionHeaderProps {
   title: string;
+  icon: ReactNode;
+  tone?: "gold" | "blood";
 }
 
-function AtlasSectionHeader({
-  title,
-}: AtlasSectionHeaderProps) {
+function AtlasSectionHeader({ title, icon, tone = "gold" }: AtlasSectionHeaderProps) {
   return (
-    <div className="flex items-center gap-3 mb-4">
-      <AtlasGlyph />
+    <div className="mb-5 flex items-center gap-4">
+      <Medallion size={64} tone={tone}>
+        {icon}
+      </Medallion>
 
-      <h2
-        className="
-        text-2xl
-        text-[#A8864B]
-        tracking-wide
-        "
-        style={{
-          fontFamily: "Cinzel",
-        }}
-      >
+      <h2 className="gold-text font-display text-[26px] font-semibold tracking-[0.06em]">
         {title}
       </h2>
-
-      <div className="flex-1 h-px bg-[#6F5A35]" />
     </div>
   );
 }
