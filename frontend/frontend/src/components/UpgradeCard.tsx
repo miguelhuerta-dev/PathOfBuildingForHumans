@@ -18,11 +18,15 @@ function UpgradeCard({
     <AtlasFrame>
       <div
         className="
-        bg-[#1E1812]
+        bg-gradient-to-b
+        from-[#21170F]
+        via-[#16120E]
+        to-[#120E0B]
         border
-        border-[#A8864B]
+        border-[#8C6A34]
         p-5
         relative
+        shadow-[inset_0_0_18px_rgba(0,0,0,0.65)]
         "
       >
         <div
@@ -30,7 +34,7 @@ function UpgradeCard({
           absolute
           inset-2
           border
-          border-[#3A2F22]
+          border-[#2A2118]
           pointer-events-none
           "
         />
@@ -52,7 +56,7 @@ function UpgradeCard({
 
         <h3
           className="
-          text-amber-300
+          text-[#D4AF6A]
           text-2xl
           font-bold
           text-center

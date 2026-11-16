@@ -9,9 +9,10 @@ function AtlasCorner({
 }: AtlasCornerProps) {
   return (
     <svg
-      width="48"
-      height="48"
-      viewBox="0 0 48 48"
+      width="60"
+      height="60"
+      viewBox="0 0 60 60"
+      fill="none"
       style={{
         transform: `
           scaleX(${flipX ? -1 : 1})
@@ -19,32 +20,61 @@ function AtlasCorner({
         `,
       }}
     >
+      {/* Línea exterior */}
+
       <path
-        d="M4 44V4H44"
+        d="M4 56V4H56"
         stroke="#A8864B"
         strokeWidth="1.5"
-        fill="none"
       />
+
+      {/* Línea interior */}
+
+      <path
+        d="M10 50V10H50"
+        stroke="#6F5A35"
+        strokeWidth="1"
+        opacity="0.8"
+      />
+
+      {/* Nodo principal */}
 
       <circle
         cx="4"
-        cy="44"
-        r="2.5"
+        cy="56"
+        r="2.8"
         fill="#D4AF6A"
       />
 
+      {/* Nodo secundario */}
+
+      <circle
+        cx="16"
+        cy="44"
+        r="1.8"
+        fill="#A8864B"
+      />
+
+      {/* Curva ornamental */}
+
       <path
-        d="M10 38C22 38 30 30 30 18"
+        d="M16 44
+           C 28 44,
+             36 36,
+             36 24"
         stroke="#A8864B"
-        strokeWidth="1"
+        strokeWidth="1.1"
         fill="none"
       />
 
-      <circle
-        cx="12"
-        cy="36"
-        r="1.5"
-        fill="#D4AF6A"
+      {/* Remate */}
+
+      <path
+        d="M36 24
+           Q 42 18 48 18"
+        stroke="#A8864B"
+        strokeWidth="1"
+        fill="none"
       />
     </svg>
   );
