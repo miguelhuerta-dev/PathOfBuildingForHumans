@@ -13,7 +13,11 @@ function Dashboard() {
       <div className="max-w-7xl mx-auto">
         <div
           className="
-  bg-slate-900
+  bg-slate-950
+  from-slate-950
+  via-slate-950
+  to-black
+  to-slate-950
   border
   border-slate-800
   rounded-3xl
@@ -21,11 +25,13 @@ function Dashboard() {
   mb-8
   "
         >
-          <h1 className="text-6xl font-black tracking-tight">
+          <h1 className="text-6xl font-black tracking-tight"
+          style={{ fontFamily: "Cinzel",}}
+          >
             {mockBuild.name}
           </h1>
 
-          <p className="text-emerald-400 mt-2 text-lg font-semibold">
+          <p className="text-amber-300 mt-2 text-lg font-semibold">
             BUILD HEALTH: EXCELLENT
           </p>
 
