@@ -22,7 +22,7 @@ function Medallion({ children, size = 64, tone = "gold" }: MedallionProps) {
       aria-hidden="true"
     >
       <div
-        className={`grid place-items-center rounded-full ${tones[tone]}`}
+        className={`textured grid place-items-center overflow-hidden rounded-full ${tones[tone]}`}
         style={{ width: inner, height: inner }}
       >
         {children}

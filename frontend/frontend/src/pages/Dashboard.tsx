@@ -16,9 +16,9 @@ const navLinks = ["Builds", "Analyze", "Atlas", "Guides", "About"];
 
 function TopNav() {
   return (
-    <header className="relative z-20 -mx-2 border-b border-gold-dim/60 pb-3">
+    <header className="nav-plate relative z-20 -mx-4 -mt-2 px-5 py-3">
       <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-2">
-        <a href="#" className="title-text font-display text-[19px] font-medium tracking-[0.06em]">
+        <a href="#" className="title-text font-display text-[21px] font-semibold tracking-[0.05em]">
           Path of Building for Humans
         </a>
 
@@ -27,7 +27,7 @@ function TopNav() {
             <a
               key={link}
               href="#"
-              className="font-display text-[14px] tracking-[0.2em] text-parchment-dim transition-colors hover:text-gold"
+              className="engraved font-display text-[15px] font-semibold tracking-[0.18em] text-[#dccca6] transition-colors hover:text-gold focus-visible:text-gold"
             >
               {link.toUpperCase()}
             </a>
@@ -44,7 +44,7 @@ function TopNav() {
 function Motto({ lines, align }: { lines: string[]; align: "left" | "right" }) {
   return (
     <p
-      className={`hidden font-display text-[12px] leading-relaxed tracking-[0.22em] text-parchment-faint lg:block ${
+      className={`hidden font-display text-[13px] font-medium leading-relaxed tracking-[0.22em] text-parchment-faint lg:block ${
         align === "right" ? "text-right" : ""
       }`}
     >
@@ -105,6 +105,7 @@ function Dashboard() {
   return (
     <div className="relative isolate min-h-screen overflow-hidden px-2 py-3 sm:px-4">
       <AtlasBackground />
+      <div className="film-grain pointer-events-none absolute inset-0 z-30" aria-hidden="true" />
       <AtlasScene />
 
       <AtlasFrame variant="outer" className="relative z-10 mx-auto max-w-[1320px]">

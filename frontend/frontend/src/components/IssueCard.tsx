@@ -29,7 +29,7 @@ function IssueCard({ title, description, severity }: Omit<Issue, "id">) {
   return (
     <AtlasFrame variant="card" className="p-[10px]">
       <article className="flex items-stretch">
-        <div className={`flex w-[76px] shrink-0 items-center justify-center ${style.block}`}>
+        <div className={`textured flex w-[76px] shrink-0 items-center justify-center ${style.block}`}>
           <div className="grid h-12 w-12 place-items-center rounded-full border border-gold-dim/70 bg-black/40">
             {style.icon}
           </div>
