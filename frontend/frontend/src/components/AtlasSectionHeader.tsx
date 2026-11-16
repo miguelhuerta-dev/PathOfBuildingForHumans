@@ -14,7 +14,7 @@ function AtlasSectionHeader({
       <h2
         className="
         text-2xl
-        text-[#D4AF6A]
+        text-[#A8864B]
         tracking-wide
         "
         style={{
@@ -24,7 +24,7 @@ function AtlasSectionHeader({
         {title}
       </h2>
 
-      <div className="flex-1 h-px bg-[#A8864B]" />
+      <div className="flex-1 h-px bg-[#6F5A35]" />
     </div>
   );
 }

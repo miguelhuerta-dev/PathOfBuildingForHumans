@@ -39,7 +39,7 @@ function AtlasSeal({ label }: AtlasSealProps) {
                 text-[11px]
                 mt-2
                 font-semibold
-                text-[#D4AF6A]
+                text-[#8C6A34]
                 tracking-[0.12em]
                 "
                 style={{

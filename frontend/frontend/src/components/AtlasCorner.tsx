@@ -24,7 +24,7 @@ function AtlasCorner({
 
       <path
         d="M4 56V4H56"
-        stroke="#A8864B"
+        stroke="#6F5A35"
         strokeWidth="1.5"
       />
 
@@ -43,7 +43,7 @@ function AtlasCorner({
         cx="4"
         cy="56"
         r="2.8"
-        fill="#D4AF6A"
+        fill="#8C6A34"
       />
 
       {/* Nodo secundario */}
@@ -62,7 +62,7 @@ function AtlasCorner({
            C 28 44,
              36 36,
              36 24"
-        stroke="#A8864B"
+        stroke="#6F5A35"
         strokeWidth="1.1"
         fill="none"
       />
@@ -72,7 +72,7 @@ function AtlasCorner({
       <path
         d="M36 24
            Q 42 18 48 18"
-        stroke="#A8864B"
+        stroke="#6F5A35"
         strokeWidth="1"
         fill="none"
       />
