@@ -1,5 +1,5 @@
 import starAtlas from "./bg-star-atlas.webp";
-import portraitInquisitor from "./portrait-inquisitor.webp";
+import portraitInquisitor from "./portrait-templar.webp";
 import itemRareRing from "./item-rare-ring.webp";
 import sceneCandles from "./scene-candles.webp";
 import sceneBooks from "./scene-books.webp";
