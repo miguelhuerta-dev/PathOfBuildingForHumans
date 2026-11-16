@@ -13,6 +13,10 @@ const USER_AGENT: &str = concat!(
     " (+https://github.com/miguelhuerta-dev/PathOfBuildingForHumans)"
 );
 
+pub fn user_agent() -> &'static str {
+    USER_AGENT
+}
+
 fn client() -> Result<reqwest::Client, String> {
     reqwest::Client::builder()
         .user_agent(USER_AGENT)

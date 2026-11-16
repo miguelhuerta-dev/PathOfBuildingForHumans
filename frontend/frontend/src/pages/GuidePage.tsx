@@ -3,6 +3,7 @@ import { atlasArt } from "../assets/atlas";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import UpgradeCard from "../components/UpgradeCard";
+import ItemIcon from "../components/ItemIcon";
 import { AtlasStarIcon, QuillIcon, SigilIcon, SwordIcon } from "../components/icons";
 import type { Archive } from "../state/useArchive";
 import type { EngineBuild, EngineStats } from "../types/Engine";
@@ -269,8 +270,10 @@ function GuidePage({ archive }: { archive: Archive }) {
                     <AtlasSectionHeader title="Then" icon={<QuillIcon className="h-6 w-6" />} />
                     <ol className="flex flex-col divide-y divide-gold-dim/20">
                       {upgrades.slice(1, 8).map((upgrade) => (
-                        <li key={upgrade.slot} className="flex flex-wrap items-baseline justify-between gap-x-4 py-3">
-                          <span>
+                        <li key={upgrade.slot} className="flex flex-wrap items-center justify-between gap-x-4 py-3">
+                          <span className="flex items-center gap-3">
+                            <ItemIcon src={upgrade.item.icon} className="h-12 w-12 shrink-0" />
+                            <span>
                             <span className="font-display text-[13px] tracking-[0.16em] text-parchment-dim">
                               {upgrade.slot.toUpperCase()}
                             </span>
@@ -278,6 +281,7 @@ function GuidePage({ archive }: { archive: Archive }) {
                             {upgrade.current && (
                               <span className="block text-[15px] text-parchment-faint">instead of {upgrade.current}</span>
                             )}
+                            </span>
                           </span>
                           <span className="font-display text-[17px]">
                             <Signed value={upgrade.dpsChange} /> <span className="text-[13px] text-parchment-dim">DPS</span>{" "}

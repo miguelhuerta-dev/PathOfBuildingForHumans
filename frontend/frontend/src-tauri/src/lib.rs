@@ -1,6 +1,7 @@
 mod client_log;
 mod engine;
 mod guide;
+mod item_icons;
 mod poe_api;
 
 use serde_json::{json, Value};
@@ -22,6 +23,15 @@ async fn run_engine(request: Value) -> Result<Value, String> {
         .map_err(|e| format!("The calculation was interrupted: {e}"))?
 }
 
+/// Adds official icons to guide items and upgrades when a guide is involved.
+async fn with_item_icons(app: &tauri::AppHandle, mut result: Value) -> Value {
+    if result.get("guide").is_some() {
+        let index = item_icons::index(app.path().app_cache_dir().ok()).await;
+        item_icons::decorate(&mut result, &index);
+    }
+    result
+}
+
 #[tauri::command]
 async fn list_characters(account: String, realm: Option<String>) -> Result<Value, String> {
     poe_api::list_characters(account.trim(), realm.as_deref().unwrap_or("pc")).await
@@ -31,6 +41,7 @@ async fn list_characters(account: String, realm: Option<String>) -> Result<Value
 /// guide is loaded, compares both.
 #[tauri::command]
 async fn load_character(
+    app: tauri::AppHandle,
     session: State<'_, Session>,
     account: String,
     character: String,
@@ -42,7 +53,10 @@ async fn load_character(
     let guide_xml = session.guide_xml.lock().unwrap().clone();
     let stage = *session.stage.lock().unwrap();
     match guide_xml {
-        Some(xml) => run_engine(json!({ "kind": "compare", "character": raw, "xml": xml, "stage": stage })).await,
+        Some(xml) => {
+            let result = run_engine(json!({ "kind": "compare", "character": raw, "xml": xml, "stage": stage })).await?;
+            Ok(with_item_icons(&app, result).await)
+        }
         None => {
             let character = run_engine(json!({ "kind": "character", "character": raw })).await?;
             Ok(json!({ "character": character }))
@@ -51,7 +65,7 @@ async fn load_character(
 }
 
 /// Calculates the loaded guide, compared with the loaded character if any.
-async fn evaluate_guide(session: &Session) -> Result<Value, String> {
+async fn evaluate_guide(app: &tauri::AppHandle, session: &Session) -> Result<Value, String> {
     let xml = session
         .guide_xml
         .lock()
@@ -60,30 +74,32 @@ async fn evaluate_guide(session: &Session) -> Result<Value, String> {
         .ok_or_else(|| "Load a guide first.".to_string())?;
     let stage = *session.stage.lock().unwrap();
     let character = session.character.lock().unwrap().clone();
-    match character {
-        Some(raw) => run_engine(json!({ "kind": "compare", "character": raw, "xml": xml, "stage": stage })).await,
-        None => {
-            let guide = run_engine(json!({ "kind": "build", "xml": xml, "stage": stage })).await?;
-            Ok(json!({ "guide": guide }))
-        }
-    }
+    let result = match character {
+        Some(raw) => run_engine(json!({ "kind": "compare", "character": raw, "xml": xml, "stage": stage })).await?,
+        None => json!({ "guide": run_engine(json!({ "kind": "build", "xml": xml, "stage": stage })).await? }),
+    };
+    Ok(with_item_icons(app, result).await)
 }
 
 /// Loads a guide from a PoB code or pobb.in / pastebin link.
 /// The stage is chosen from the character's level unless the player picks one.
 #[tauri::command]
-async fn load_guide(session: State<'_, Session>, input: String) -> Result<Value, String> {
+async fn load_guide(app: tauri::AppHandle, session: State<'_, Session>, input: String) -> Result<Value, String> {
     let xml = guide::resolve(&input).await?;
     *session.guide_xml.lock().unwrap() = Some(xml);
     *session.stage.lock().unwrap() = None;
-    evaluate_guide(&session).await
+    evaluate_guide(&app, &session).await
 }
 
 /// Compares against another stage of the loaded guide (None = by level).
 #[tauri::command]
-async fn select_guide_stage(session: State<'_, Session>, stage: Option<u32>) -> Result<Value, String> {
+async fn select_guide_stage(
+    app: tauri::AppHandle,
+    session: State<'_, Session>,
+    stage: Option<u32>,
+) -> Result<Value, String> {
     *session.stage.lock().unwrap() = stage;
-    evaluate_guide(&session).await
+    evaluate_guide(&app, &session).await
 }
 
 #[tauri::command]

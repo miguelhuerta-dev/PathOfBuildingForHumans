@@ -4,6 +4,7 @@ import { changeTone, formatSignedPercent } from "../utils/format";
 import { rarityStyle } from "../utils/rarity";
 import AtlasFrame from "./AtlasFrame";
 import ItemIcon from "./ItemIcon";
+import { officialIcon } from "../config/features";
 import { AtlasStarIcon } from "./icons";
 
 
@@ -36,7 +37,11 @@ function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
 
       <div className="relative mx-auto mt-5 h-36 w-36">
         <div className="absolute inset-[18%] bg-[radial-gradient(circle,rgba(220,170,90,0.25),transparent_70%)]" />
-        {isRing ? (
+        {officialIcon(upgrade.item.icon) ? (
+          <div className="absolute inset-[18%] flex items-center justify-center overflow-hidden">
+            <ItemIcon src={upgrade.item.icon} className="h-auto max-h-full w-auto max-w-full" />
+          </div>
+        ) : isRing ? (
           <img
             src={atlasArt.itemRareRing}
             alt=""
@@ -68,7 +73,7 @@ function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
       </div>
 
       <p className="mt-3 flex items-center justify-center gap-2 text-[16px] text-parchment-faint">
-        {upgrade.current && <ItemIcon src={upgrade.currentIcon} className="h-8 w-8" />}
+        {upgrade.current && <ItemIcon src={upgrade.currentIcon} className="h-10 w-10" />}
         <span>
           Replaces {upgrade.current ? <span className="text-parchment-dim">{upgrade.current}</span> : "an empty slot"}
         </span>
