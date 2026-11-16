@@ -52,7 +52,7 @@ function Dashboard() {
               <div>
                 <h1
                   className="
-                  text-8xl
+                  text-6xl
                   font-black
                   tracking-tight
                   text-white
@@ -76,7 +76,7 @@ function Dashboard() {
               </p>
 
               <p
-                className="text-2xl"
+                className="text-3xl"
                 style={{
                   fontFamily: "Cinzel",
                 }}

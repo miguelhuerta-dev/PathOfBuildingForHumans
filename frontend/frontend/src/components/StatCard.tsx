@@ -1,57 +1,101 @@
+import AtlasFrame from "./AtlasFrame";
+import AtlasGlyph from "./AtlasGlyph";
+
 interface StatCardProps {
   title: string;
   value: string | number;
   hero?: boolean;
 }
 
-function StatCard({ title, value, hero = false }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  hero = false,
+}: StatCardProps) {
   return (
-    <div
-      className={`
-      relative
-      bg-[#16120E]
-      border
-      rounded-none
-      p-6
-      transition
-      
-      ${hero
-          ? "border-[#A8864B] bg-[#16120E]"
-          : "border-[#3A2F22] hover:border-[#A8864B]"
-        }
-     `}
-    >
-
+    <AtlasFrame>
       <div
-        className="
-        absolute
-        inset-1
+        className={`
+        relative
+        bg-gradient-to-b
+        from-[#231911]
+        via-[#17120E]
+        to-[#0F0C09]
         border
-        border-[#3A2F22]
-        pointer-events-none
-        "
-      />
-      <h3
-        className="
-        text-[#8C7F68]
-        text-sm
-        uppercase
-        tracking-widest
-        font-semibold
-        "
+        p-6
+        shadow-[inset_0_0_18px_rgba(0,0,0,0.65)]
+        ${hero
+            ? "border-[#8C6A34]"
+            : "border-[#3A2F22]"
+          }
+        `}
       >
-        {hero ? `✦ ${title} ✦` : title}
-      </h3>
+        <div
+          className="
+          absolute
+          inset-2
+          border
+          border-[#2A2118]
+          pointer-events-none
+          "
+        />
 
-      <p
-        className={`font-bold mt-4 ${hero ? "text-7xl text-amber-300" : "text-4xl"
-          }`}
-      >
-        {value}
-      </p>
+        <h3
+          className="
+          text-[#8C7F68]
+          text-sm
+          uppercase
+          tracking-widest
+          font-semibold
+          "
+        >
+          {hero ? `✦ ${title} ✦` : title}
+        </h3>
 
+        {hero ? (
+          <div className="mt-4 text-center">
+            <div
+              className="text-[#D4AF6A]"
+              style={{
+                fontFamily: "Cinzel",
+              }}
+            >
+              ✦
+            </div>
 
-    </div>
+            <div className="flex justify-center mb-3">
+              <AtlasGlyph />
+            </div>
+
+            <p
+              className="
+              text-8xl
+              text-[#D4AF6A]
+              font-bold
+              leading-none
+              "
+            >
+              8.4
+            </p>
+
+            <p className="text-[#8C7F68] text-lg">
+              / 10
+            </p>
+          </div>
+        ) : (
+          <p
+            className="
+            text-5xl
+            text-[#C6B18A]
+            font-bold
+            mt-4
+            "
+          >
+            {value}
+          </p>
+        )}
+      </div>
+    </AtlasFrame>
   );
 }
 
