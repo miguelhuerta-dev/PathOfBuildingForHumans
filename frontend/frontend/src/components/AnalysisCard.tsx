@@ -11,7 +11,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone: stri
   return (
     <div>
       <p className="text-[17px] text-parchment-dim">{label}</p>
-      <p className={`text-[21px] font-medium ${tone}`}>{value}</p>
+      <p className={`text-[22px] font-semibold ${tone}`}>{value}</p>
     </div>
   );
 }

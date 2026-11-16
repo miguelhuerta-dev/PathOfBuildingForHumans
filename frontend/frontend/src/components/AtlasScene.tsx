@@ -3,56 +3,41 @@ import { atlasArt } from "../assets/atlas";
 function CandleGlow({ className }: { className: string }) {
   return (
     <div
-      className={`candle-flicker absolute rounded-full bg-[radial-gradient(circle,rgba(255,180,90,0.35),rgba(255,140,60,0.08)_45%,transparent_70%)] ${className}`}
+      className={`candle-flicker absolute rounded-full bg-[radial-gradient(circle,rgba(255,180,90,0.38),rgba(255,140,60,0.1)_45%,transparent_70%)] ${className}`}
     />
   );
 }
 
-/** Desk props framing the page edges. Decorative only; hidden on small screens. */
+/**
+ * Desk props framing the page edges. Decorative only; hidden on small screens.
+ * Back layer sits behind the outer frame, front layer overlaps its lower edge.
+ */
 function AtlasScene() {
   return (
-    <div
-      className="pointer-events-none absolute inset-0 z-0 hidden overflow-hidden lg:block"
-      aria-hidden="true"
-    >
-      {/* upper right candle */}
-      <CandleGlow className="-right-24 top-24 h-80 w-80" />
-      <img
-        src={atlasArt.sceneCandles}
-        alt=""
-        className="absolute -right-10 top-28 h-56 opacity-90"
-      />
+    <>
+      <div className="pointer-events-none absolute inset-0 z-0 hidden lg:block" aria-hidden="true">
+        <CandleGlow className="-right-24 top-20 h-96 w-96" />
+        <img src={atlasArt.sceneCandles} alt="" className="absolute -right-6 top-44 h-64" />
 
-      {/* lower left: books, candles, coins */}
-      <CandleGlow className="-left-28 bottom-40 h-[28rem] w-[28rem]" />
-      <img
-        src={atlasArt.sceneBooks}
-        alt=""
-        className="absolute -left-16 bottom-0 w-[22rem]"
-      />
-      <img
-        src={atlasArt.sceneCandles}
-        alt=""
-        className="absolute -left-6 bottom-44 h-72"
-      />
-      <img
-        src={atlasArt.sceneCoins}
-        alt=""
-        className="absolute bottom-0 left-64 w-48 opacity-90"
-      />
+        <CandleGlow className="-left-28 top-[46%] h-96 w-96" />
+        <img src={atlasArt.sceneCandles} alt="" className="absolute -left-10 top-[52%] h-60 opacity-80" />
+      </div>
 
-      {/* lower right: parchment map and astrolabe */}
-      <img
-        src={atlasArt.sceneParchmentMap}
-        alt=""
-        className="absolute -bottom-10 -right-20 w-[30rem] rotate-[-6deg] opacity-90"
-      />
-      <img
-        src={atlasArt.sceneAstrolabe}
-        alt=""
-        className="absolute -right-12 bottom-24 w-56"
-      />
-    </div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 hidden h-[34rem] lg:block" aria-hidden="true">
+        <CandleGlow className="-left-20 bottom-24 h-[30rem] w-[30rem]" />
+        <img src={atlasArt.sceneBooks} alt="" className="absolute -left-24 -bottom-6 w-[30rem]" />
+        <img src={atlasArt.sceneCandles} alt="" className="absolute bottom-40 left-48 h-56" />
+        <img src={atlasArt.sceneCoins} alt="" className="absolute bottom-0 left-[22rem] w-52" />
+
+        <CandleGlow className="-right-20 bottom-10 h-80 w-80" />
+        <img
+          src={atlasArt.sceneParchmentMap}
+          alt=""
+          className="absolute -bottom-20 -right-16 w-[36rem] rotate-[-8deg]"
+        />
+        <img src={atlasArt.sceneAstrolabe} alt="" className="absolute -right-20 bottom-10 w-72" />
+      </div>
+    </>
   );
 }
 

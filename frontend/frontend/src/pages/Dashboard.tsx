@@ -16,13 +16,13 @@ const navLinks = ["Builds", "Analyze", "Atlas", "Guides", "About"];
 
 function TopNav() {
   return (
-    <header className="relative z-20 border-b border-gold-dim/50 bg-[linear-gradient(180deg,rgba(20,16,12,0.95),rgba(10,8,6,0.9))] shadow-[0_6px_20px_rgba(0,0,0,0.7)]">
-      <div className="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-x-8 gap-y-2 px-6 py-3">
-        <a href="#" className="gold-text font-display text-[19px] tracking-[0.08em]">
+    <header className="relative z-20 -mx-2 border-b border-gold-dim/60 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-2">
+        <a href="#" className="title-text font-display text-[19px] font-medium tracking-[0.06em]">
           Path of Building for Humans
         </a>
 
-        <nav aria-label="Main" className="flex flex-wrap items-center gap-x-9 gap-y-1">
+        <nav aria-label="Main" className="flex flex-wrap items-center gap-x-10 gap-y-1">
           {navLinks.map((link) => (
             <a
               key={link}
@@ -32,7 +32,7 @@ function TopNav() {
               {link.toUpperCase()}
             </a>
           ))}
-          <Medallion size={44}>
+          <Medallion size={46}>
             <AtlasStarIcon className="h-5 w-5" />
           </Medallion>
         </nav>
@@ -41,11 +41,11 @@ function TopNav() {
   );
 }
 
-function SideMotto({ lines, side }: { lines: string[]; side: "left" | "right" }) {
+function Motto({ lines, align }: { lines: string[]; align: "left" | "right" }) {
   return (
     <p
-      className={`pointer-events-none absolute top-10 z-10 hidden font-display text-[12px] leading-relaxed tracking-[0.22em] text-parchment-faint 2xl:block ${
-        side === "left" ? "left-10 text-left" : "right-10 text-right"
+      className={`hidden font-display text-[12px] leading-relaxed tracking-[0.22em] text-parchment-faint lg:block ${
+        align === "right" ? "text-right" : ""
       }`}
     >
       {lines.map((line) => (
@@ -60,18 +60,20 @@ function SideMotto({ lines, side }: { lines: string[]; side: "left" | "right" })
 function BuildHeader() {
   return (
     <AtlasFrame pendant>
-      <div className="grid items-center gap-6 md:grid-cols-[auto_1fr_auto_auto]">
-        <img
-          src={atlasArt.portraitInquisitor}
-          alt={`${mockBuild.ascendancy} portrait`}
-          className="-my-6 -ml-4 hidden h-52 w-52 object-cover [mask-image:radial-gradient(ellipse_75%_80%_at_45%_45%,black_55%,transparent_100%)] md:block"
-        />
+      <div className="grid items-center gap-6 md:grid-cols-[200px_1fr_auto_auto]">
+        <div className="relative hidden h-40 md:block">
+          <img
+            src={atlasArt.portraitInquisitor}
+            alt={`${mockBuild.ascendancy} portrait`}
+            className="absolute -left-14 -top-14 h-[270px] w-[270px] max-w-none object-cover brightness-90 saturate-[0.85] [mask-image:radial-gradient(ellipse_70%_75%_at_45%_42%,black_55%,transparent_100%)]"
+          />
+        </div>
 
         <div>
-          <h1 className="gold-text font-display text-[clamp(34px,4.4vw,54px)] font-semibold leading-tight lg:whitespace-nowrap">
+          <h1 className="title-text font-display text-[clamp(34px,4.2vw,56px)] font-semibold leading-tight lg:whitespace-nowrap">
             {mockBuild.name}
           </h1>
-          <p className="mt-1 font-display text-[17px] tracking-[0.16em] text-parchment-dim">
+          <p className="mt-1 font-display text-[17px] tracking-[0.16em] text-gold-dim">
             {mockBuild.ascendancy.toUpperCase()} • LEVEL {mockBuild.level}
           </p>
           <p className="mt-3 max-w-xs text-[18px] italic leading-snug text-gold-dim">
@@ -79,18 +81,20 @@ function BuildHeader() {
           </p>
         </div>
 
-        <div className="hidden h-36 flex-col items-center md:flex" aria-hidden="true">
+        <div className="hidden h-40 flex-col items-center md:flex" aria-hidden="true">
           <div className="w-px flex-1 bg-gradient-to-b from-transparent to-gold-dim" />
-          <SigilIcon className="my-2 h-9 w-9 text-gold-dim" />
+          <SigilIcon className="my-2 h-10 w-10 text-gold-dim" />
           <div className="w-px flex-1 bg-gradient-to-t from-transparent to-gold-dim" />
         </div>
 
-        <dl className="min-w-56 pr-4">
+        <dl className="min-w-60 pr-2">
           <dt className="font-display text-[14px] tracking-[0.18em] text-parchment-dim">BUILD HEALTH</dt>
-          <dd className="engraved font-display text-[26px] text-verdigris">{mockBuild.health.toUpperCase()}</dd>
+          <dd className="engraved font-display text-[28px] font-semibold text-verdigris">
+            {mockBuild.health.toUpperCase()}
+          </dd>
           <div className="my-3 h-px bg-gradient-to-r from-gold-dim/60 to-transparent" aria-hidden="true" />
           <dt className="font-display text-[14px] tracking-[0.18em] text-parchment-dim">PRIORITY</dt>
-          <dd className="text-[21px] text-ember">{mockBuild.priority}</dd>
+          <dd className="text-[22px] font-medium text-ember">{mockBuild.priority}</dd>
         </dl>
       </div>
     </AtlasFrame>
@@ -99,27 +103,30 @@ function BuildHeader() {
 
 function Dashboard() {
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative isolate min-h-screen overflow-hidden px-2 py-3 sm:px-4">
       <AtlasBackground />
-      <TopNav />
+      <AtlasScene />
 
-      <div className="relative">
-        <AtlasScene />
-        <SideMotto side="left" lines={["EXILES", "STUDY", "ADAPT", "CONQUER"]} />
-        <SideMotto side="right" lines={["KNOWLEDGE", "BUILDS", "SURVIVAL"]} />
+      <AtlasFrame variant="outer" className="relative z-10 mx-auto max-w-[1320px]">
+        <TopNav />
 
-        <main className="relative z-10 mx-auto flex max-w-[1120px] flex-col gap-7 px-4 pb-10 pt-16 sm:px-6 md:pt-40">
+        <div className="flex items-start justify-between pb-10 pt-5 md:min-h-[150px]">
+          <Motto align="left" lines={["EXILES", "STUDY", "ADAPT", "CONQUER"]} />
+          <Motto align="right" lines={["KNOWLEDGE", "BUILDS", "SURVIVAL"]} />
+        </div>
+
+        <main className="flex flex-col gap-4">
           <BuildHeader />
 
           <AnalysisCard analysis={mockBuild.analysis} />
 
-          <section aria-label="Key stats" className="grid gap-5 md:grid-cols-[1.7fr_1fr_1fr]">
+          <section aria-label="Key stats" className="grid gap-4 md:grid-cols-[1.75fr_1fr_1fr]">
             <ScoreCard score={mockBuild.score} />
-            <StatCard title="DPS" value={formatNumber(mockBuild.dps)} icon={<SwordIcon className="h-7 w-7" />} />
-            <StatCard title="EHP" value={formatNumber(mockBuild.ehp)} icon={<ShieldIcon className="h-7 w-7" />} />
+            <StatCard title="DPS" value={formatNumber(mockBuild.dps)} icon={<SwordIcon className="h-4 w-4" />} />
+            <StatCard title="EHP" value={formatNumber(mockBuild.ehp)} icon={<ShieldIcon className="h-4 w-4" />} />
           </section>
 
-          <div className="grid items-start gap-6 lg:grid-cols-[1.15fr_1fr]">
+          <div className="mt-4 grid items-stretch gap-x-5 gap-y-10 lg:grid-cols-[1.12fr_1fr]">
             <AtlasFrame>
               <AtlasSectionHeader
                 title="Critical Issues"
@@ -152,13 +159,13 @@ function Dashboard() {
             </AtlasFrame>
           </div>
 
-          <p className="py-10 text-center font-display text-[14px] leading-relaxed tracking-[0.24em] text-parchment-faint">
+          <p className="pb-4 pt-14 text-center font-display text-[14px] leading-relaxed tracking-[0.24em] text-parchment-faint md:pb-24">
             SAME BUILDS.
             <br />
             A DEEPER UNDERSTANDING.
           </p>
         </main>
-      </div>
+      </AtlasFrame>
     </div>
   );
 }

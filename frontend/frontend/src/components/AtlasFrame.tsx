@@ -3,7 +3,7 @@ import { atlasArt } from "../assets/atlas";
 
 interface AtlasFrameProps {
   children: ReactNode;
-  variant?: "panel" | "card";
+  variant?: "outer" | "panel" | "card";
   pendant?: boolean;
   className?: string;
 }

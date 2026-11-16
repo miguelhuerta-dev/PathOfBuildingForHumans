@@ -6,13 +6,13 @@ const severityStyles = {
   high: {
     label: "CRITICAL",
     labelColor: "text-[#ef7563]",
-    block: "bg-[linear-gradient(180deg,#7e1c13,#3a0b07)] shadow-[inset_-1px_0_0_#b8332580,0_0_24px_rgba(200,50,30,0.35)]",
+    block: "bg-[linear-gradient(180deg,#a3241a,#4a0c07)] shadow-[inset_-1px_0_0_#b8332580,0_0_24px_rgba(200,50,30,0.35)]",
     icon: <SkullIcon className="h-7 w-7 text-[#f0a495]" />,
   },
   medium: {
     label: "WARNING",
     labelColor: "text-amber",
-    block: "bg-[linear-gradient(180deg,#7c5312,#3a2506)] shadow-[inset_-1px_0_0_#c2861f80]",
+    block: "bg-[linear-gradient(180deg,#a8731c,#4a3008)] shadow-[inset_-1px_0_0_#c2861f80]",
     icon: <WarningIcon className="h-7 w-7 text-[#f6d38f]" />,
   },
   low: {
@@ -29,7 +29,7 @@ function IssueCard({ title, description, severity }: Omit<Issue, "id">) {
   return (
     <AtlasFrame variant="card" className="p-[10px]">
       <article className="flex items-stretch">
-        <div className={`flex w-20 shrink-0 items-center justify-center ${style.block}`}>
+        <div className={`flex w-[76px] shrink-0 items-center justify-center ${style.block}`}>
           <div className="grid h-12 w-12 place-items-center rounded-full border border-gold-dim/70 bg-black/40">
             {style.icon}
           </div>
@@ -37,7 +37,7 @@ function IssueCard({ title, description, severity }: Omit<Issue, "id">) {
 
         <div className="flex-1 px-5 py-3">
           <p className={`font-display text-[13px] tracking-[0.22em] ${style.labelColor}`}>{style.label}</p>
-          <h3 className="font-display text-[22px] leading-tight text-parchment">{title}</h3>
+          <h3 className="title-text font-display text-[23px] font-semibold leading-tight">{title}</h3>
           <p className="mt-1 text-[15px] text-parchment-faint">Expected Impact</p>
           <p className="text-[17px] text-parchment/85">{description}</p>
         </div>

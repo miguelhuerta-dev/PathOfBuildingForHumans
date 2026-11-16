@@ -9,12 +9,12 @@ interface AtlasSectionHeaderProps {
 
 function AtlasSectionHeader({ title, icon, tone = "gold" }: AtlasSectionHeaderProps) {
   return (
-    <div className="mb-5 flex items-center gap-4">
-      <Medallion size={64} tone={tone}>
+    <div className="-ml-[34px] -mt-[40px] mb-3 flex items-center gap-3">
+      <Medallion size={80} tone={tone}>
         {icon}
       </Medallion>
 
-      <h2 className="gold-text font-display text-[26px] font-semibold tracking-[0.06em]">
+      <h2 className="heading-text font-display text-[27px] font-medium tracking-[0.05em] pt-2">
         {title}
       </h2>
     </div>

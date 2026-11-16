@@ -1,5 +1,6 @@
 import { atlasArt } from "../assets/atlas";
 import type { Upgrade } from "../types/Build";
+import AtlasFrame from "./AtlasFrame";
 
 const rarityStyles = {
   normal: { label: "NORMAL ITEM", title: "text-parchment" },
@@ -12,9 +13,9 @@ function UpgradeCard({ title, rarity, description, dpsIncrease, ehpIncrease }: U
   const style = rarityStyles[rarity];
 
   return (
-    <div className="text-center">
+    <AtlasFrame variant="card" className="text-center">
       <p className="font-display text-[13px] tracking-[0.3em] text-parchment-dim">{style.label}</p>
-      <h3 className={`engraved font-display text-[30px] tracking-[0.06em] ${style.title}`}>
+      <h3 className={`engraved font-display text-[30px] font-semibold tracking-[0.06em] ${style.title}`}>
         {title.toUpperCase()}
       </h3>
       <div
@@ -53,7 +54,7 @@ function UpgradeCard({ title, rarity, description, dpsIncrease, ehpIncrease }: U
       >
         VIEW DETAILS
       </button>
-    </div>
+    </AtlasFrame>
   );
 }
 

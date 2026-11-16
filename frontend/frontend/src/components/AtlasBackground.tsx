@@ -1,9 +1,9 @@
 import { atlasArt } from "../assets/atlas";
 
-/** Fixed backdrop: stone wall, painted star atlas, candle warmth and vignette. */
+/** Page backdrop: stone wall, painted star atlas, candle warmth and vignette. */
 function AtlasBackground() {
   return (
-    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
+    <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
       <div className="stone-wall absolute inset-0" />
 
       <img

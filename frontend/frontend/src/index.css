@@ -41,9 +41,14 @@ body {
   position: absolute;
   z-index: -1;
   background:
-    radial-gradient(ellipse 70% 60% at 50% 0%, rgb(217 179 108 / 0.07), transparent 70%),
-    linear-gradient(180deg, rgb(24 19 15 / 0.94), rgb(12 10 8 / 0.96));
-  box-shadow: inset 0 0 60px rgb(0 0 0 / 0.75);
+    radial-gradient(ellipse 70% 60% at 50% 0%, rgb(217 179 108 / 0.08), transparent 70%),
+    linear-gradient(180deg, rgb(26 20 15 / 0.95), rgb(10 8 6 / 0.97)),
+    url("./assets/atlas/tex-stone.webp");
+  background-size: auto, auto, 384px;
+  box-shadow:
+    inset 0 0 0 6px rgb(0 0 0 / 0.35),
+    inset 0 0 0 7px rgb(168 134 75 / 0.28),
+    inset 0 0 70px rgb(0 0 0 / 0.8);
 }
 
 .atlas-frame__border {
@@ -53,13 +58,24 @@ body {
   border-style: solid;
 }
 
-.atlas-frame--panel {
-  padding: 44px 48px;
+.atlas-frame--outer {
+  padding: 34px 44px 40px;
 }
-.atlas-frame--panel .atlas-frame__surface {
+.atlas-frame--outer > .atlas-frame__surface {
+  display: none;
+}
+.atlas-frame--outer > .atlas-frame__border {
+  border-width: 60px;
+  border-image: url("./assets/atlas/frame-panel.webp") 180 stretch;
+}
+
+.atlas-frame--panel {
+  padding: 38px 42px;
+}
+.atlas-frame--panel > .atlas-frame__surface {
   inset: 22px;
 }
-.atlas-frame--panel .atlas-frame__border {
+.atlas-frame--panel > .atlas-frame__border {
   border-width: 54px;
   border-image: url("./assets/atlas/frame-panel.webp") 180 stretch;
 }
@@ -67,10 +83,10 @@ body {
 .atlas-frame--card {
   padding: 26px 28px;
 }
-.atlas-frame--card .atlas-frame__surface {
+.atlas-frame--card > .atlas-frame__surface {
   inset: 8px;
 }
-.atlas-frame--card .atlas-frame__border {
+.atlas-frame--card > .atlas-frame__border {
   border-width: 30px;
   border-image: url("./assets/atlas/frame-card.webp") 100 stretch;
 }
@@ -97,6 +113,16 @@ body {
   background-clip: text;
   color: transparent;
   filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.9));
+}
+
+.title-text {
+  color: #ead7a6;
+  text-shadow: 0 2px 0 rgb(0 0 0 / 0.9), 0 0 18px rgb(230 190 110 / 0.18);
+}
+
+.heading-text {
+  color: #d8b06a;
+  text-shadow: 0 2px 0 rgb(0 0 0 / 0.9);
 }
 
 .engraved {
