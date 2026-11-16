@@ -3,33 +3,57 @@ import StatCard from "../components/StatCard";
 import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
 import { formatNumber } from "../utils/formatNumber";
+import AnalysisCard from "../components/AnalysisCard";
 
 
 
 
 function Dashboard() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
+    <div className="
+    min-h-screen 
+    bg-gradient-to-b
+    from-slate-950
+    via-black
+    to-slate-950
+    text-white 
+    p-8">
+
+
+
+
+
+
+
       <div className="max-w-7xl mx-auto">
         <div
           className="
-  bg-slate-950
-  from-slate-950
-  via-slate-950
-  to-black
-  to-slate-950
-  border
-  border-slate-800
-  rounded-3xl
-  p-8
-  mb-8
-  "
-        >
-          <h1 className="text-6xl font-black tracking-tight"
-          style={{ fontFamily: "Cinzel",}}
+            bg-slate-900
+            border
+            border-amber-700
+            rounded-3xl
+            p-8
+            mb-8
+            shadow-[0-0-60px-rgba(212,175,55,0.12)]
+            "
+          >
+        
+          <h1 className="
+          inline-block
+          text-8xl 
+          font-black 
+          tracking-tight 
+          text-white
+          
+          "
+            style={{ 
+              fontFamily: "Cinzel", 
+            }}
           >
             {mockBuild.name}
           </h1>
+
+
 
           <p className="text-amber-300 mt-2 text-lg font-semibold">
             BUILD HEALTH: EXCELLENT
@@ -39,10 +63,21 @@ function Dashboard() {
             PRIORITY: Fix Chaos Resistance
           </p>
 
-          <p className="text-slate-400 mt-3">
+          <div className="
+          mt-4
+          h-px
+          bg-gradient-to-r
+          from-transparent
+          via-amber-500
+          to-transparent
+          "
+          />
             {mockBuild.ascendancy} • Level {mockBuild.level}
-          </p>
+          
         </div>
+
+        <AnalysisCard />
+
 
 
         <div className="grid grid-cols-4 gap-4 mt-8">

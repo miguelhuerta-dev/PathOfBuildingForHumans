@@ -1,0 +1,72 @@
+function AnalysisCard() {
+    return (
+        <div
+            className="
+        bg-slate-900
+        border
+        border-slate-800
+        rounded-3x1
+        p-6
+        mt-8
+        "
+        >
+
+            <h2 className="
+            text-2xl 
+            font-bold 
+            text-amber-300
+            tracking-wide
+            ">
+                BUILD ANALYSIS
+            </h2>
+
+            <div className="mt-6 grid grid-cols-2 gap-6">
+
+                <div>
+                    <p className="text-slate-500 text-sm uppercase tracking-wide">
+                        Mapping Performance
+                    </p>
+
+                    <p className="text-emerald-400 font-semibold mt-1">
+                        Excellent
+                    </p>
+                </div>
+
+                <div>
+                    <p className="text-slate-500 text-sm uppercase tracking-wide">
+                        Primary Weakness
+                    </p>
+
+                    <p className="text-orange-400 font-semibold mt-1">
+                        Chaos Resistance
+                    </p>
+                </div>
+
+                <div>
+                    <p className="text-slate-500 text-sm uppercase tracking-wide">
+                        Estimated Gain
+                    </p>
+
+                    <p className="text-amber-300 font-semibold mt-1">
+                        +18% Survivability
+                    </p>
+                </div>
+
+                <div>
+                    <p className="text-slate-500 text-sm uppercase tracking-wide">
+                        Recommended Action
+                    </p>
+
+                    <p className="text-sky-400 font-semibold mt-1">
+                        Replace Current Ring
+                    </p>
+                </div>
+
+            </div>
+
+
+
+        </div>
+    );
+}
+export default AnalysisCard;//
