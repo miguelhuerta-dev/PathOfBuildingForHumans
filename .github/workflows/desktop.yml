@@ -1,12 +1,10 @@
 name: Desktop app (Windows portable)
 
+# Runs only on demand (Actions tab → Run workflow) or when a version tag is pushed.
 on:
-  push:
-    branches: [main, "feat/**"]
-    paths:
-      - "frontend/frontend/**"
-      - ".github/workflows/desktop.yml"
   workflow_dispatch:
+  push:
+    tags: ["v*"]
 
 jobs:
   windows-portable:
@@ -16,9 +14,9 @@ jobs:
         working-directory: frontend/frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -30,20 +28,66 @@ jobs:
         with:
           workspaces: frontend/frontend/src-tauri -> target
 
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Prepare calculation engine
+        shell: pwsh
+        run: |
+          $lock = Get-Content src-tauri/engine/engine.lock.json | ConvertFrom-Json
+          $work = Join-Path $env:RUNNER_TEMP "engine-src"
+          $engine = Resolve-Path src-tauri/engine
+
+          # Path of Building Community, without images (the headless engine never draws).
+          $env:GIT_LFS_SKIP_SMUDGE = "1"
+          git clone -q --depth 1 --branch $lock.pathOfBuilding.tag $lock.pathOfBuilding.repository "$work/pob"
+          New-Item -ItemType Directory -Force -Path "$engine/pob/runtime" | Out-Null
+          robocopy "$work/pob/src" "$engine/pob/src" /E /XF *.png *.jpg *.webp /NFL /NDL /NJH /NJS
+          if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
+          Copy-Item -Recurse "$work/pob/runtime/lua" "$engine/pob/runtime/lua"
+          Copy-Item "$work/pob/LICENSE.md" "$engine/pob/LICENSE.md"
+
+          # LuaJIT at the pinned commit.
+          git clone -q $lock.luajit.repository "$work/luajit"
+          git -C "$work/luajit" checkout -q $lock.luajit.commit
+          Push-Location "$work/luajit/src"
+          cmd /c msvcbuild.bat
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item luajit.exe, lua51.dll $engine
+          Pop-Location
+
+          # lua-utf8 C module.
+          git clone -q --depth 1 --branch $lock.luautf8.tag $lock.luautf8.repository "$work/luautf8"
+          cl /nologo /O2 /LD /I "$work/luajit/src" "$work/luautf8/lutf8lib.c" "$work/luajit/src/lua51.lib" /Fe:"$engine/lua-utf8.dll"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Smoke-test the engine
+        shell: pwsh
+        working-directory: frontend/frontend/src-tauri/engine/pob/src
+        run: |
+          $env:LUA_PATH = "../runtime/lua/?.lua;../runtime/lua/?/init.lua;./?.lua"
+          $env:LUA_CPATH = "../../?.dll"
+          $xml = Get-Content -Raw "$env:RUNNER_TEMP/engine-src/pob/spec/TestBuilds/3.13/OccVortex.xml"
+          @{ kind = "build"; xml = $xml } | ConvertTo-Json -Compress | Set-Content -Encoding utf8 "$env:RUNNER_TEMP/smoke.json"
+          $out = ../../luajit.exe ../../pobh_engine.lua "$env:RUNNER_TEMP/smoke.json"
+          if (-not ($out -match "@@POBH_RESULT@@")) { Write-Output $out; exit 1 }
+
       - name: Install dependencies
         run: npm ci
 
       - name: Build desktop app
         run: npx tauri build
 
-      - name: Collect portable executable
+      - name: Assemble portable folder
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path portable | Out-Null
-          Copy-Item "src-tauri/target/release/path-of-building-for-humans.exe" "portable/PathOfBuildingForHumans.exe"
+          $out = "portable/PathOfBuildingForHumans"
+          New-Item -ItemType Directory -Force -Path "$out/engine" | Out-Null
+          Copy-Item "src-tauri/target/release/path-of-building-for-humans.exe" "$out/PathOfBuildingForHumans.exe"
+          Copy-Item src-tauri/engine/pobh_engine.lua, src-tauri/engine/luajit.exe, src-tauri/engine/lua51.dll, src-tauri/engine/lua-utf8.dll "$out/engine"
+          Copy-Item -Recurse src-tauri/engine/pob "$out/engine/pob"
 
       - uses: actions/upload-artifact@v4
         with:
           name: PathOfBuildingForHumans-windows-portable
-          path: frontend/frontend/portable/PathOfBuildingForHumans.exe
+          path: frontend/frontend/portable/PathOfBuildingForHumans
           if-no-files-found: error

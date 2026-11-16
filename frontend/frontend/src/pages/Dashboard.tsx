@@ -1,55 +1,48 @@
-import { atlasArt } from "../assets/atlas";
-import { mockBuild } from "../data/mockBuild";
-import { formatNumber } from "../utils/formatNumber";
-import AtlasBackground from "../components/AtlasBackground";
-import AtlasScene from "../components/AtlasScene";
+import { useMemo } from "react";
+import { portraitFor } from "../assets/atlas";
+import { analyze } from "../analysis/analyze";
+import { formatNumber } from "../utils/format";
+import { ErrorNote } from "../components/ui";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import AnalysisCard from "../components/AnalysisCard";
+import ConnectPanel from "../components/ConnectPanel";
 import { ScoreCard, StatCard } from "../components/StatCard";
 import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
-import TopNav from "../components/TopNav";
+import type { Page } from "../components/TopNav";
+import type { Archive } from "../state/useArchive";
+import type { EngineBuild } from "../types/Engine";
+import type { Analysis } from "../analysis/analyze";
 import { AtlasStarIcon, ShieldIcon, SigilIcon, SkullIcon, SwordIcon } from "../components/icons";
 
-function Motto({ lines, align }: { lines: string[]; align: "left" | "right" }) {
-  return (
-    <p
-      className={`hidden font-display text-[13px] engraved font-medium leading-relaxed tracking-[0.22em] text-parchment-dim lg:block ${
-        align === "right" ? "text-right" : ""
-      }`}
-    >
-      {lines.map((line) => (
-        <span key={line} className="block">
-          {line}
-        </span>
-      ))}
-    </p>
-  );
-}
+function BuildHeader({ build, analysis }: { build: EngineBuild; analysis: Analysis }) {
+  const { character } = build;
+  const title = character.ascendancy && character.ascendancy !== "None" ? character.ascendancy : character.class;
 
-function BuildHeader() {
   return (
     <AtlasFrame pendant>
-      <div className="grid items-center gap-6 md:grid-cols-[200px_1fr_auto_auto]">
-        <div className="relative hidden h-40 md:block">
+      <div className="grid items-center gap-6 md:grid-cols-[220px_1fr_auto_auto]">
+        {/* The portrait breaks out of the frame for an immersive header. */}
+        <div className="relative hidden h-44 md:block">
           <img
-            src={atlasArt.portraitInquisitor}
-            alt={`${mockBuild.ascendancy} portrait`}
-            className="absolute -left-14 -top-14 h-[270px] w-[270px] max-w-none object-cover brightness-90 saturate-[0.85] [mask-image:radial-gradient(ellipse_70%_75%_at_45%_42%,black_55%,transparent_100%)]"
+            src={portraitFor(title ?? character.class)}
+            alt={`${title ?? "Exile"} portrait`}
+            className="absolute -left-16 -top-28 h-[330px] w-[330px] max-w-none object-cover drop-shadow-[0_10px_24px_rgba(0,0,0,0.9)] [mask-image:radial-gradient(ellipse_68%_78%_at_48%_40%,black_58%,transparent_100%)]"
           />
         </div>
 
-        <div>
-          <h1 className="title-text font-display text-[clamp(34px,4.2vw,56px)] font-semibold leading-tight lg:whitespace-nowrap">
-            {mockBuild.name}
+        <div className="min-w-0">
+          <h1 className="title-text truncate font-display text-[clamp(32px,4vw,54px)] font-semibold leading-tight">
+            {character.name ?? "Unknown Exile"}
           </h1>
           <p className="mt-1 font-display text-[17px] tracking-[0.16em] text-gold-dim">
-            {mockBuild.ascendancy.toUpperCase()} • LEVEL {mockBuild.level}
+            {(title ?? "").toUpperCase()} • LEVEL {character.level}
+            {character.league ? ` • ${character.league.toUpperCase()}` : ""}
           </p>
-          <p className="mt-3 max-w-xs text-[18px] italic leading-snug text-gold-dim">
-            “{mockBuild.quote}”
-          </p>
+          {character.mainSkill && (
+            <p className="mt-3 text-[18px] italic leading-snug text-gold-dim">Main skill: {character.mainSkill}</p>
+          )}
         </div>
 
         <div className="hidden h-40 flex-col items-center md:flex" aria-hidden="true">
@@ -60,65 +53,101 @@ function BuildHeader() {
 
         <dl className="min-w-60 pr-2">
           <dt className="font-display text-[14px] tracking-[0.18em] text-parchment-dim">BUILD HEALTH</dt>
-          <dd className="engraved font-display text-[28px] font-semibold text-verdigris">
-            {mockBuild.health.toUpperCase()}
+          <dd
+            className={`engraved font-display text-[28px] font-semibold ${
+              analysis.health === "Excellent" || analysis.health === "Good" ? "text-verdigris" : "text-ember"
+            }`}
+          >
+            {analysis.health.toUpperCase()}
           </dd>
           <div className="my-3 h-px bg-gradient-to-r from-gold-dim/60 to-transparent" aria-hidden="true" />
           <dt className="font-display text-[14px] tracking-[0.18em] text-parchment-dim">PRIORITY</dt>
-          <dd className="text-[22px] font-medium text-ember">{mockBuild.priority}</dd>
+          <dd className="text-[20px] font-medium text-ember">{analysis.priority}</dd>
         </dl>
       </div>
     </AtlasFrame>
   );
 }
 
-function Dashboard() {
+function StatusBar({ archive }: { archive: Archive }) {
+  if (!archive.isDesktopApp) {
+    return (
+      <p role="status" className="text-center text-[16px] text-parchment-dim">
+        Demo character. Open the desktop app to connect your own exile.
+      </p>
+    );
+  }
   return (
-    <div className="relative isolate min-h-screen overflow-hidden px-2 py-3 sm:px-4">
-      <AtlasBackground />
-      <div className="film-grain pointer-events-none absolute inset-0 z-30" aria-hidden="true" />
-      <AtlasScene />
+    <div role="status" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[16px] text-parchment-dim">
+      <span>
+        {archive.characterState === "loading"
+          ? "Consulting the archive…"
+          : archive.updatedAt
+            ? `Updated at ${archive.updatedAt.toLocaleTimeString()}`
+            : "Not loaded yet"}
+      </span>
+      {archive.lastZone && <span>Last zone: {archive.lastZone}</span>}
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={archive.autoRefresh}
+          onChange={(event) => archive.setAutoRefresh(event.target.checked)}
+          className="h-4 w-4 accent-[#d9b36c]"
+        />
+        Refresh when I change zone
+      </label>
+      <button
+        type="button"
+        onClick={archive.refresh}
+        disabled={archive.characterState === "loading" || !archive.selected}
+        className="border border-gold-dim/60 px-4 py-1 font-display text-[13px] tracking-[0.18em] text-parchment hover:text-gold disabled:opacity-50"
+      >
+        REFRESH NOW
+      </button>
+    </div>
+  );
+}
 
-      <AtlasFrame variant="outer" className="relative z-10 mx-auto max-w-[1320px]">
-        <TopNav />
+interface DashboardProps {
+  archive: Archive;
+  onNavigate: (page: Page) => void;
+}
 
-        <div className="flex items-start justify-between pb-10 pt-5 md:min-h-[150px]">
-          <Motto align="left" lines={["EXILES", "STUDY", "ADAPT", "CONQUER"]} />
-          <Motto align="right" lines={["KNOWLEDGE", "BUILDS", "SURVIVAL"]} />
-        </div>
+function Dashboard({ archive, onNavigate }: DashboardProps) {
+  const build = archive.result?.character;
+  const upgrades = archive.result?.upgrades;
+  const analysis = useMemo(() => (build ? analyze(build, upgrades) : null), [build, upgrades]);
 
-        <main className="flex flex-col gap-4">
-          <BuildHeader />
+  return (
+    <>
+      <StatusBar archive={archive} />
 
-          <AnalysisCard analysis={mockBuild.analysis} />
+      {archive.characterError && <ErrorNote className="text-center">{archive.characterError}</ErrorNote>}
+
+      {build && analysis && (
+        <>
+          <BuildHeader build={build} analysis={analysis} />
+          <AnalysisCard analysis={analysis} />
 
           <section aria-label="Key stats" className="grid gap-4 md:grid-cols-[1.75fr_1fr_1fr]">
-            <ScoreCard score={mockBuild.score} />
-            <StatCard title="DPS" value={formatNumber(mockBuild.dps)} icon={<SwordIcon className="h-4 w-4" />} />
-            <StatCard title="EHP" value={formatNumber(mockBuild.ehp)} icon={<ShieldIcon className="h-4 w-4" />} />
+            <ScoreCard score={analysis.score} />
+            <StatCard title="DPS" value={formatNumber(build.stats.DPS)} icon={<SwordIcon className="h-4 w-4" />} />
+            <StatCard title="EHP" value={formatNumber(build.stats.TotalEHP ?? 0)} icon={<ShieldIcon className="h-4 w-4" />} />
           </section>
 
           <div className="mt-4 grid items-stretch gap-x-5 gap-y-10 lg:grid-cols-[1.12fr_1fr]">
             <AtlasFrame className="flex flex-col" contentClassName="flex flex-1 flex-col">
-              <AtlasSectionHeader
-                title="Critical Issues"
-                tone="blood"
-                icon={<SkullIcon className="h-7 w-7" />}
-              />
+              <AtlasSectionHeader title="Threat Register" tone="blood" icon={<SkullIcon className="h-7 w-7" />} />
               <div className="flex flex-col gap-3">
-                {mockBuild.issues.map((issue) => (
-                  <IssueCard
-                    key={issue.id}
-                    title={issue.title}
-                    description={issue.description}
-                    severity={issue.severity}
-                  />
+                {analysis.findings.length === 0 && (
+                  <p className="text-[18px] text-verdigris">No weaknesses found for {analysis.stageLabel.toLowerCase()}.</p>
+                )}
+                {analysis.findings.slice(0, 4).map((finding) => (
+                  <IssueCard key={finding.id} {...finding} />
                 ))}
               </div>
               <figure className="mt-auto pt-8 text-center">
-                <blockquote className="text-[19px] italic text-gold-dim">
-                  “A single weakness can undo an empire.”
-                </blockquote>
+                <blockquote className="text-[19px] italic text-gold-dim">“A single weakness can undo an empire.”</blockquote>
                 <figcaption className="mt-1 font-display text-[12px] tracking-[0.24em] text-parchment-faint">
                   — THE ATLAS ARCHIVIST
                 </figcaption>
@@ -126,19 +155,30 @@ function Dashboard() {
             </AtlasFrame>
 
             <AtlasFrame>
-              <AtlasSectionHeader title="Next Best Upgrade" icon={<AtlasStarIcon className="h-7 w-7" />} />
-              <UpgradeCard {...mockBuild.recommendedUpgrade} />
+              <AtlasSectionHeader title="Recommended Artifact" icon={<AtlasStarIcon className="h-7 w-7" />} />
+              {upgrades && upgrades.length > 0 ? (
+                <UpgradeCard upgrade={upgrades[0]} onViewDetails={() => onNavigate("guide")} />
+              ) : (
+                <div className="flex flex-col items-center gap-4 py-10 text-center">
+                  <p className="max-w-sm text-[19px] text-parchment-dim">
+                    Load the guide you are following and the archive will tell you which item to chase next.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate("guide")}
+                    className="ui-button h-14 w-full max-w-sm font-display text-[15px] tracking-[0.2em] text-parchment transition hover:brightness-125"
+                  >
+                    LOAD A GUIDE
+                  </button>
+                </div>
+              )}
             </AtlasFrame>
           </div>
+        </>
+      )}
 
-          <p className="pb-4 pt-14 text-center font-display text-[14px] leading-relaxed tracking-[0.24em] text-parchment-faint md:pb-24">
-            SAME BUILDS.
-            <br />
-            A DEEPER UNDERSTANDING.
-          </p>
-        </main>
-      </AtlasFrame>
-    </div>
+      {archive.isDesktopApp && <ConnectPanel archive={archive} />}
+    </>
   );
 }
 

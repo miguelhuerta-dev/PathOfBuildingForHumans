@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import AtlasFrame from "./AtlasFrame";
 import Medallion from "./Medallion";
 import { AtlasStarIcon } from "./icons";
+import { MetalMeter } from "./ui";
 
 function ArcaneRings() {
   return (
@@ -47,7 +48,7 @@ interface ScoreCardProps {
 }
 
 export function ScoreCard({ score, max = 10 }: ScoreCardProps) {
-  const percent = Math.max(0, Math.min(100, (score / max) * 100));
+  const percent = Math.max(0, Math.min(100, (score / max) * 100)); // gauge arc
   const radius = 58;
   const circumference = 2 * Math.PI * radius;
 
@@ -81,22 +82,13 @@ export function ScoreCard({ score, max = 10 }: ScoreCardProps) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="font-display text-[15px] tracking-[0.2em] text-parchment-dim">BUILD SCORE</p>
+          <p className="font-display text-[15px] tracking-[0.2em] text-parchment-dim">ATLAS RATING</p>
           <p className="font-display leading-none">
             <span className="title-text text-[68px] font-semibold">{score.toFixed(1)}</span>
             <span className="ml-2 text-[26px] text-parchment-dim">/ {max}</span>
           </p>
 
-          <div
-            className="mt-3 h-4 border border-[#4a3a22] bg-[#060403] p-[3px] shadow-[inset_0_2px_4px_#000]"
-            role="meter"
-            aria-label="Build score"
-            aria-valuenow={score}
-            aria-valuemin={0}
-            aria-valuemax={max}
-          >
-            <div className="metal-bar h-full shadow-[0_0_10px_rgba(230,180,90,0.45)]" style={{ width: `${percent}%` }} />
-          </div>
+          <MetalMeter label="Atlas rating" value={score} max={max} className="mt-3" />
         </div>
       </div>
     </AtlasFrame>

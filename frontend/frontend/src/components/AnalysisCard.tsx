@@ -1,10 +1,10 @@
-import type { BuildAnalysis } from "../types/Build";
+import type { Analysis } from "../analysis/analyze";
 import AtlasFrame from "./AtlasFrame";
 import AtlasSectionHeader from "./AtlasSectionHeader";
 import { QuillIcon } from "./icons";
 
 interface AnalysisCardProps {
-  analysis: BuildAnalysis;
+  analysis: Analysis;
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone: string }) {
@@ -17,12 +17,15 @@ function Stat({ label, value, tone }: { label: string; value: string; tone: stri
 }
 
 function AnalysisCard({ analysis }: AnalysisCardProps) {
+  const healthTone =
+    analysis.health === "Excellent" || analysis.health === "Good" ? "text-verdigris" : "text-ember";
+
   return (
     <AtlasFrame>
       <div className="grid gap-8 md:grid-cols-[1fr_auto_1.1fr] md:items-center">
         <div>
           <AtlasSectionHeader title="Scholar's Verdict" icon={<QuillIcon className="h-6 w-6" />} />
-          <p className="text-[19px] leading-snug text-parchment/90">{analysis.summary}</p>
+          <p className="text-[19px] leading-snug text-parchment/90">{analysis.verdict}</p>
         </div>
 
         <div
@@ -31,7 +34,7 @@ function AnalysisCard({ analysis }: AnalysisCardProps) {
         />
 
         <div className="grid grid-cols-2 gap-x-8 gap-y-5">
-          <Stat label="Mapping Performance" value={analysis.mappingPerformance} tone="text-verdigris" />
+          <Stat label={`Ready for ${analysis.stageLabel}`} value={analysis.health} tone={healthTone} />
           <Stat label="Primary Weakness" value={analysis.primaryWeakness} tone="text-ember" />
           <Stat label="Estimated Gain" value={analysis.estimatedGain} tone="text-gold" />
           <Stat label="Recommended Action" value={analysis.recommendedAction} tone="text-arcane" />

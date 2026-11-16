@@ -1,0 +1,18 @@
+{
+  "$comment": "Pinned sources of the calculation engine. Bump pathOfBuilding each league after checking its release notes.",
+  "pathOfBuilding": {
+    "repository": "https://github.com/PathOfBuildingCommunity/PathOfBuilding",
+    "tag": "v2.67.2",
+    "license": "MIT"
+  },
+  "luajit": {
+    "repository": "https://github.com/LuaJIT/LuaJIT",
+    "commit": "2460b3ff93a1c955de3d62cfc825de7d68dc272e",
+    "license": "MIT"
+  },
+  "luautf8": {
+    "repository": "https://github.com/starwing/luautf8",
+    "tag": "0.1.6",
+    "license": "MIT"
+  }
+}

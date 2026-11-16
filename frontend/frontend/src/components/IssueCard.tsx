@@ -1,6 +1,6 @@
-import type { Issue } from "../types/Build";
+import type { Severity } from "../analysis/analyze";
 import AtlasFrame from "./AtlasFrame";
-import { ChevronIcon, SkullIcon, WarningIcon } from "./icons";
+import { SkullIcon, WarningIcon } from "./icons";
 
 const severityStyles = {
   high: {
@@ -23,7 +23,14 @@ const severityStyles = {
   },
 };
 
-function IssueCard({ title, description, severity }: Omit<Issue, "id">) {
+interface IssueCardProps {
+  title: string;
+  impact: string;
+  remedy: string;
+  severity: Severity;
+}
+
+function IssueCard({ title, impact, remedy, severity }: IssueCardProps) {
   const style = severityStyles[severity];
 
   return (
@@ -38,13 +45,13 @@ function IssueCard({ title, description, severity }: Omit<Issue, "id">) {
         <div className="flex-1 px-5 py-3">
           <p className={`font-display text-[13px] tracking-[0.22em] ${style.labelColor}`}>{style.label}</p>
           <h3 className="title-text font-display text-[23px] font-semibold leading-tight">{title}</h3>
-          <p className="mt-1 text-[15px] text-parchment-faint">Expected Impact</p>
-          <p className="text-[17px] text-parchment/85">{description}</p>
+          <p className="mt-1 text-[17px] text-parchment/85">{impact}</p>
+          <p className="mt-1 text-[16px] text-verdigris">
+            <span className="text-parchment-faint">Remedy: </span>
+            {remedy}
+          </p>
         </div>
 
-        <div className="flex items-center pr-4 text-gold-dim" aria-hidden="true">
-          <ChevronIcon className="h-7 w-7" />
-        </div>
       </article>
     </AtlasFrame>
   );
