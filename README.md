@@ -41,6 +41,20 @@ The dashboard is the first screen every player sees. It must answer three questi
 2. **What is wrong with my build?** Detected issues, ranked by severity, with their expected impact.
 3. **What should I improve next?** The single highest-impact upgrade, with its estimated gain.
 
+## Screenshots
+
+**The armoury.** Your gear as on the in-game inventory, read out like the game's tooltip.
+
+<img src="docs/assets/screenshots/armoury.webp" alt="Equipped Artifacts: the character's gear laid out as on the in-game inventory, with the selected item's modifiers" width="900" />
+
+**Following a guide.** Your passive tree against the guide's: taken in gold, still to take in verdigris.
+
+<img src="docs/assets/screenshots/passive-tree.webp" alt="Passive tree map with the guide's route highlighted" width="900" />
+
+**The Atlas.** The Atlas passive tree over the star atlas, with each passive's icon from your own game.
+
+<img src="docs/assets/screenshots/atlas.webp" alt="Atlas passive tree drawn over the star atlas" width="600" />
+
 ## Features
 
 | Feature | Status |
