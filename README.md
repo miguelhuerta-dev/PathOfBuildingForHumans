@@ -52,6 +52,7 @@ The dashboard is the first screen every player sees. It must answer three questi
 | Guides from PoB codes, pobb.in or pastebin links, with stages (Maxroll-style) | v0.2.0 |
 | Recommended Artifact: guide items ranked by measured DPS/EHP gain | v0.2.0 |
 | Passive tree and gem comparison against the guide | v0.2.0 |
+| Atlas passive tree drawn over the star atlas, with progress against a guide's Atlas link | Unreleased |
 | Desktop app with a custom title bar (Windows portable) | v0.1 |
 | League meta and prices (poe.ninja) | Planned |
 | Official OAuth account connection | Planned |
@@ -95,22 +96,51 @@ Damage and defence numbers come from [Path of Building Community](https://github
 `src-tauri/engine/engine.lock.json`; bump it each league. Diagnostic thresholds live in
 `src/data/rules/poe1.json`, so patch changes are data edits, not code changes.
 
+### The Atlas tree
+
+The Atlas page draws the Atlas passive tree with the app's own art. Node positions, names and texts come from
+GGG's official [atlastree-export](https://github.com/grindinggear/atlastree-export), pinned in
+`src/data/atlas/atlas.lock.json`. Each league, bump the tag and regenerate the trimmed data:
+
+```bash
+node scripts/update-atlas-tree.mjs
+```
+
+A guide's Atlas is loaded from an official Atlas tree link
+(`pathofexile.com/fullscreen-atlas-skill-tree/…`). Public profiles do not include the Atlas tree, so players
+mark the passives they have by clicking them (or load their own Atlas link); progress is kept per league.
+
 ### Desktop app
 
 The desktop app is built with [Tauri](https://tauri.app/). It opens in its own window with a themed title bar,
 custom window controls and a bronze border on Windows 11.
 
 To run it locally you also need [Rust](https://www.rust-lang.org/tools/install) and, once, the calculation
-engine (Linux or macOS; needs git, make and a C compiler):
+engine. On Linux or macOS (needs git, make and a C compiler):
 
 ```bash
 cd frontend/frontend
 scripts/setup-engine.sh
 ```
 
+On Windows (needs git and Visual Studio with the **Desktop development with C++** workload; the script
+loads the MSVC environment by itself):
+
+```powershell
+cd frontend/frontend
+./scripts/setup-engine.ps1
+```
+
+Then:
+
 ```bash
 npm run desktop:dev
 ```
+
+**Debugging in Visual Studio (Windows):** `./scripts/debug-vs.ps1` starts the Vite dev server, builds the
+app in debug mode and opens the executable in Visual Studio. Press F5 to run it under the native debugger;
+breakpoints in `src-tauri/src/*.rs` work once the file is open in VS. For the TypeScript side use the app's
+DevTools (right-click → Inspect) or set the VS project's Debugger Type to *JavaScript (WebView2)*.
 
 To build it locally:
 

@@ -32,33 +32,8 @@ jobs:
 
       - name: Prepare calculation engine
         shell: pwsh
-        run: |
-          $lock = Get-Content src-tauri/engine/engine.lock.json | ConvertFrom-Json
-          $work = Join-Path $env:RUNNER_TEMP "engine-src"
-          $engine = Resolve-Path src-tauri/engine
-
-          # Path of Building Community, without images (the headless engine never draws).
-          $env:GIT_LFS_SKIP_SMUDGE = "1"
-          git clone -q --depth 1 --branch $lock.pathOfBuilding.tag $lock.pathOfBuilding.repository "$work/pob"
-          New-Item -ItemType Directory -Force -Path "$engine/pob/runtime" | Out-Null
-          robocopy "$work/pob/src" "$engine/pob/src" /E /XF *.png *.jpg *.webp /NFL /NDL /NJH /NJS
-          if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
-          Copy-Item -Recurse "$work/pob/runtime/lua" "$engine/pob/runtime/lua"
-          Copy-Item "$work/pob/LICENSE.md" "$engine/pob/LICENSE.md"
-
-          # LuaJIT at the pinned commit.
-          git clone -q $lock.luajit.repository "$work/luajit"
-          git -C "$work/luajit" checkout -q $lock.luajit.commit
-          Push-Location "$work/luajit/src"
-          cmd /c msvcbuild.bat
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Copy-Item luajit.exe, lua51.dll $engine
-          Pop-Location
-
-          # lua-utf8 C module.
-          git clone -q --depth 1 --branch $lock.luautf8.tag $lock.luautf8.repository "$work/luautf8"
-          cl /nologo /O2 /LD /I "$work/luajit/src" "$work/luautf8/lutf8lib.c" "$work/luajit/src/lua51.lib" /Fe:"$engine/lua-utf8.dll"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        # The work dir is kept so the smoke test can read PoB's test builds from it.
+        run: ./scripts/setup-engine.ps1 -WorkDir (Join-Path $env:RUNNER_TEMP "engine-src")
 
       - name: Smoke-test the engine
         shell: pwsh
@@ -66,7 +41,8 @@ jobs:
         run: |
           $env:LUA_PATH = "../runtime/lua/?.lua;../runtime/lua/?/init.lua;./?.lua"
           $env:LUA_CPATH = "../../?.dll"
-          $xml = Get-Content -Raw "$env:RUNNER_TEMP/engine-src/pob/spec/TestBuilds/3.13/OccVortex.xml"
+          # ReadAllText gives a plain string; Get-Content adds properties that ConvertTo-Json can serialize.
+          $xml = [IO.File]::ReadAllText("$env:RUNNER_TEMP/engine-src/pob/spec/TestBuilds/3.13/OccVortex.xml")
           @{ kind = "build"; xml = $xml } | ConvertTo-Json -Compress | Set-Content -Encoding utf8 "$env:RUNNER_TEMP/smoke.json"
           $out = ../../luajit.exe ../../pobh_engine.lua "$env:RUNNER_TEMP/smoke.json"
           if (-not ($out -match "@@POBH_RESULT@@")) { Write-Output $out; exit 1 }

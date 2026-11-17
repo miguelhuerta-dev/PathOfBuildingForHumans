@@ -1,17 +1,6 @@
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
-import { AtlasStarIcon, QuillIcon } from "../components/icons";
-
-export function AtlasPage() {
-  return (
-    <AtlasFrame>
-      <AtlasSectionHeader title="The Atlas" icon={<AtlasStarIcon className="h-7 w-7" />} />
-      <p className="text-[19px] text-parchment-dim">
-        The league meta, popular builds and item prices will live here in a later version.
-      </p>
-    </AtlasFrame>
-  );
-}
+import { QuillIcon } from "../components/icons";
 
 export function AboutPage() {
   return (

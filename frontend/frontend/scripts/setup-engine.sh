@@ -3,7 +3,7 @@
 #   - Path of Building Community at the pinned tag, without its images
 #   - LuaJIT at the pinned commit
 #   - the lua-utf8 C module
-# Windows builds are prepared by .github/workflows/desktop.yml.
+# On Windows use scripts/setup-engine.ps1 (also used by .github/workflows/desktop.yml).
 #
 # Usage: scripts/setup-engine.sh            (downloads sources)
 #        POB_SOURCE=/path/to/PathOfBuilding scripts/setup-engine.sh   (reuses a local clone)

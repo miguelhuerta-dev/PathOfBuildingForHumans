@@ -1,6 +1,6 @@
 /target/
 /gen/schemas
-# Engine runtime, prepared by scripts/setup-engine.sh or the desktop workflow
+# Engine runtime, prepared by scripts/setup-engine.sh or scripts/setup-engine.ps1
 /engine/pob/
 /engine/luajit
 /engine/luajit.exe

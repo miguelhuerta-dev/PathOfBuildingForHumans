@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import demoCharacter from "../data/demo/demoCharacter.json";
 import { desktop, isDesktopApp } from "../lib/desktop";
+import { readSetting, writeSetting } from "../lib/settings";
 import type { CharacterSummary, EngineResult } from "../types/Engine";
 
 const STORAGE = {
@@ -12,23 +13,6 @@ const STORAGE = {
 
 /** Minimum time between automatic refreshes, to respect pathofexile.com rate limits. */
 const AUTO_REFRESH_COOLDOWN_MS = 60_000;
-
-function readSetting(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeSetting(key: string, value: string | null) {
-  try {
-    if (value === null) window.localStorage.removeItem(key);
-    else window.localStorage.setItem(key, value);
-  } catch {
-    // Storage unavailable: settings simply are not remembered.
-  }
-}
 
 export type LoadState = "idle" | "loading" | "error";
 
