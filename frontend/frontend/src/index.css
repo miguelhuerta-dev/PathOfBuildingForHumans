@@ -176,6 +176,12 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   .candle-flicker {
     animation: flicker 4s ease-in-out infinite;
+    /* Its own compositor layer: the flicker changes opacity without repainting the scene. */
+    will-change: opacity;
+  }
+  /* Endless animations rest while the window is in the background (e.g. during play). */
+  :root[data-idle] .candle-flicker {
+    animation-play-state: paused;
   }
 }
 

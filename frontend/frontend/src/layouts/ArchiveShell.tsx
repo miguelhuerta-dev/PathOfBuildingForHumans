@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import AtlasBackground from "../components/AtlasBackground";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasScene from "../components/AtlasScene";
@@ -50,8 +50,31 @@ interface ArchiveShellProps {
   children: ReactNode;
 }
 
+/**
+ * Marks the page idle while its window is not focused, so endless decorative
+ * animations stop costing CPU when the app sits behind the game.
+ */
+function useIdleWhenUnfocused() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const update = () => {
+      if (document.hasFocus()) delete root.dataset.idle;
+      else root.dataset.idle = "";
+    };
+    update();
+    window.addEventListener("focus", update);
+    window.addEventListener("blur", update);
+    return () => {
+      window.removeEventListener("focus", update);
+      window.removeEventListener("blur", update);
+      delete root.dataset.idle;
+    };
+  }, []);
+}
+
 /** The archive around every page: background, desk scene, outer frame and title bar. */
 function ArchiveShell({ page, onNavigate, children }: ArchiveShellProps) {
+  useIdleWhenUnfocused();
   return (
     <div className="relative isolate min-h-screen overflow-hidden px-2 py-3 sm:px-4">
       <AtlasBackground />
