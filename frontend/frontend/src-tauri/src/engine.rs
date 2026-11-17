@@ -13,11 +13,11 @@
 
 use crate::{engine_pack, jewel_data};
 use serde_json::Value;
-use std::path::{Path, PathBuf};
 use std::io::Read;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
-use std::time::{Duration, Instant};
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 const MARKER: &str = "@@POBH_RESULT@@";
 
@@ -94,8 +94,7 @@ fn run_once(dir: &Path, request: &Value) -> Result<Output, String> {
         .suffix(".json")
         .tempfile()
         .map_err(|e| format!("Could not prepare the calculation: {e}"))?;
-    serde_json::to_writer(&mut request_file, request)
-        .map_err(|e| format!("Could not prepare the calculation: {e}"))?;
+    serde_json::to_writer(&mut request_file, request).map_err(|e| format!("Could not prepare the calculation: {e}"))?;
 
     let lib_ext = if cfg!(windows) { "dll" } else { "so" };
     let mut command = Command::new(luajit_path(dir));
@@ -167,11 +166,19 @@ fn output_within(command: &mut Command, timeout: Duration) -> Result<Output, Str
 
 fn parse_output(output: &Output) -> Result<Value, String> {
     let stdout = String::from_utf8_lossy(&output.stdout);
-    match stdout.lines().find_map(|line| line.split_once(MARKER).map(|(_, json)| json)) {
+    match stdout
+        .lines()
+        .find_map(|line| line.split_once(MARKER).map(|(_, json)| json))
+    {
         Some(json) => serde_json::from_str(json).map_err(|e| format!("The engine returned unreadable data: {e}")),
         None => {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            let detail = stderr.lines().chain(stdout.lines()).rev().find(|l| !l.trim().is_empty()).unwrap_or("no output");
+            let detail = stderr
+                .lines()
+                .chain(stdout.lines())
+                .rev()
+                .find(|l| !l.trim().is_empty())
+                .unwrap_or("no output");
             Err(format!("The calculation failed: {detail}"))
         }
     }
@@ -184,7 +191,10 @@ mod tests {
     #[test]
     fn stops_a_process_that_runs_too_long() {
         let started = Instant::now();
-        let result = output_within(Command::new("cmd").args(["/C", "ping -n 6 127.0.0.1 >NUL"]), Duration::from_millis(300));
+        let result = output_within(
+            Command::new("cmd").args(["/C", "ping -n 6 127.0.0.1 >NUL"]),
+            Duration::from_millis(300),
+        );
         assert!(result.unwrap_err().contains("was stopped"));
         assert!(started.elapsed() < Duration::from_secs(3));
     }

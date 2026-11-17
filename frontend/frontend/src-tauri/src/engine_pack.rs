@@ -45,7 +45,12 @@ fn read_footer(exe: &Path) -> std::io::Result<Option<Packed>> {
     let Some(offset) = size.checked_sub(FOOTER_LEN as u64 + length) else {
         return Ok(None);
     };
-    Ok(Some(Packed { file, offset, length, id: String::from_utf8_lossy(id).into_owned() }))
+    Ok(Some(Packed {
+        file,
+        offset,
+        length,
+        id: String::from_utf8_lossy(id).into_owned(),
+    }))
 }
 
 fn engines_root() -> PathBuf {
@@ -76,7 +81,9 @@ pub fn unpacked() -> Result<Option<PathBuf>, String> {
     let _ = fs::remove_dir_all(&staging);
     packed.file.seek(SeekFrom::Start(packed.offset)).map_err(fail)?;
     let archive = Read::take(&mut packed.file, packed.length);
-    tar::Archive::new(GzDecoder::new(archive)).unpack(&staging).map_err(fail)?;
+    tar::Archive::new(GzDecoder::new(archive))
+        .unpack(&staging)
+        .map_err(fail)?;
     File::create(staging.join(COMPLETE)).map_err(fail)?;
 
     let _ = fs::remove_dir_all(&target);
@@ -117,7 +124,10 @@ mod tests {
         exe.write_all(MAGIC).unwrap();
 
         let packed = read_footer(exe.path()).unwrap().expect("packed engine");
-        assert_eq!((packed.offset, packed.length, packed.id.as_str()), (16, 7, "0123456789abcdef"));
+        assert_eq!(
+            (packed.offset, packed.length, packed.id.as_str()),
+            (16, 7, "0123456789abcdef")
+        );
     }
 
     #[test]

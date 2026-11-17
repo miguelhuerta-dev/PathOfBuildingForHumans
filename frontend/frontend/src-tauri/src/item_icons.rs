@@ -11,7 +11,14 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 const OVERVIEW: &str = "https://poe.ninja/poe1/api/economy/stash/current/item/overview";
-const TYPES: [&str; 6] = ["BaseType", "UniqueWeapon", "UniqueArmour", "UniqueAccessory", "UniqueFlask", "UniqueJewel"];
+const TYPES: [&str; 6] = [
+    "BaseType",
+    "UniqueWeapon",
+    "UniqueArmour",
+    "UniqueAccessory",
+    "UniqueFlask",
+    "UniqueJewel",
+];
 const CACHE_FILE: &str = "item-icons.json";
 const CACHE_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const ICON_PREFIX: &str = "https://web.poecdn.com/";
@@ -41,8 +48,10 @@ async fn download() -> Result<Index, String> {
             .await
             .map_err(|e| e.to_string())?;
         for line in body.get("lines").and_then(Value::as_array).into_iter().flatten() {
-            let (Some(name), Some(icon)) = (line.get("name").and_then(Value::as_str), line.get("icon").and_then(Value::as_str))
-            else {
+            let (Some(name), Some(icon)) = (
+                line.get("name").and_then(Value::as_str),
+                line.get("icon").and_then(Value::as_str),
+            ) else {
                 continue;
             };
             if icon.starts_with(ICON_PREFIX) {
@@ -139,7 +148,10 @@ mod tests {
             ]
         });
         decorate(&mut result, &index);
-        assert_eq!(result["upgrades"][0]["item"]["icon"], "https://web.poecdn.com/staff.png");
+        assert_eq!(
+            result["upgrades"][0]["item"]["icon"],
+            "https://web.poecdn.com/staff.png"
+        );
         assert_eq!(result["upgrades"][1]["item"]["icon"], "https://web.poecdn.com/hh.png");
         assert!(result["upgrades"][2]["item"].get("icon").is_none());
     }

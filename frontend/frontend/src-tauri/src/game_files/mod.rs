@@ -31,7 +31,9 @@ fn is_valid_key(key: &str) -> bool {
         && key.len() <= 120
         && !key.contains("..")
         && !key.starts_with('/')
-        && key.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '/' | ' ' | '-'))
+        && key
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '/' | ' ' | '-'))
 }
 
 /// Cache file of an icon; "~" cannot appear in a key, so names never collide.
@@ -42,7 +44,12 @@ fn file_name(key: &str) -> String {
 /// Cache folder of one game version: a new patch gets fresh icons.
 fn version_dir(cache: &Path, index: &Path) -> Option<PathBuf> {
     let meta = fs::metadata(index).ok()?;
-    let modified = meta.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
+    let modified = meta
+        .modified()
+        .ok()?
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()?
+        .as_secs();
     Some(cache.join(format!("{:x}-{modified:x}", meta.len())))
 }
 
@@ -56,7 +63,10 @@ fn remove_other_versions(root: &Path, current: &Path) {
 }
 
 fn data_url(png: &[u8]) -> String {
-    format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(png))
+    format!(
+        "data:image/png;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(png)
+    )
 }
 
 /// Passive skill icons by key. Each value is the path of the cached PNG (shown
@@ -89,8 +99,14 @@ pub fn passive_icons(
 
     let mut icons = BTreeMap::new();
     let mut missing = Vec::new();
-    for key in keys.iter().filter(|key| is_valid_key(key) && !not_in_game.contains(*key)) {
-        let cached = cache.as_ref().map(|(dir, _)| dir.join(file_name(key))).filter(|path| path.is_file());
+    for key in keys
+        .iter()
+        .filter(|key| is_valid_key(key) && !not_in_game.contains(*key))
+    {
+        let cached = cache
+            .as_ref()
+            .map(|(dir, _)| dir.join(file_name(key)))
+            .filter(|path| path.is_file());
         match cached {
             Some(path) => {
                 icons.insert(key.clone(), path.display().to_string());
@@ -102,7 +118,10 @@ pub fn passive_icons(
         return Ok(icons);
     }
 
-    let paths: Vec<String> = missing.iter().map(|key| format!("{PASSIVE_ICONS}{}.dds", key.to_lowercase())).collect();
+    let paths: Vec<String> = missing
+        .iter()
+        .map(|key| format!("{PASSIVE_ICONS}{}.dds", key.to_lowercase()))
+        .collect();
     let mut files = bundles::read_files(&bundles_dir, &paths)?;
     let cache_dir = cache.as_ref().and_then(|(dir, root)| {
         fs::create_dir_all(dir).ok()?;
@@ -123,7 +142,9 @@ pub fn passive_icons(
         else {
             continue;
         };
-        let saved = cache_dir.map(|dir| dir.join(file_name(key))).filter(|path| fs::write(path, &png).is_ok());
+        let saved = cache_dir
+            .map(|dir| dir.join(file_name(key)))
+            .filter(|path| fs::write(path, &png).is_ok());
         let value = match saved {
             Some(path) => path.display().to_string(),
             None => data_url(&png),
@@ -131,8 +152,13 @@ pub fn passive_icons(
         icons.insert(key.clone(), value);
     }
     if let Some(dir) = cache_dir {
-        let _ = fs::write(dir.join(NOT_IN_GAME), absent.into_iter().collect::<Vec<_>>().join("
-"));
+        let _ = fs::write(
+            dir.join(NOT_IN_GAME),
+            absent.into_iter().collect::<Vec<_>>().join(
+                "
+",
+            ),
+        );
     }
     Ok(icons)
 }
@@ -153,7 +179,9 @@ mod tests {
 
     /// Every icon a tree's data names, as the app asks for them.
     fn icon_keys_of(tree_file: &str) -> Vec<String> {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data").join(tree_file);
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../src/data")
+            .join(tree_file);
         let tree: serde_json::Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
         let mut keys: Vec<String> = tree["nodes"]
             .as_array()
@@ -174,8 +202,18 @@ mod tests {
         let cache = tempfile::tempdir().unwrap();
         let started = std::time::Instant::now();
         let icons = passive_icons(&keys, None, Some(cache.path().to_path_buf())).unwrap();
-        let size: u64 = icons.values().filter_map(|path| fs::metadata(path).ok()).map(|meta| meta.len()).sum();
-        println!("{tree_file}: {} of {} icons ({} KB) in {:?}", icons.len(), keys.len(), size / 1024, started.elapsed());
+        let size: u64 = icons
+            .values()
+            .filter_map(|path| fs::metadata(path).ok())
+            .map(|meta| meta.len())
+            .sum();
+        println!(
+            "{tree_file}: {} of {} icons ({} KB) in {:?}",
+            icons.len(),
+            keys.len(),
+            size / 1024,
+            started.elapsed()
+        );
         let started = std::time::Instant::now();
         let cached = passive_icons(&keys, None, Some(cache.path().to_path_buf())).unwrap();
         println!("{tree_file}: from the cache in {:?}", started.elapsed());
@@ -183,7 +221,10 @@ mod tests {
         let missing: Vec<&String> = keys.iter().filter(|key| !icons.contains_key(*key)).collect();
         assert_eq!(missing, vec!["NotThere/AtAll"], "every real icon is found and decoded");
         assert_eq!(icons, cached);
-        assert!(icons.values().all(|path| Path::new(path).is_file()), "icons are served from the cache");
+        assert!(
+            icons.values().all(|path| Path::new(path).is_file()),
+            "icons are served from the cache"
+        );
     }
 
     /// Reads every icon the app uses from the installed game. Needs Path of

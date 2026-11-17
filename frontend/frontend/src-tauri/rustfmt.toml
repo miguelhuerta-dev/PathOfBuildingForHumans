@@ -1,0 +1,2 @@
+# Matches the line length used across the codebase.
+max_width = 120

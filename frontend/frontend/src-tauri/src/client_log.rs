@@ -106,7 +106,10 @@ mod tests {
     fn reads_zone_changes() {
         let line = "2026/11/16 10:00:01 123456 cff9459 [INFO Client 1234] : You have entered Lioneye's Watch.";
         assert_eq!(zone_from_line(line), Some("Lioneye's Watch"));
-        assert_eq!(zone_from_line("2026/11/16 10:00:01 [INFO] : Connecting to instance server"), None);
+        assert_eq!(
+            zone_from_line("2026/11/16 10:00:01 [INFO] : Connecting to instance server"),
+            None
+        );
     }
 
     #[test]

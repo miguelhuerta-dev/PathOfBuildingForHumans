@@ -100,9 +100,18 @@ mod tests {
 
     #[test]
     fn maps_share_links() {
-        assert_eq!(raw_url("https://pobb.in/AbC123").as_deref(), Some("https://pobb.in/AbC123/raw"));
-        assert_eq!(raw_url("https://pastebin.com/xyz").as_deref(), Some("https://pastebin.com/raw/xyz"));
-        assert_eq!(raw_url("https://pastebin.com/raw/xyz").as_deref(), Some("https://pastebin.com/raw/xyz"));
+        assert_eq!(
+            raw_url("https://pobb.in/AbC123").as_deref(),
+            Some("https://pobb.in/AbC123/raw")
+        );
+        assert_eq!(
+            raw_url("https://pastebin.com/xyz").as_deref(),
+            Some("https://pastebin.com/raw/xyz")
+        );
+        assert_eq!(
+            raw_url("https://pastebin.com/raw/xyz").as_deref(),
+            Some("https://pastebin.com/raw/xyz")
+        );
         assert_eq!(raw_url("eNrtWl"), None);
     }
 }

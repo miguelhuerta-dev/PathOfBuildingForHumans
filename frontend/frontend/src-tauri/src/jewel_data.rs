@@ -70,7 +70,11 @@ pub fn download(engine_dir: &Path, names: &[String]) -> Result<(), String> {
 
 fn download_tables(engine_dir: &Path, names: &[String]) -> Result<(), String> {
     let base = source_url(engine_dir)?;
-    let target = engine_dir.join("pob").join("src").join("Data").join("TimelessJewelData");
+    let target = engine_dir
+        .join("pob")
+        .join("src")
+        .join("Data")
+        .join("TimelessJewelData");
     let client = crate::http::blocking_client();
 
     for name in names {
@@ -119,7 +123,9 @@ mod tests {
     #[ignore]
     fn downloads_tables_from_the_pinned_release() {
         let engine = tempfile::tempdir().unwrap();
-        let lock = Path::new(env!("CARGO_MANIFEST_DIR")).join("engine").join("engine.lock.json");
+        let lock = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("engine")
+            .join("engine.lock.json");
         fs::copy(lock, engine.path().join("engine.lock.json")).unwrap();
         let target = engine.path().join("pob/src/Data/TimelessJewelData");
         fs::create_dir_all(&target).unwrap();

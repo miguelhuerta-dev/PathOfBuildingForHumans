@@ -98,7 +98,11 @@ pub fn decode(dds: &[u8]) -> Result<(u32, u32, Vec<u8>), String> {
         (Format::from_dxgi(code).ok_or_else(unsupported)?, HEADER_LEN + DX10_LEN)
     } else if four_cc == [0, 0, 0, 0] && u32_at(dds, 88) == Some(32) {
         // Uncompressed 32-bit; the red mask tells RGBA from BGRA.
-        let format = if u32_at(dds, 92) == Some(0xff) { Format::Rgba8 } else { Format::Bgra8 };
+        let format = if u32_at(dds, 92) == Some(0xff) {
+            Format::Rgba8
+        } else {
+            Format::Bgra8
+        };
         (format, HEADER_LEN)
     } else {
         (Format::from_four_cc(four_cc).ok_or_else(unsupported)?, HEADER_LEN)
@@ -113,7 +117,10 @@ pub fn decode(dds: &[u8]) -> Result<(u32, u32, Vec<u8>), String> {
             let source = data.get(..w * h * 4).ok_or_else(unsupported)?;
             rgba.copy_from_slice(source);
             if matches!(format, Format::Bgra8) {
-                rgba.as_chunks_mut::<4>().0.iter_mut().for_each(|pixel| pixel.swap(0, 2));
+                rgba.as_chunks_mut::<4>()
+                    .0
+                    .iter_mut()
+                    .for_each(|pixel| pixel.swap(0, 2));
             }
         }
         Some(block_size) => {
@@ -178,7 +185,11 @@ pub fn to_png(width: u32, height: u32, rgba: &[u8]) -> Result<Vec<u8>, String> {
     encoder.set_color(png::ColorType::Rgba);
     encoder.set_depth(png::BitDepth::Eight);
     encoder.set_compression(png::Compression::High);
-    encoder.write_header().map_err(fail)?.write_image_data(rgba).map_err(fail)?;
+    encoder
+        .write_header()
+        .map_err(fail)?
+        .write_image_data(rgba)
+        .map_err(fail)?;
     Ok(out)
 }
 

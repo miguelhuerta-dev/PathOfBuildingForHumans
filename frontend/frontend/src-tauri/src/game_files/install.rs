@@ -128,7 +128,10 @@ mod tests {
 }"#;
         assert_eq!(
             library_paths(vdf),
-            vec![PathBuf::from("C:\\Program Files (x86)\\Steam"), PathBuf::from("D:\\SteamLibrary")]
+            vec![
+                PathBuf::from("C:\\Program Files (x86)\\Steam"),
+                PathBuf::from("D:\\SteamLibrary")
+            ]
         );
     }
 }

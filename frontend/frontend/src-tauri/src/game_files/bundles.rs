@@ -22,7 +22,11 @@ impl<'a> Reader<'a> {
     }
 
     fn bytes(&mut self, len: usize) -> Result<&'a [u8], String> {
-        let end = self.pos.checked_add(len).filter(|&end| end <= self.data.len()).ok_or(DAMAGED)?;
+        let end = self
+            .pos
+            .checked_add(len)
+            .filter(|&end| end <= self.data.len())
+            .ok_or(DAMAGED)?;
         let slice = &self.data[self.pos..end];
         self.pos = end;
         Ok(slice)
@@ -115,8 +119,8 @@ struct Location {
 /// Reads the given files (by path) from the bundles in `dir`.
 /// Files the game does not have are left out of the result.
 pub fn read_files(dir: &Path, paths: &[String]) -> Result<HashMap<String, Vec<u8>>, String> {
-    let index = std::fs::read(dir.join("_.index.bin"))
-        .map_err(|e| format!("Could not open the game's file index: {e}"))?;
+    let index =
+        std::fs::read(dir.join("_.index.bin")).map_err(|e| format!("Could not open the game's file index: {e}"))?;
     let index = decompress(&index)?;
     let mut reader = Reader::new(&index);
 
@@ -133,7 +137,11 @@ pub fn read_files(dir: &Path, paths: &[String]) -> Result<HashMap<String, Vec<u8
     let file_count = reader.usize()?;
     for _ in 0..file_count {
         let hash = reader.u64()?;
-        let location = Location { bundle: reader.usize()?, offset: reader.usize()?, size: reader.usize()? };
+        let location = Location {
+            bundle: reader.usize()?,
+            offset: reader.usize()?,
+            size: reader.usize()?,
+        };
         if let Some(path) = wanted.remove(&hash) {
             found.entry(location.bundle).or_default().push((path, location));
             if wanted.is_empty() {
@@ -150,7 +158,11 @@ pub fn read_files(dir: &Path, paths: &[String]) -> Result<HashMap<String, Vec<u8
             .map_err(|e| format!("Could not open the game's bundle {name}: {e}"))?;
         let data = decompress(&raw)?;
         for (path, location) in entries {
-            let end = location.offset.checked_add(location.size).filter(|&end| end <= data.len()).ok_or(DAMAGED)?;
+            let end = location
+                .offset
+                .checked_add(location.size)
+                .filter(|&end| end <= data.len())
+                .ok_or(DAMAGED)?;
             files.insert(path.clone(), data[location.offset..end].to_vec());
         }
     }
