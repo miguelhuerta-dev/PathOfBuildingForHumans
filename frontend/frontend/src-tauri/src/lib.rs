@@ -3,6 +3,7 @@ mod engine;
 mod engine_pack;
 mod game_files;
 mod guide;
+mod http;
 mod item_icons;
 mod jewel_data;
 mod poe_api;
@@ -12,12 +13,19 @@ use std::collections::BTreeMap;
 use std::sync::Mutex;
 use tauri::{Manager, State};
 
+/// A guide and the stage compared against it (None = chosen by the character's level).
+/// Kept together so a calculation never sees a guide with another guide's stage.
+#[derive(Clone)]
+struct LoadedGuide {
+    xml: String,
+    stage: Option<u32>,
+}
+
 /// Last character and guide loaded, so a refresh can recompute the comparison.
 #[derive(Default)]
 struct Session {
     character: Mutex<Option<Value>>,
-    guide_xml: Mutex<Option<String>>,
-    stage: Mutex<Option<u32>>,
+    guide: Mutex<Option<LoadedGuide>>,
     watcher: client_log::Watcher,
 }
 
@@ -54,10 +62,9 @@ async fn load_character(
     let raw = poe_api::fetch_character(account.trim(), character.trim(), realm.as_deref().unwrap_or("pc")).await?;
     *session.character.lock().unwrap() = Some(raw.clone());
 
-    let guide_xml = session.guide_xml.lock().unwrap().clone();
-    let stage = *session.stage.lock().unwrap();
-    match guide_xml {
-        Some(xml) => {
+    let guide = session.guide.lock().unwrap().clone();
+    match guide {
+        Some(LoadedGuide { xml, stage }) => {
             let result = run_engine(json!({ "kind": "compare", "character": raw, "xml": xml, "stage": stage })).await?;
             Ok(with_item_icons(&app, result).await)
         }
@@ -70,13 +77,12 @@ async fn load_character(
 
 /// Calculates the loaded guide, compared with the loaded character if any.
 async fn evaluate_guide(app: &tauri::AppHandle, session: &Session) -> Result<Value, String> {
-    let xml = session
-        .guide_xml
+    let LoadedGuide { xml, stage } = session
+        .guide
         .lock()
         .unwrap()
         .clone()
         .ok_or_else(|| "Load a guide first.".to_string())?;
-    let stage = *session.stage.lock().unwrap();
     let character = session.character.lock().unwrap().clone();
     let result = match character {
         Some(raw) => run_engine(json!({ "kind": "compare", "character": raw, "xml": xml, "stage": stage })).await?,
@@ -90,8 +96,7 @@ async fn evaluate_guide(app: &tauri::AppHandle, session: &Session) -> Result<Val
 #[tauri::command]
 async fn load_guide(app: tauri::AppHandle, session: State<'_, Session>, input: String) -> Result<Value, String> {
     let xml = guide::resolve(&input).await?;
-    *session.guide_xml.lock().unwrap() = Some(xml);
-    *session.stage.lock().unwrap() = None;
+    *session.guide.lock().unwrap() = Some(LoadedGuide { xml, stage: None });
     evaluate_guide(&app, &session).await
 }
 
@@ -102,14 +107,16 @@ async fn select_guide_stage(
     session: State<'_, Session>,
     stage: Option<u32>,
 ) -> Result<Value, String> {
-    *session.stage.lock().unwrap() = stage;
+    match session.guide.lock().unwrap().as_mut() {
+        Some(guide) => guide.stage = stage,
+        None => return Err("Load a guide first.".into()),
+    }
     evaluate_guide(&app, &session).await
 }
 
 #[tauri::command]
 fn clear_guide(session: State<'_, Session>) {
-    *session.guide_xml.lock().unwrap() = None;
-    *session.stage.lock().unwrap() = None;
+    *session.guide.lock().unwrap() = None;
 }
 
 #[tauri::command]

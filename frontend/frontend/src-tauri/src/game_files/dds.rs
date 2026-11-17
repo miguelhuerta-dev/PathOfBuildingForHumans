@@ -135,12 +135,49 @@ pub fn decode(dds: &[u8]) -> Result<(u32, u32, Vec<u8>), String> {
     Ok((width, height, rgba))
 }
 
+/// Scales the image down so its longest side is at most `max`, averaging the
+/// covered source pixels. Colours are weighted by alpha so transparent pixels
+/// do not darken the edges. Smaller images are returned unchanged.
+pub fn shrink(width: u32, height: u32, rgba: Vec<u8>, max: u32) -> (u32, u32, Vec<u8>) {
+    if width <= max && height <= max {
+        return (width, height, rgba);
+    }
+    let scale = f64::from(max) / f64::from(width.max(height));
+    let (out_w, out_h) = (
+        ((f64::from(width) * scale).round() as u32).max(1),
+        ((f64::from(height) * scale).round() as u32).max(1),
+    );
+    let (w, h) = (width as usize, height as usize);
+    let mut out = Vec::with_capacity(out_w as usize * out_h as usize * 4);
+    for oy in 0..out_h as usize {
+        let (y0, y1) = (oy * h / out_h as usize, ((oy + 1) * h).div_ceil(out_h as usize));
+        for ox in 0..out_w as usize {
+            let (x0, x1) = (ox * w / out_w as usize, ((ox + 1) * w).div_ceil(out_w as usize));
+            let mut sum = [0u64; 4];
+            for y in y0..y1 {
+                for pixel in rgba[(y * w + x0) * 4..(y * w + x1) * 4].as_chunks::<4>().0 {
+                    let alpha = u64::from(pixel[3]);
+                    for channel in 0..3 {
+                        sum[channel] += u64::from(pixel[channel]) * alpha;
+                    }
+                    sum[3] += alpha;
+                }
+            }
+            let count = ((y1 - y0) * (x1 - x0)) as u64;
+            let colour = |channel: usize| sum[channel].checked_div(sum[3]).unwrap_or(0) as u8;
+            out.extend_from_slice(&[colour(0), colour(1), colour(2), (sum[3] / count) as u8]);
+        }
+    }
+    (out_w, out_h, out)
+}
+
 pub fn to_png(width: u32, height: u32, rgba: &[u8]) -> Result<Vec<u8>, String> {
     let fail = |e: png::EncodingError| format!("Could not encode an icon: {e}");
     let mut out = Vec::new();
     let mut encoder = png::Encoder::new(&mut out, width, height);
     encoder.set_color(png::ColorType::Rgba);
     encoder.set_depth(png::BitDepth::Eight);
+    encoder.set_compression(png::Compression::High);
     encoder.write_header().map_err(fail)?.write_image_data(rgba).map_err(fail)?;
     Ok(out)
 }
@@ -169,6 +206,21 @@ mod tests {
         assert_eq!((w, h, rgba.len()), (6, 5, 6 * 5 * 4));
         assert!(rgba.as_chunks::<4>().0.iter().all(|p| *p == [255, 0, 0, 255]));
         assert!(to_png(w, h, &rgba).unwrap().starts_with(b"\x89PNG"));
+    }
+
+    #[test]
+    fn shrinks_keeping_edges_clean() {
+        // 4×2: left half opaque red, right half fully transparent black.
+        let mut rgba = Vec::new();
+        for _ in 0..2 {
+            rgba.extend_from_slice(&[255, 0, 0, 255, 255, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0]);
+        }
+        let (w, h, small) = shrink(4, 2, rgba, 2);
+        assert_eq!((w, h), (2, 1));
+        assert_eq!(small, vec![255, 0, 0, 255, 0, 0, 0, 0]);
+
+        let (w, h, same) = shrink(2, 2, vec![7; 16], 96);
+        assert_eq!((w, h, same), (2, 2, vec![7; 16]));
     }
 
     #[test]

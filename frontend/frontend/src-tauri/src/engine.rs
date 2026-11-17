@@ -14,7 +14,9 @@
 use crate::{engine_pack, jewel_data};
 use serde_json::Value;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::io::Read;
+use std::process::{Command, Output, Stdio};
+use std::time::{Duration, Instant};
 use std::sync::Mutex;
 
 const MARKER: &str = "@@POBH_RESULT@@";
@@ -111,9 +113,56 @@ fn run_once(dir: &Path, request: &Value) -> Result<Output, String> {
         command.creation_flags(CREATE_NO_WINDOW);
     }
 
-    command
-        .output()
-        .map_err(|e| format!("Could not start the calculation engine: {e}"))
+    output_within(&mut command, CALCULATION_TIMEOUT)
+}
+
+/// A calculation takes seconds; anything far longer is stuck and is stopped
+/// so it does not hold a thread (and the player's request) forever.
+const CALCULATION_TIMEOUT: Duration = Duration::from_secs(120);
+
+fn drain<R: Read + Send + 'static>(pipe: Option<R>) -> std::thread::JoinHandle<Vec<u8>> {
+    std::thread::spawn(move || {
+        let mut bytes = Vec::new();
+        if let Some(mut pipe) = pipe {
+            let _ = pipe.read_to_end(&mut bytes);
+        }
+        bytes
+    })
+}
+
+/// Like `Command::output`, but kills the process when it runs past `timeout`.
+fn output_within(command: &mut Command, timeout: Duration) -> Result<Output, String> {
+    let mut child = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Could not start the calculation engine: {e}"))?;
+
+    // Both pipes are drained while waiting, so a chatty engine never blocks on a full pipe.
+    let stdout = drain(child.stdout.take());
+    let stderr = drain(child.stderr.take());
+
+    let started = Instant::now();
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) if started.elapsed() < timeout => std::thread::sleep(Duration::from_millis(20)),
+            Ok(None) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(format!(
+                    "The calculation took longer than {} seconds and was stopped.",
+                    timeout.as_secs()
+                ));
+            }
+            Err(e) => return Err(format!("The calculation engine stopped unexpectedly: {e}")),
+        }
+    };
+    Ok(Output {
+        status,
+        stdout: stdout.join().unwrap_or_default(),
+        stderr: stderr.join().unwrap_or_default(),
+    })
 }
 
 fn parse_output(output: &Output) -> Result<Value, String> {
@@ -125,5 +174,24 @@ fn parse_output(output: &Output) -> Result<Value, String> {
             let detail = stderr.lines().chain(stdout.lines()).rev().find(|l| !l.trim().is_empty()).unwrap_or("no output");
             Err(format!("The calculation failed: {detail}"))
         }
+    }
+}
+
+#[cfg(all(test, windows))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stops_a_process_that_runs_too_long() {
+        let started = Instant::now();
+        let result = output_within(Command::new("cmd").args(["/C", "ping -n 6 127.0.0.1 >NUL"]), Duration::from_millis(300));
+        assert!(result.unwrap_err().contains("was stopped"));
+        assert!(started.elapsed() < Duration::from_secs(3));
+    }
+
+    #[test]
+    fn returns_the_output_of_a_quick_process() {
+        let output = output_within(Command::new("cmd").args(["/C", "echo hello"]), Duration::from_secs(10)).unwrap();
+        assert!(String::from_utf8_lossy(&output.stdout).contains("hello"));
     }
 }

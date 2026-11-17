@@ -57,7 +57,7 @@ pub fn raw_url(input: &str) -> Option<String> {
 /// Accepts a code or a share link and returns the build XML.
 pub async fn resolve(input: &str) -> Result<String, String> {
     let code = if let Some(url) = raw_url(input) {
-        reqwest::Client::new()
+        crate::http::client()
             .get(&url)
             .send()
             .await

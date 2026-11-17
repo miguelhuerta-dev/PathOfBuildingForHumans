@@ -43,6 +43,10 @@ export function useArchive() {
   const [lastZone, setLastZone] = useState<string | null>(null);
 
   const lastRefresh = useRef(0);
+  // Every engine request answers with the whole result. Only the latest request
+  // may apply its answer, so a slow, older one never overwrites a newer one; an
+  // older request just stops showing as loading, the newer answer covers it.
+  const latestRequest = useRef(0);
 
   const loadCharacters = useCallback(async (accountName: string) => {
     const trimmed = accountName.trim();
@@ -69,12 +73,15 @@ export function useArchive() {
       setCharacterState("loading");
       setCharacterError(null);
       lastRefresh.current = Date.now();
+      const request = ++latestRequest.current;
       try {
         const next = await desktop.loadCharacter(account, name);
+        if (request !== latestRequest.current) return setCharacterState("idle");
         setResult(next);
         setUpdatedAt(new Date());
         setCharacterState("idle");
       } catch (error) {
+        if (request !== latestRequest.current) return setCharacterState("idle");
         setCharacterError((error as Error).message);
         setCharacterState("error");
       }
@@ -90,11 +97,14 @@ export function useArchive() {
     if (!input.trim()) return;
     setGuideState("loading");
     setGuideError(null);
+    const request = ++latestRequest.current;
     try {
       const next = await desktop.loadGuide(input.trim());
+      if (request !== latestRequest.current) return setGuideState("idle");
       setResult((previous) => ({ ...previous, ...next }));
       setGuideState("idle");
     } catch (error) {
+      if (request !== latestRequest.current) return setGuideState("idle");
       setGuideError((error as Error).message);
       setGuideState("error");
     }
@@ -103,18 +113,24 @@ export function useArchive() {
   const selectStage = useCallback(async (stage: number | null) => {
     setGuideState("loading");
     setGuideError(null);
+    const request = ++latestRequest.current;
     try {
       const next = await desktop.selectGuideStage(stage);
+      if (request !== latestRequest.current) return setGuideState("idle");
       setResult((previous) => ({ ...previous, ...next }));
       setGuideState("idle");
     } catch (error) {
+      if (request !== latestRequest.current) return setGuideState("idle");
       setGuideError((error as Error).message);
       setGuideState("error");
     }
   }, []);
 
   const clearGuide = useCallback(async () => {
+    // Answers still on their way would bring the guide back.
+    latestRequest.current += 1;
     await desktop.clearGuide();
+    setGuideState("idle");
     setResult((previous) => (previous ? { character: previous.character } : previous));
   }, []);
 

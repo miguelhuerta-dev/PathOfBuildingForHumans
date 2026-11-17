@@ -88,6 +88,7 @@ export interface Upgrade {
 }
 
 export interface PassiveNode {
+  id?: number;
   name: string;
   type: "Notable" | "Keystone" | "Mastery" | "Normal" | string;
   ascendancy?: boolean;
@@ -100,6 +101,12 @@ export interface PassiveComparison {
   shared: number;
   extra: number;
   missing: PassiveNode[];
+  /** Allocated node ids of each tree, for the passive tree map. */
+  guideNodes?: number[];
+  characterNodes?: number[];
+  /** Chosen mastery effect id by mastery node id. */
+  guideMasteries?: Record<string, number>;
+  characterMasteries?: Record<string, number>;
 }
 
 /** What `load_character`, `load_guide` and `select_guide_stage` return. */

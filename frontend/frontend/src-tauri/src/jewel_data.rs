@@ -42,7 +42,8 @@ fn source_url(engine_dir: &Path) -> Result<String, String> {
 /// `Ok(None)` when the file does not exist in the release.
 fn get(client: &reqwest::blocking::Client, url: &str) -> Result<Option<Vec<u8>>, String> {
     let fail = |e: reqwest::Error| format!("Could not download jewel data: {e}");
-    let response = client.get(url).send().map_err(fail)?;
+    // Each part is up to 5 MB; a slow connection gets more than the default limit.
+    let response = client.get(url).timeout(Duration::from_secs(120)).send().map_err(fail)?;
     if response.status() == reqwest::StatusCode::NOT_FOUND {
         return Ok(None);
     }
@@ -70,12 +71,7 @@ pub fn download(engine_dir: &Path, names: &[String]) -> Result<(), String> {
 fn download_tables(engine_dir: &Path, names: &[String]) -> Result<(), String> {
     let base = source_url(engine_dir)?;
     let target = engine_dir.join("pob").join("src").join("Data").join("TimelessJewelData");
-    let client = reqwest::blocking::Client::builder()
-        .user_agent("PathOfBuildingForHumans")
-        .connect_timeout(Duration::from_secs(10))
-        .timeout(Duration::from_secs(300))
-        .build()
-        .map_err(|e| format!("Could not download jewel data: {e}"))?;
+    let client = crate::http::blocking_client();
 
     for name in names {
         // Another calculation may have fetched it while this one waited.
@@ -84,10 +80,10 @@ fn download_tables(engine_dir: &Path, names: &[String]) -> Result<(), String> {
         }
         // A table is either one .zip or numbered .zip.partN files.
         let mut files = Vec::new();
-        if let Some(bytes) = get(&client, &format!("{base}/{name}.zip"))? {
+        if let Some(bytes) = get(client, &format!("{base}/{name}.zip"))? {
             files.push((format!("{name}.zip"), bytes));
         } else {
-            while let Some(bytes) = get(&client, &format!("{base}/{name}.zip.part{}", files.len()))? {
+            while let Some(bytes) = get(client, &format!("{base}/{name}.zip.part{}", files.len()))? {
                 files.push((format!("{name}.zip.part{}", files.len()), bytes));
             }
         }

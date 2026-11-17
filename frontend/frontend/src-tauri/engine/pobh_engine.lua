@@ -402,10 +402,27 @@ local function allocatedPassives()
 	local nodes = {}
 	for id, node in pairs(build.spec and build.spec.allocNodes or {}) do
 		if node.type ~= "ClassStart" and node.type ~= "AscendClassStart" then
-			nodes[id] = { name = node.dn or node.name, type = node.type, ascendancy = node.ascendancyName ~= nil }
+			nodes[id] = { id = id, name = node.dn or node.name, type = node.type, ascendancy = node.ascendancyName ~= nil }
 		end
 	end
 	return nodes
+end
+
+-- Node ids (sorted, for the map) and chosen mastery effects of the active tree.
+-- Read before another build is loaded: both come from the current spec.
+local function treeSnapshot(nodes)
+	local ids = {}
+	for id in pairs(nodes) do
+		ids[#ids + 1] = id
+	end
+	table.sort(ids)
+	local masteries = setmetatable({}, { __jsontype = "object" })
+	for id, effect in pairs(build.spec and build.spec.masterySelections or {}) do
+		if nodes[id] then
+			masteries[tostring(id)] = effect
+		end
+	end
+	return ids, masteries
 end
 
 -- What the character still lacks from the guide's tree at the chosen stage.
@@ -457,6 +474,7 @@ elseif request.kind == "compare" then
 	local guide = summarize()
 	guide.stages = stages
 	local guideNodes = allocatedPassives()
+	local guideIds, guideMasteries = treeSnapshot(guideNodes)
 	local guideItems = {}
 	for _, entry in ipairs(gearSlots()) do
 		local item = equippedItem(entry.slot)
@@ -468,7 +486,10 @@ elseif request.kind == "compare" then
 	loadCharacter(request.character)
 	local icons = iconsBySlot(request.character.equipment)
 	local character = summarize({ name = request.character.name, league = request.character.league }, icons)
-	local passives = comparePassives(guideNodes, allocatedPassives())
+	local characterNodes = allocatedPassives()
+	local passives = comparePassives(guideNodes, characterNodes)
+	passives.guideNodes, passives.guideMasteries = guideIds, guideMasteries
+	passives.characterNodes, passives.characterMasteries = treeSnapshot(characterNodes)
 	result = { character = character, guide = guide, upgrades = findUpgrades(guideItems, icons), passives = passives }
 else
 	error("unknown request kind: " .. tostring(request.kind))

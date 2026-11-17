@@ -1,12 +1,12 @@
-import type { AtlasNode, AtlasTreeData } from "./types";
+import type { TreeData, TreeNode } from "./types";
 
-export interface AtlasGraph {
-  tree: AtlasTreeData;
-  byId: Map<number, AtlasNode>;
+export interface TreeGraph<T extends TreeData = TreeData> {
+  tree: T;
+  byId: Map<number, TreeNode>;
   neighbours: Map<number, number[]>;
 }
 
-export function buildGraph(tree: AtlasTreeData): AtlasGraph {
+export function buildGraph<T extends TreeData>(tree: T): TreeGraph<T> {
   const byId = new Map(tree.nodes.map((node) => [node.id, node]));
   const neighbours = new Map<number, number[]>();
   const link = (from: number, to: number) => {
@@ -22,7 +22,7 @@ export function buildGraph(tree: AtlasTreeData): AtlasGraph {
 }
 
 export interface NextStep {
-  node: AtlasNode;
+  node: TreeNode;
   /** Points needed to reach it from what is already allocated (1 = can be taken now). */
   distance: number;
 }
@@ -33,23 +33,24 @@ export interface RegionProgress {
   total: number;
 }
 
-export interface AtlasProgress {
+export interface TreeProgress {
   /** Guide nodes the player already has. */
   done: number;
-  /** Guide nodes in total (the root is not counted). */
+  /** Guide nodes in total (start nodes are not counted). */
   total: number;
-  /** Points the player has spent (the root is not counted). */
+  /** Points the player has spent (start nodes are not counted). */
   spent: number;
   /** Missing guide nodes, closest first. */
   next: NextStep[];
+  /** Guide progress per region, for trees whose nodes have one. */
   regions: RegionProgress[];
 }
 
 /** Distance in points from the allocated nodes to every reachable node. */
-function distancesFrom(graph: AtlasGraph, owned: Set<number>): Map<number, number> {
+function distancesFrom(graph: TreeGraph, allocated: Set<number>): Map<number, number> {
   const distance = new Map<number, number>();
   const queue: number[] = [];
-  for (const id of owned) {
+  for (const id of allocated) {
     distance.set(id, 0);
     queue.push(id);
   }
@@ -65,10 +66,17 @@ function distancesFrom(graph: AtlasGraph, owned: Set<number>): Map<number, numbe
   return distance;
 }
 
-export function computeProgress(graph: AtlasGraph, guide: Set<number>, owned: Set<number>): AtlasProgress {
-  const root = graph.tree.root;
-  const allocated = new Set(owned).add(root);
-  const distance = distancesFrom(graph, allocated);
+/**
+ * Compares the player's allocated nodes with a guide's.
+ * `starts` are the nodes allocation grows from (the Atlas centre, the class start).
+ */
+export function computeProgress(
+  graph: TreeGraph,
+  guide: ReadonlySet<number>,
+  owned: ReadonlySet<number>,
+  starts: Iterable<number>,
+): TreeProgress {
+  const distance = distancesFrom(graph, new Set([...owned, ...starts]));
 
   const regions = new Map<string, RegionProgress>();
   const next: NextStep[] = [];
@@ -83,16 +91,20 @@ export function computeProgress(graph: AtlasGraph, guide: Set<number>, owned: Se
     if (has) done += 1;
     else next.push({ node, distance: distance.get(id) ?? Infinity });
 
-    const name = node.region ?? "The Atlas";
-    const region = regions.get(name) ?? { name, owned: 0, total: 0 };
-    region.total += 1;
-    if (has) region.owned += 1;
-    regions.set(name, region);
+    if (node.region) {
+      const region = regions.get(node.region) ?? { name: node.region, owned: 0, total: 0 };
+      region.total += 1;
+      if (has) region.owned += 1;
+      regions.set(node.region, region);
+    }
   }
 
   next.sort((a, b) => a.distance - b.distance || a.node.name.localeCompare(b.node.name));
   let spent = 0;
-  for (const id of owned) if (id !== root && graph.byId.has(id)) spent += 1;
+  for (const id of owned) {
+    const node = graph.byId.get(id);
+    if (node && node.kind !== "root") spent += 1;
+  }
 
   return {
     done,

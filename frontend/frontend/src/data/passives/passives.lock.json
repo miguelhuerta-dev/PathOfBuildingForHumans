@@ -1,0 +1,5 @@
+{
+  "$comment": "GGG's official passive skill tree export used to draw the character tree. Bump the tag each league and run scripts/update-passive-tree.mjs.",
+  "repository": "https://github.com/grindinggear/skilltree-export",
+  "tag": "3.30.0"
+}

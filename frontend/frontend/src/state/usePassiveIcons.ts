@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { desktop, isDesktopApp } from "../lib/desktop";
 
-/** Icons by name, as PNG data URLs. Empty when the game's icons are not available. */
+/** Icons by name, as image URLs. Empty when the game's icons are not available. */
 export type PassiveIcons = Readonly<Record<string, string>>;
 
 export interface PassiveIconsState {
@@ -33,8 +33,10 @@ function load(keys: string[], clientLog: string | null): Promise<PassiveIcons> {
  * Exile installation. They are never bundled with the app nor downloaded.
  */
 export function usePassiveIcons(keys: readonly string[], clientLog: string | null): PassiveIconsState {
-  const sorted = useMemo(() => [...new Set(keys)].sort(), [keys]);
-  const id = `${clientLog ?? ""}|${sorted.join(",")}`;
+  // Keyed by content, so a new array with the same names does not read the game again.
+  const joined = [...new Set(keys)].sort().join(",");
+  const sorted = useMemo(() => (joined ? joined.split(",") : []), [joined]);
+  const id = `${clientLog ?? ""}|${joined}`;
   const [result, setResult] = useState<{ id: string; icons: PassiveIcons; error: string | null } | null>(null);
 
   useEffect(() => {

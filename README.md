@@ -52,6 +52,7 @@ The dashboard is the first screen every player sees. It must answer three questi
 | Guides from PoB codes, pobb.in or pastebin links, with stages (Maxroll-style) | v0.2.0 |
 | Recommended Artifact: guide items ranked by measured DPS/EHP gain | v0.2.0 |
 | Passive tree and gem comparison against the guide | v0.2.0 |
+| Passive tree map with the game's own icons, compared with the guide | Unreleased |
 | Atlas passive tree drawn over the star atlas, with progress against a guide's Atlas link | Unreleased |
 | Desktop app with a custom title bar (Windows portable) | v0.1 |
 | League meta and prices (poe.ninja) | Planned |
@@ -73,7 +74,7 @@ The full guide lives in [`docs/visual_language.md`](docs/visual_language.md).
 
 - **v0.1** Atlas Archive UI, desktop app
 - **v0.2.0** Live character, Path of Building engine, guides with stages, upgrade advisor
-- **Next** League meta and prices, official OAuth, visual passive tree
+- **Next** League meta and prices, official OAuth
 
 See [`docs/roadmap.md`](docs/roadmap.md) and the RFCs in [`rfc/`](rfc).
 
@@ -96,20 +97,25 @@ Damage and defence numbers come from [Path of Building Community](https://github
 `src-tauri/engine/engine.lock.json`; bump it each league. Diagnostic thresholds live in
 `src/data/rules/poe1.json`, so patch changes are data edits, not code changes.
 
-### The Atlas tree
+### The passive and Atlas trees
 
-The Atlas page draws the Atlas passive tree with the app's own art. Node positions, names and texts come from
-GGG's official [atlastree-export](https://github.com/grindinggear/atlastree-export), pinned in
-`src/data/atlas/atlas.lock.json`. Each league, bump the tag and regenerate the trimmed data:
+Both trees are drawn as constellation maps with the app's own frames. Node positions, names and texts come
+from GGG's official exports, pinned per league:
 
-```bash
-node scripts/update-atlas-tree.mjs
-```
+| Tree | Source | Lock file | Regenerate |
+|---|---|---|---|
+| Character passives (Guide page) | [skilltree-export](https://github.com/grindinggear/skilltree-export) | `src/data/passives/passives.lock.json` | `node scripts/update-passive-tree.mjs` |
+| Atlas (Atlas page) | [atlastree-export](https://github.com/grindinggear/atlastree-export) | `src/data/atlas/atlas.lock.json` | `node scripts/update-atlas-tree.mjs` |
 
-In the desktop app each passive shows its icon from the game. The icons are **read from the player's own Path
-of Exile installation** (Steam or Epic; any Steam library is found, or the folder of the chosen `Client.txt`),
-decoded and cached on that computer only: the app never ships nor downloads GGG's art. Without the game the
-map keeps its own marks. The standalone client (`Content.ggpk`) is not supported yet.
+On the Guide page the character's tree is compared with the guide's: Path of Building reports both sets of
+passives and the chosen masteries, and the map shows what is taken (gold), what the guide still asks for
+(verdigris) and what the guide does not use. Ascendancy passives are listed under the map.
+
+In the desktop app each passive shows its own icon from the game (the Atlas and the passive tree use different
+icons). The icons are **read from the player's own Path of Exile installation** (Steam or Epic; any Steam
+library is found, or the folder of the chosen `Client.txt`), decoded, scaled down and cached on that computer
+only: the app never ships nor downloads GGG's art. Without the game the maps keep their own marks. The
+standalone client (`Content.ggpk`) is not supported yet.
 
 A guide's Atlas is loaded from an official Atlas tree link
 (`pathofexile.com/fullscreen-atlas-skill-tree/…`). Public profiles do not include the Atlas tree, so players

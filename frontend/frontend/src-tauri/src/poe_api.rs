@@ -7,23 +7,6 @@
 use serde_json::{json, Map, Value};
 
 const BASE: &str = "https://www.pathofexile.com/character-window";
-const USER_AGENT: &str = concat!(
-    "PathOfBuildingForHumans/",
-    env!("CARGO_PKG_VERSION"),
-    " (+https://github.com/miguelhuerta-dev/PathOfBuildingForHumans)"
-);
-
-pub fn user_agent() -> &'static str {
-    USER_AGENT
-}
-
-fn client() -> Result<reqwest::Client, String> {
-    reqwest::Client::builder()
-        .user_agent(USER_AGENT)
-        .timeout(std::time::Duration::from_secs(20))
-        .build()
-        .map_err(|e| format!("Could not start the HTTP client: {e}"))
-}
 
 /// Percent-encodes a query value (account names contain `#`, character names may contain spaces).
 pub fn encode(value: &str) -> String {
@@ -38,7 +21,7 @@ pub fn encode(value: &str) -> String {
 }
 
 async fn get_json(url: &str) -> Result<Value, String> {
-    let response = client()?
+    let response = crate::http::client()
         .get(url)
         .send()
         .await

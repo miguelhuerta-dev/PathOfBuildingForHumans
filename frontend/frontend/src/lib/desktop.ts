@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { CharacterSummary, EngineResult } from "../types/Engine";
 
@@ -30,9 +30,14 @@ export const desktop = {
   detectClientLog: () => call<string | null>("detect_client_log"),
   watchClientLog: (path: string) => call<void>("watch_client_log", { path }),
   stopWatchingClientLog: () => call<void>("stop_watching_client_log"),
-  /** Passive skill icons read from the installed game, as PNG data URLs by icon name. */
-  passiveIcons: (keys: string[], clientLog: string | null) =>
-    call<Record<string, string>>("passive_icons", { keys, clientLog }),
+  /** Passive skill icons read from the installed game, as image URLs by icon name. */
+  passiveIcons: async (keys: string[], clientLog: string | null) => {
+    // Each value is a cached PNG on disk (served through the asset protocol) or a data URL.
+    const icons = await call<Record<string, string>>("passive_icons", { keys, clientLog });
+    return Object.fromEntries(
+      Object.entries(icons).map(([key, source]) => [key, source.startsWith("data:") ? source : convertFileSrc(source)]),
+    );
+  },
   onZoneEntered: (handler: (zone: string) => void): Promise<UnlistenFn> =>
     listen<string>("zone-entered", (event) => handler(event.payload)),
 };

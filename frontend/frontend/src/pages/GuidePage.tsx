@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { atlasArt } from "../assets/atlas";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import UpgradeCard from "../components/UpgradeCard";
+import ConstellationMap, { MapLegend, type MapFocus } from "../components/ConstellationMap";
 import ItemIcon from "../components/ItemIcon";
 import { AtlasStarIcon, QuillIcon, SigilIcon, SwordIcon } from "../components/icons";
 import type { Archive } from "../state/useArchive";
+import { usePassiveIcons } from "../state/usePassiveIcons";
+import { usePassiveTree } from "../state/usePassiveTree";
 import type { EngineBuild, EngineStats } from "../types/Engine";
 import { changeTone, formatNumber, formatSignedPercent } from "../utils/format";
 import { ChipGroup, ErrorNote, MetalMeter } from "../components/ui";
@@ -150,7 +152,11 @@ function CompareTable({ you, guide }: { you: EngineBuild; guide: EngineBuild }) 
 
 function PassivesPanel({ archive }: { archive: Archive }) {
   const passives = archive.result?.passives;
+  const tree = usePassiveTree(passives, archive.result?.character?.character.class);
+  const passiveIcons = usePassiveIcons(tree.iconKeys, archive.clientLog || null);
+  const [focus, setFocus] = useState<MapFocus | null>(null);
   if (!passives) return null;
+
   const ascendancy = passives.missing.filter((n) => n.ascendancy);
   const keystones = passives.missing.filter((n) => !n.ascendancy && n.type === "Keystone");
   const notables = passives.missing.filter((n) => !n.ascendancy && n.type === "Notable");
@@ -161,46 +167,75 @@ function PassivesPanel({ archive }: { archive: Archive }) {
       <div>
         <h4 className="font-display text-[13px] tracking-[0.2em] text-parchment-dim">{title}</h4>
         <ul className="mt-1 flex flex-wrap gap-2">
-          {nodes.map((node) => (
-            <li key={`${title}-${node.name}`} className={`border border-gold-dim/40 bg-black/50 px-3 py-1 text-[16px] ${tone}`}>
-              {node.name}
-            </li>
-          ))}
+          {nodes.map((node) => {
+            // Passives on the map can be found on it; ascendancy passives are not drawn.
+            const onMap = node.id !== undefined && tree.graph?.byId.has(node.id);
+            const chip = `border border-gold-dim/40 bg-black/50 px-3 py-1 text-[16px] ${tone}`;
+            return (
+              <li key={`${title}-${node.id ?? node.name}`}>
+                {onMap ? (
+                  <button
+                    type="button"
+                    title="Show on the tree"
+                    onClick={() => node.id !== undefined && setFocus({ id: node.id })}
+                    className={`${chip} hover:border-gold hover:text-gold`}
+                  >
+                    {node.name}
+                  </button>
+                ) : (
+                  <span className={`block ${chip}`}>{node.name}</span>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
     );
 
   return (
     <AtlasFrame>
-      {/* The star atlas sits behind the tree summary, faded into the panel. */}
-      <img
-        src={atlasArt.starAtlas}
-        alt=""
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-45 [mask-image:linear-gradient(to_bottom,black_30%,transparent_100%)]"
+      <AtlasSectionHeader title="Passive Tree" icon={<AtlasStarIcon className="h-7 w-7" />} />
+      <p className="text-[19px] text-parchment">
+        You have taken <span className="text-gold">{passives.shared}</span> of the guide's{" "}
+        <span className="text-gold">{passives.guidePoints}</span> points for this stage
+        {passives.extra > 0 ? `, plus ${passives.extra} the guide does not use` : ""}.
+      </p>
+      <MetalMeter
+        label="Guide passive points taken"
+        value={passives.shared}
+        max={passives.guidePoints}
+        className="mt-3 max-w-xl"
       />
-      <div className="relative">
-        <AtlasSectionHeader title="Passive Tree" icon={<AtlasStarIcon className="h-7 w-7" />} />
-        <p className="text-[19px] text-parchment">
-          You have taken <span className="text-gold">{passives.shared}</span> of the guide's{" "}
-          <span className="text-gold">{passives.guidePoints}</span> points for this stage
-          {passives.extra > 0 ? `, plus ${passives.extra} the guide does not use` : ""}.
-        </p>
-        <MetalMeter
-          label="Guide passive points taken"
-          value={passives.shared}
-          max={passives.guidePoints}
-          className="mt-3 max-w-xl"
-        />
 
-        <div className="mt-6 flex flex-col gap-4">
-          {group("ASCENDANCY", ascendancy, "text-[#f2d27a]")}
-          {group("KEYSTONES", keystones, "text-[#f2d27a]")}
-          {group("NOTABLES", notables, "text-parchment")}
-          {group("MASTERIES", masteries, "text-arcane")}
-          {passives.missing.length === 0 && (
-            <p className="text-[18px] text-verdigris">You have every key passive of this stage.</p>
-          )}
+      {tree.loadError && <ErrorNote className="mt-4">{tree.loadError}</ErrorNote>}
+      {tree.graph && passives.guideNodes && (
+        <div className="mt-5">
+          <ConstellationMap
+            graph={tree.graph}
+            guide={tree.guide}
+            owned={tree.owned}
+            starts={tree.starts}
+            picks={tree.picks}
+            focus={focus}
+            icons={passiveIcons.icons}
+            label="Your passive tree compared with the guide's"
+          />
+          <MapLegend />
+          <p className="mt-2 text-[14px] text-parchment-faint">
+            Passive tree {tree.graph.tree.version}. Ascendancy passives are listed below.
+            {passiveIcons.unavailable && ` ${passiveIcons.unavailable}`}
+          </p>
         </div>
+      )}
+
+      <div className="mt-6 flex flex-col gap-4">
+        {group("ASCENDANCY", ascendancy, "text-[#f2d27a]")}
+        {group("KEYSTONES", keystones, "text-[#f2d27a]")}
+        {group("NOTABLES", notables, "text-parchment")}
+        {group("MASTERIES", masteries, "text-arcane")}
+        {passives.missing.length === 0 && (
+          <p className="text-[18px] text-verdigris">You have every key passive of this stage.</p>
+        )}
       </div>
     </AtlasFrame>
   );

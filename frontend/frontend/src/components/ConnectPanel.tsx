@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { portraitFor } from "../assets/atlas";
+import { atlasArt } from "../assets/atlas";
 import type { Archive } from "../state/useArchive";
 import AtlasFrame from "./AtlasFrame";
 import AtlasSectionHeader from "./AtlasSectionHeader";
@@ -81,9 +81,9 @@ function ConnectPanel({ archive }: ConnectPanelProps) {
                     }`}
                   >
                     <img
-                      src={portraitFor(character.class)}
+                      src={atlasArt.emblem}
                       alt=""
-                      className="h-[76px] w-[76px] shrink-0 object-cover object-top"
+                      className="h-[76px] w-[76px] shrink-0 bg-[radial-gradient(circle_at_50%_45%,#2a1e12,#0b0907_75%)] object-contain p-2 drop-shadow-[0_0_8px_rgba(217,179,108,0.25)] transition group-hover:scale-105"
                     />
                     <span className="flex flex-1 flex-col justify-center bg-[linear-gradient(180deg,#3a2414,#1a100a)] px-4 py-2">
                       <span className="engraved font-display text-[17px] font-semibold text-[#f2dfb4]">

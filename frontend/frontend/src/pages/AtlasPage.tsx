@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
-import AtlasTreeMap, { type AtlasFocus } from "../components/AtlasTreeMap";
+import ConstellationMap, { MapLegend, type MapFocus } from "../components/ConstellationMap";
 import { AtlasStarIcon, QuillIcon, SigilIcon } from "../components/icons";
 import { ErrorNote, MetalMeter } from "../components/ui";
-import type { AtlasProgress } from "../atlas/progress";
+import type { TreeProgress } from "../tree/progress";
 import { useAtlasProgress, type AtlasProgressState } from "../state/useAtlasProgress";
 import { usePassiveIcons } from "../state/usePassiveIcons";
 
@@ -98,7 +98,7 @@ function LinkForm({ atlas }: { atlas: AtlasProgressState }) {
 }
 
 function ProgressPanel({ progress, onFocus, onToggle }: {
-  progress: AtlasProgress;
+  progress: TreeProgress;
   onFocus: (id: number) => void;
   onToggle: (id: number) => void;
 }) {
@@ -160,7 +160,7 @@ function ProgressPanel({ progress, onFocus, onToggle }: {
   );
 }
 
-function RegionPanel({ progress }: { progress: AtlasProgress }) {
+function RegionPanel({ progress }: { progress: TreeProgress }) {
   if (progress.regions.length === 0) return null;
   return (
     <AtlasFrame>
@@ -182,25 +182,6 @@ function RegionPanel({ progress }: { progress: AtlasProgress }) {
   );
 }
 
-function Legend() {
-  const items = [
-    { label: "Taken", swatch: "bg-[#f2dfa8] border-gold" },
-    { label: "In the guide, not taken", swatch: "bg-ink border-verdigris" },
-    { label: "Taken, not in the guide", swatch: "bg-gold-dim border-gold" },
-    { label: "Not planned", swatch: "bg-stone border-parchment-faint opacity-60" },
-  ];
-  return (
-    <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[15px] text-parchment-dim">
-      {items.map((item) => (
-        <li key={item.label} className="flex items-center gap-2">
-          <span aria-hidden="true" className={`inline-block h-3.5 w-3.5 rounded-full border-2 ${item.swatch}`} />
-          {item.label}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 const NO_KEYS: string[] = [];
 
 interface AtlasPageProps {
@@ -212,7 +193,9 @@ interface AtlasPageProps {
 /** The Atlas passive tree: the guide's plan, what the player has taken and what comes next. */
 export default function AtlasPage({ league, clientLog }: AtlasPageProps) {
   const atlas = useAtlasProgress(league);
-  const [focus, setFocus] = useState<AtlasFocus | null>(null);
+  const [focus, setFocus] = useState<MapFocus | null>(null);
+  const root = atlas.graph?.tree.root;
+  const starts = useMemo(() => new Set(root === undefined ? [] : [root]), [root]);
   const iconKeys = useMemo(
     () => atlas.graph?.tree.nodes.flatMap((node) => (node.icon ? [node.icon] : [])) ?? NO_KEYS,
     [atlas.graph],
@@ -230,15 +213,17 @@ export default function AtlasPage({ league, clientLog }: AtlasPageProps) {
         {atlas.loadError && <ErrorNote>{atlas.loadError}</ErrorNote>}
         {atlas.graph ? (
           <>
-            <AtlasTreeMap
+            <ConstellationMap
               graph={atlas.graph}
+              starts={starts}
+              label="Atlas passive tree. Click a passive to mark it as taken."
               guide={atlas.guide}
               owned={atlas.owned}
               onToggle={atlas.toggleOwned}
               focus={focus}
               icons={passiveIcons.icons}
             />
-            <Legend />
+            <MapLegend />
             {passiveIcons.unavailable && (
               <p className="mt-2 text-[14px] text-parchment-faint">{passiveIcons.unavailable}</p>
             )}

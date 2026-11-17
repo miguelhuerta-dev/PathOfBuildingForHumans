@@ -27,17 +27,12 @@ fn read_cache(path: &Path) -> Option<Index> {
 }
 
 async fn download() -> Result<Index, String> {
-    let client = reqwest::Client::builder()
-        .user_agent(crate::poe_api::user_agent())
-        .timeout(Duration::from_secs(30))
-        .build()
-        .map_err(|e| e.to_string())?;
-
     let mut index = Index::new();
     for kind in TYPES {
-        let body: Value = client
+        let body: Value = crate::http::client()
             .get(OVERVIEW)
             .query(&[("league", "Standard"), ("type", kind)])
+            .timeout(Duration::from_secs(30))
             .send()
             .await
             .and_then(|r| r.error_for_status())
