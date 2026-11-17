@@ -41,6 +41,20 @@ The dashboard is the first screen every player sees. It must answer three questi
 2. **What is wrong with my build?** Detected issues, ranked by severity, with their expected impact.
 3. **What should I improve next?** The single highest-impact upgrade, with its estimated gain.
 
+## Screenshots
+
+**The armoury.** Your gear as on the in-game inventory, read out like the game's tooltip.
+
+<img src="docs/assets/screenshots/armoury.webp" alt="Equipped Artifacts: the character's gear laid out as on the in-game inventory, with the selected item's modifiers" width="900" />
+
+**Following a guide.** Your passive tree against the guide's: taken in gold, still to take in verdigris.
+
+<img src="docs/assets/screenshots/passive-tree.webp" alt="Passive tree map with the guide's route highlighted" width="900" />
+
+**The Atlas.** The Atlas passive tree over the star atlas, with each passive's icon from your own game.
+
+<img src="docs/assets/screenshots/atlas.webp" alt="Atlas passive tree drawn over the star atlas" width="600" />
+
 ## Features
 
 | Feature | Status |
@@ -52,7 +66,10 @@ The dashboard is the first screen every player sees. It must answer three questi
 | Guides from PoB codes, pobb.in or pastebin links, with stages (Maxroll-style) | v0.2.0 |
 | Recommended Artifact: guide items ranked by measured DPS/EHP gain | v0.2.0 |
 | Passive tree and gem comparison against the guide | v0.2.0 |
+| Passive tree map with the game's own icons, compared with the guide | v0.3.0 |
+| Atlas passive tree drawn over the star atlas, with progress against a guide's Atlas link | v0.3.0 |
 | Desktop app with a custom title bar (Windows portable) | v0.1 |
+| Single-file portable app, published as a GitHub Release | v0.3.0 |
 | League meta and prices (poe.ninja) | Planned |
 | Official OAuth account connection | Planned |
 | Build snapshots and history | Planned |
@@ -72,7 +89,8 @@ The full guide lives in [`docs/visual_language.md`](docs/visual_language.md).
 
 - **v0.1** Atlas Archive UI, desktop app
 - **v0.2.0** Live character, Path of Building engine, guides with stages, upgrade advisor
-- **Next** League meta and prices, official OAuth, visual passive tree
+- **v0.3.0** Atlas and passive tree maps with the game's own icons, single-file portable app
+- **Next** League meta and prices, official OAuth
 
 See [`docs/roadmap.md`](docs/roadmap.md) and the RFCs in [`rfc/`](rfc).
 
@@ -95,35 +113,80 @@ Damage and defence numbers come from [Path of Building Community](https://github
 `src-tauri/engine/engine.lock.json`; bump it each league. Diagnostic thresholds live in
 `src/data/rules/poe1.json`, so patch changes are data edits, not code changes.
 
+### The passive and Atlas trees
+
+Both trees are drawn as constellation maps with the app's own frames. Node positions, names and texts come
+from GGG's official exports, pinned per league:
+
+| Tree | Source | Lock file | Regenerate |
+|---|---|---|---|
+| Character passives (Guide page) | [skilltree-export](https://github.com/grindinggear/skilltree-export) | `src/data/passives/passives.lock.json` | `node scripts/update-passive-tree.mjs` |
+| Atlas (Atlas page) | [atlastree-export](https://github.com/grindinggear/atlastree-export) | `src/data/atlas/atlas.lock.json` | `node scripts/update-atlas-tree.mjs` |
+
+On the Guide page the character's tree is compared with the guide's: Path of Building reports both sets of
+passives and the chosen masteries, and the map shows what is taken (gold), what the guide still asks for
+(verdigris) and what the guide does not use. Ascendancy passives are listed under the map.
+
+In the desktop app each passive shows its own icon from the game (the Atlas and the passive tree use different
+icons). The icons are **read from the player's own Path of Exile installation** (Steam or Epic; any Steam
+library is found, or the folder of the chosen `Client.txt`), decoded, scaled down and cached on that computer
+only: the app never ships nor downloads GGG's art. Without the game the maps keep their own marks. The
+standalone client (`Content.ggpk`) is not supported yet.
+
+A guide's Atlas is loaded from an official Atlas tree link
+(`pathofexile.com/fullscreen-atlas-skill-tree/…`). Public profiles do not include the Atlas tree, so players
+mark the passives they have by clicking them (or load their own Atlas link); progress is kept per league.
+
 ### Desktop app
 
 The desktop app is built with [Tauri](https://tauri.app/). It opens in its own window with a themed title bar,
 custom window controls and a bronze border on Windows 11.
 
 To run it locally you also need [Rust](https://www.rust-lang.org/tools/install) and, once, the calculation
-engine (Linux or macOS; needs git, make and a C compiler):
+engine. On Linux or macOS (needs git, make and a C compiler):
 
 ```bash
 cd frontend/frontend
 scripts/setup-engine.sh
 ```
 
+On Windows (needs git and Visual Studio with the **Desktop development with C++** workload; the script
+loads the MSVC environment by itself):
+
+```powershell
+cd frontend/frontend
+./scripts/setup-engine.ps1
+```
+
+Then:
+
 ```bash
 npm run desktop:dev
 ```
 
-To build it locally:
+**Debugging in Visual Studio (Windows):** `./scripts/debug-vs.ps1` starts the Vite dev server, builds the
+app in debug mode and opens the executable in Visual Studio. Press F5 to run it under the native debugger;
+breakpoints in `src-tauri/src/*.rs` work once the file is open in VS. For the TypeScript side use the app's
+DevTools (right-click → Inspect) or set the VS project's Debugger Type to *JavaScript (WebView2)*.
 
-```bash
-npm run desktop:build
+To build the portable app locally (Windows):
+
+```powershell
+./scripts/build-portable.ps1
 ```
 
-The executable is written to `frontend/frontend/src-tauri/target/release/`.
+It writes `frontend/frontend/portable/PathOfBuildingForHumans.exe`: one file with the calculation engine packed
+inside. On first launch the engine is unpacked to `%LOCALAPPDATA%\PathOfBuildingForHumans\engine`. Timeless
+and abyss jewel tables (about 170 MB, most of Path of Building's size) are not packed; the app downloads the
+one a build needs from the pinned Path of Building release the first time it is used.
 
-**Portable Windows build without installing Rust:** run the **Desktop app (Windows portable)** workflow from
-the **Actions** tab, or push a version tag such as `v0.2.0`. Download the `PathOfBuildingForHumans-windows-portable`
-artifact: a folder with `PathOfBuildingForHumans.exe` and its `engine` folder. Keep them together; no
-installation is needed on Windows 10 and 11 (it uses the WebView2 runtime that ships with Windows).
+**Releases:** push a version tag such as `v0.3.0` (or run the **Desktop app (Windows portable)** workflow
+by hand from the **Actions** tab). The workflow builds `PathOfBuildingForHumans-v0.3.0-windows.exe` and
+keeps it as a workflow artifact for 7 days, together with `release-notes-v0.3.0.md` (that version's section
+of `CHANGELOG.md`). Download it and publish the GitHub Release by hand. After each successful build the
+workflow deletes the artifacts of earlier runs, so they do not fill the Actions storage; releases are never
+touched. No installation is needed on Windows 10 and 11 (the app uses the WebView2 runtime that ships with
+Windows).
 
 ## Project structure
 
@@ -139,8 +202,8 @@ frontend/frontend/     React + TypeScript + Vite + Tailwind app
   src/state/           Account, character and guide state
   src-tauri/           Desktop app (Tauri): PoE profiles, guide decoding, Client.txt watcher
   src-tauri/engine/    Path of Building bridge and pinned engine versions
-  scripts/             Engine setup for development
-.github/workflows/     Windows portable build
+  scripts/             Engine setup, portable build, Atlas data update, VS debugging
+.github/workflows/     Windows portable build and releases
 ```
 
 ## Disclaimer

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { portraitFor } from "../assets/atlas";
+import { atlasArt } from "../assets/atlas";
 import { analyze } from "../analysis/analyze";
 import { formatNumber } from "../utils/format";
 import { ErrorNote } from "../components/ui";
@@ -7,6 +7,7 @@ import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import AnalysisCard from "../components/AnalysisCard";
 import ConnectPanel from "../components/ConnectPanel";
+import EquipmentPanel from "../components/EquipmentPanel";
 import { ScoreCard, StatCard } from "../components/StatCard";
 import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
@@ -23,12 +24,12 @@ function BuildHeader({ build, analysis }: { build: EngineBuild; analysis: Analys
   return (
     <AtlasFrame pendant>
       <div className="grid items-center gap-6 md:grid-cols-[220px_1fr_auto_auto]">
-        {/* The portrait breaks out of the frame for an immersive header. */}
-        <div className="relative hidden h-44 md:block">
+        {/* The emblem rises above the frame but stays inside its own column, clear of the text. */}
+        <div className="relative hidden h-44 md:block" aria-hidden="true">
           <img
-            src={portraitFor(title ?? character.class)}
-            alt={`${title ?? "Exile"} portrait`}
-            className="absolute -left-16 -top-28 h-[330px] w-[330px] max-w-none object-cover drop-shadow-[0_10px_24px_rgba(0,0,0,0.9)] [mask-image:radial-gradient(ellipse_68%_78%_at_48%_40%,black_58%,transparent_100%)]"
+            src={atlasArt.emblem}
+            alt=""
+            className="absolute -top-24 left-1/2 h-[250px] w-[250px] max-w-none -translate-x-1/2 -rotate-6 [filter:drop-shadow(0_14px_22px_rgba(0,0,0,0.9))_drop-shadow(0_0_26px_rgba(217,179,108,0.28))]"
           />
         </div>
 
@@ -135,6 +136,8 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
             <StatCard title="EHP" value={formatNumber(build.stats.TotalEHP ?? 0)} icon={<ShieldIcon className="h-4 w-4" />} />
           </section>
 
+          <EquipmentPanel items={build.items} />
+
           <div className="mt-4 grid items-stretch gap-x-5 gap-y-10 lg:grid-cols-[1.12fr_1fr]">
             <AtlasFrame className="flex flex-col" contentClassName="flex flex-1 flex-col">
               <AtlasSectionHeader title="Threat Register" tone="blood" icon={<SkullIcon className="h-7 w-7" />} />
@@ -174,6 +177,7 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
               )}
             </AtlasFrame>
           </div>
+
         </>
       )}
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import demoCharacter from "../data/demo/demoCharacter.json";
 import { desktop, isDesktopApp } from "../lib/desktop";
+import { readSetting, writeSetting } from "../lib/settings";
 import type { CharacterSummary, EngineResult } from "../types/Engine";
 
 const STORAGE = {
@@ -12,23 +13,6 @@ const STORAGE = {
 
 /** Minimum time between automatic refreshes, to respect pathofexile.com rate limits. */
 const AUTO_REFRESH_COOLDOWN_MS = 60_000;
-
-function readSetting(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeSetting(key: string, value: string | null) {
-  try {
-    if (value === null) window.localStorage.removeItem(key);
-    else window.localStorage.setItem(key, value);
-  } catch {
-    // Storage unavailable: settings simply are not remembered.
-  }
-}
 
 export type LoadState = "idle" | "loading" | "error";
 
@@ -59,6 +43,10 @@ export function useArchive() {
   const [lastZone, setLastZone] = useState<string | null>(null);
 
   const lastRefresh = useRef(0);
+  // Every engine request answers with the whole result. Only the latest request
+  // may apply its answer, so a slow, older one never overwrites a newer one; an
+  // older request just stops showing as loading, the newer answer covers it.
+  const latestRequest = useRef(0);
 
   const loadCharacters = useCallback(async (accountName: string) => {
     const trimmed = accountName.trim();
@@ -85,12 +73,15 @@ export function useArchive() {
       setCharacterState("loading");
       setCharacterError(null);
       lastRefresh.current = Date.now();
+      const request = ++latestRequest.current;
       try {
         const next = await desktop.loadCharacter(account, name);
+        if (request !== latestRequest.current) return setCharacterState("idle");
         setResult(next);
         setUpdatedAt(new Date());
         setCharacterState("idle");
       } catch (error) {
+        if (request !== latestRequest.current) return setCharacterState("idle");
         setCharacterError((error as Error).message);
         setCharacterState("error");
       }
@@ -106,11 +97,14 @@ export function useArchive() {
     if (!input.trim()) return;
     setGuideState("loading");
     setGuideError(null);
+    const request = ++latestRequest.current;
     try {
       const next = await desktop.loadGuide(input.trim());
+      if (request !== latestRequest.current) return setGuideState("idle");
       setResult((previous) => ({ ...previous, ...next }));
       setGuideState("idle");
     } catch (error) {
+      if (request !== latestRequest.current) return setGuideState("idle");
       setGuideError((error as Error).message);
       setGuideState("error");
     }
@@ -119,18 +113,24 @@ export function useArchive() {
   const selectStage = useCallback(async (stage: number | null) => {
     setGuideState("loading");
     setGuideError(null);
+    const request = ++latestRequest.current;
     try {
       const next = await desktop.selectGuideStage(stage);
+      if (request !== latestRequest.current) return setGuideState("idle");
       setResult((previous) => ({ ...previous, ...next }));
       setGuideState("idle");
     } catch (error) {
+      if (request !== latestRequest.current) return setGuideState("idle");
       setGuideError((error as Error).message);
       setGuideState("error");
     }
   }, []);
 
   const clearGuide = useCallback(async () => {
+    // Answers still on their way would bring the guide back.
+    latestRequest.current += 1;
     await desktop.clearGuide();
+    setGuideState("idle");
     setResult((previous) => (previous ? { character: previous.character } : previous));
   }, []);
 

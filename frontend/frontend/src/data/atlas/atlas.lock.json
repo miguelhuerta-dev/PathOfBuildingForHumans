@@ -1,0 +1,5 @@
+{
+  "$comment": "Pinned source of the Atlas passive tree. Bump the tag each league, then run: node scripts/update-atlas-tree.mjs",
+  "repository": "https://github.com/grindinggear/atlastree-export",
+  "tag": "3.30.0"
+}

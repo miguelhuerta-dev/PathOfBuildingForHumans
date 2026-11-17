@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { atlasArt } from "../assets/atlas";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import UpgradeCard from "../components/UpgradeCard";
+import ConstellationMap, { MapLegend, type MapFocus } from "../components/ConstellationMap";
+import NextSteps from "../components/NextSteps";
+import ItemIcon from "../components/ItemIcon";
 import { AtlasStarIcon, QuillIcon, SigilIcon, SwordIcon } from "../components/icons";
 import type { Archive } from "../state/useArchive";
+import { usePassiveIcons } from "../state/usePassiveIcons";
+import { usePassiveTree } from "../state/usePassiveTree";
 import type { EngineBuild, EngineStats } from "../types/Engine";
 import { changeTone, formatNumber, formatSignedPercent } from "../utils/format";
 import { ChipGroup, ErrorNote, MetalMeter } from "../components/ui";
@@ -147,9 +151,19 @@ function CompareTable({ you, guide }: { you: EngineBuild; guide: EngineBuild }) 
   );
 }
 
+const NEXT_LIMIT = 8;
+
 function PassivesPanel({ archive }: { archive: Archive }) {
   const passives = archive.result?.passives;
+  const yourClass = archive.result?.character?.character.class;
+  const guideClass = archive.result?.guide?.character.class;
+  // Without a character the guide's own class start anchors the map.
+  const hasCharacter = Boolean(archive.result?.character);
+  const tree = usePassiveTree(passives, yourClass ?? guideClass);
+  const passiveIcons = usePassiveIcons(tree.iconKeys, archive.clientLog || null);
+  const [focus, setFocus] = useState<MapFocus | null>(null);
   if (!passives) return null;
+
   const ascendancy = passives.missing.filter((n) => n.ascendancy);
   const keystones = passives.missing.filter((n) => !n.ascendancy && n.type === "Keystone");
   const notables = passives.missing.filter((n) => !n.ascendancy && n.type === "Notable");
@@ -160,38 +174,89 @@ function PassivesPanel({ archive }: { archive: Archive }) {
       <div>
         <h4 className="font-display text-[13px] tracking-[0.2em] text-parchment-dim">{title}</h4>
         <ul className="mt-1 flex flex-wrap gap-2">
-          {nodes.map((node) => (
-            <li key={`${title}-${node.name}`} className={`border border-gold-dim/40 bg-black/50 px-3 py-1 text-[16px] ${tone}`}>
-              {node.name}
-            </li>
-          ))}
+          {nodes.map((node) => {
+            // Passives on the map can be found on it; ascendancy passives are not drawn.
+            const onMap = node.id !== undefined && tree.graph?.byId.has(node.id);
+            const chip = `border border-gold-dim/40 bg-black/50 px-3 py-1 text-[16px] ${tone}`;
+            return (
+              <li key={`${title}-${node.id ?? node.name}`}>
+                {onMap ? (
+                  <button
+                    type="button"
+                    title="Show on the tree"
+                    onClick={() => node.id !== undefined && setFocus({ id: node.id })}
+                    className={`${chip} hover:border-gold hover:text-gold`}
+                  >
+                    {node.name}
+                  </button>
+                ) : (
+                  <span className={`block ${chip}`}>{node.name}</span>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
     );
 
   return (
     <AtlasFrame>
-      {/* The star atlas sits behind the tree summary, faded into the panel. */}
-      <img
-        src={atlasArt.starAtlas}
-        alt=""
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-45 [mask-image:linear-gradient(to_bottom,black_30%,transparent_100%)]"
-      />
-      <div className="relative">
-        <AtlasSectionHeader title="Passive Tree" icon={<AtlasStarIcon className="h-7 w-7" />} />
+      <AtlasSectionHeader title="Passive Tree" icon={<AtlasStarIcon className="h-7 w-7" />} />
+      {hasCharacter ? (
+        <>
+          <p className="text-[19px] text-parchment">
+            You have taken <span className="text-gold">{passives.shared}</span> of the guide's{" "}
+            <span className="text-gold">{passives.guidePoints}</span> points for this stage
+            {passives.extra > 0 ? `, plus ${passives.extra} the guide does not use` : ""}.
+          </p>
+          <MetalMeter
+            label="Guide passive points taken"
+            value={passives.shared}
+            max={passives.guidePoints}
+            className="mt-3 max-w-xl"
+          />
+        </>
+      ) : (
         <p className="text-[19px] text-parchment">
-          You have taken <span className="text-gold">{passives.shared}</span> of the guide's{" "}
-          <span className="text-gold">{passives.guidePoints}</span> points for this stage
-          {passives.extra > 0 ? `, plus ${passives.extra} the guide does not use` : ""}.
+          The guide takes <span className="text-gold">{passives.guidePoints}</span> points at this stage. Connect your
+          character on the Character page to see which ones you already have.
         </p>
-        <MetalMeter
-          label="Guide passive points taken"
-          value={passives.shared}
-          max={passives.guidePoints}
-          className="mt-3 max-w-xl"
-        />
+      )}
+      {yourClass && guideClass && yourClass !== guideClass && (
+        <ErrorNote className="mt-4">
+          This guide is for a {guideClass} and your character is a {yourClass}. Each class starts in a different part
+          of the tree, so the guide's passives are far from yours. Load a {yourClass} guide to follow it.
+        </ErrorNote>
+      )}
 
-        <div className="mt-6 flex flex-col gap-4">
+      {tree.loadError && <ErrorNote className="mt-4">{tree.loadError}</ErrorNote>}
+      {tree.graph && passives.guideNodes && (
+        <div className="mt-5">
+          <ConstellationMap
+            graph={tree.graph}
+            guide={tree.guide}
+            owned={tree.owned}
+            starts={tree.starts}
+            picks={tree.picks}
+            focus={focus}
+            icons={passiveIcons.icons}
+            label="Your passive tree compared with the guide's"
+          />
+          <MapLegend icons={Object.keys(passiveIcons.icons).length > 0} />
+          <p className="mt-2 text-[14px] text-parchment-faint">
+            Passive tree {tree.graph.tree.version}. Ascendancy passives are listed below.
+            {passiveIcons.note && ` ${passiveIcons.note}`}
+          </p>
+        </div>
+      )}
+
+      <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+        {tree.progress && tree.progress.next.length > 0 && (
+          <div>
+            <NextSteps steps={tree.progress.next} limit={NEXT_LIMIT} onFocus={(id) => setFocus({ id })} />
+          </div>
+        )}
+        <div className="flex flex-col gap-4">
           {group("ASCENDANCY", ascendancy, "text-[#f2d27a]")}
           {group("KEYSTONES", keystones, "text-[#f2d27a]")}
           {group("NOTABLES", notables, "text-parchment")}
@@ -269,8 +334,10 @@ function GuidePage({ archive }: { archive: Archive }) {
                     <AtlasSectionHeader title="Then" icon={<QuillIcon className="h-6 w-6" />} />
                     <ol className="flex flex-col divide-y divide-gold-dim/20">
                       {upgrades.slice(1, 8).map((upgrade) => (
-                        <li key={upgrade.slot} className="flex flex-wrap items-baseline justify-between gap-x-4 py-3">
-                          <span>
+                        <li key={upgrade.slot} className="flex flex-wrap items-center justify-between gap-x-4 py-3">
+                          <span className="flex items-center gap-3">
+                            <ItemIcon src={upgrade.item.icon} className="h-12 w-12 shrink-0" />
+                            <span>
                             <span className="font-display text-[13px] tracking-[0.16em] text-parchment-dim">
                               {upgrade.slot.toUpperCase()}
                             </span>
@@ -278,6 +345,7 @@ function GuidePage({ archive }: { archive: Archive }) {
                             {upgrade.current && (
                               <span className="block text-[15px] text-parchment-faint">instead of {upgrade.current}</span>
                             )}
+                            </span>
                           </span>
                           <span className="font-display text-[17px]">
                             <Signed value={upgrade.dpsChange} /> <span className="text-[13px] text-parchment-dim">DPS</span>{" "}
@@ -290,9 +358,10 @@ function GuidePage({ archive }: { archive: Archive }) {
                 </div>
               )}
 
-              <PassivesPanel archive={archive} />
             </>
           )}
+
+          <PassivesPanel archive={archive} />
 
           <GemsPanel you={comparing ? you : undefined} guide={guide} />
         </>

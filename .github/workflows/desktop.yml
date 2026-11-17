@@ -1,10 +1,17 @@
 name: Desktop app (Windows portable)
 
 # Runs only on demand (Actions tab → Run workflow) or when a version tag is pushed.
+# It builds the single-file Windows app and keeps it as a workflow artifact
+# (with the version's release notes, for a tag); the release itself is published
+# by hand from that file. After a successful build, artifacts of earlier runs
+# are deleted so they do not fill the account's Actions storage.
 on:
   workflow_dispatch:
   push:
     tags: ["v*"]
+
+permissions:
+  contents: read
 
 jobs:
   windows-portable:
@@ -32,33 +39,8 @@ jobs:
 
       - name: Prepare calculation engine
         shell: pwsh
-        run: |
-          $lock = Get-Content src-tauri/engine/engine.lock.json | ConvertFrom-Json
-          $work = Join-Path $env:RUNNER_TEMP "engine-src"
-          $engine = Resolve-Path src-tauri/engine
-
-          # Path of Building Community, without images (the headless engine never draws).
-          $env:GIT_LFS_SKIP_SMUDGE = "1"
-          git clone -q --depth 1 --branch $lock.pathOfBuilding.tag $lock.pathOfBuilding.repository "$work/pob"
-          New-Item -ItemType Directory -Force -Path "$engine/pob/runtime" | Out-Null
-          robocopy "$work/pob/src" "$engine/pob/src" /E /XF *.png *.jpg *.webp /NFL /NDL /NJH /NJS
-          if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
-          Copy-Item -Recurse "$work/pob/runtime/lua" "$engine/pob/runtime/lua"
-          Copy-Item "$work/pob/LICENSE.md" "$engine/pob/LICENSE.md"
-
-          # LuaJIT at the pinned commit.
-          git clone -q $lock.luajit.repository "$work/luajit"
-          git -C "$work/luajit" checkout -q $lock.luajit.commit
-          Push-Location "$work/luajit/src"
-          cmd /c msvcbuild.bat
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Copy-Item luajit.exe, lua51.dll $engine
-          Pop-Location
-
-          # lua-utf8 C module.
-          git clone -q --depth 1 --branch $lock.luautf8.tag $lock.luautf8.repository "$work/luautf8"
-          cl /nologo /O2 /LD /I "$work/luajit/src" "$work/luautf8/lutf8lib.c" "$work/luajit/src/lua51.lib" /Fe:"$engine/lua-utf8.dll"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        # The work dir is kept so the smoke test can read PoB's test builds from it.
+        run: ./scripts/setup-engine.ps1 -WorkDir (Join-Path $env:RUNNER_TEMP "engine-src")
 
       - name: Smoke-test the engine
         shell: pwsh
@@ -66,7 +48,8 @@ jobs:
         run: |
           $env:LUA_PATH = "../runtime/lua/?.lua;../runtime/lua/?/init.lua;./?.lua"
           $env:LUA_CPATH = "../../?.dll"
-          $xml = Get-Content -Raw "$env:RUNNER_TEMP/engine-src/pob/spec/TestBuilds/3.13/OccVortex.xml"
+          # ReadAllText gives a plain string; Get-Content adds properties that ConvertTo-Json can serialize.
+          $xml = [IO.File]::ReadAllText("$env:RUNNER_TEMP/engine-src/pob/spec/TestBuilds/3.13/OccVortex.xml")
           @{ kind = "build"; xml = $xml } | ConvertTo-Json -Compress | Set-Content -Encoding utf8 "$env:RUNNER_TEMP/smoke.json"
           $out = ../../luajit.exe ../../pobh_engine.lua "$env:RUNNER_TEMP/smoke.json"
           if (-not ($out -match "@@POBH_RESULT@@")) { Write-Output $out; exit 1 }
@@ -74,20 +57,46 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build desktop app
-        run: npx tauri build
-
-      - name: Assemble portable folder
+      - name: Build the single-file app
         shell: pwsh
         run: |
-          $out = "portable/PathOfBuildingForHumans"
-          New-Item -ItemType Directory -Force -Path "$out/engine" | Out-Null
-          Copy-Item "src-tauri/target/release/path-of-building-for-humans.exe" "$out/PathOfBuildingForHumans.exe"
-          Copy-Item src-tauri/engine/pobh_engine.lua, src-tauri/engine/luajit.exe, src-tauri/engine/lua51.dll, src-tauri/engine/lua-utf8.dll "$out/engine"
-          Copy-Item -Recurse src-tauri/engine/pob "$out/engine/pob"
+          $name = if ($env:GITHUB_REF_TYPE -eq "tag") { "PathOfBuildingForHumans-$env:GITHUB_REF_NAME-windows.exe" } else { "PathOfBuildingForHumans-windows.exe" }
+          ./scripts/build-portable.ps1 -OutFile "portable/$name"
+
+      - name: Release notes
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        run: |
+          # This version's section of CHANGELOG.md ("## v0.3.0" up to the next "## "), ready to paste in the release.
+          $changelog = [IO.File]::ReadAllText((Resolve-Path ../../CHANGELOG.md)) -replace "`r`n", "`n"
+          $section = [regex]::Match($changelog, "(?ms)^## $([regex]::Escape($env:GITHUB_REF_NAME))\s*\n(.*?)(?=^## |\z)")
+          if (-not $section.Success) { throw "CHANGELOG.md has no section for $env:GITHUB_REF_NAME." }
+          [IO.File]::WriteAllText((Join-Path (Resolve-Path portable) "release-notes-$env:GITHUB_REF_NAME.md"), $section.Groups[1].Value.Trim())
 
       - uses: actions/upload-artifact@v4
         with:
-          name: PathOfBuildingForHumans-windows-portable
-          path: frontend/frontend/portable/PathOfBuildingForHumans
+          name: PathOfBuildingForHumans-${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}-windows
+          path: |
+            frontend/frontend/portable/*.exe
+            frontend/frontend/portable/*.md
+          retention-days: 7
           if-no-files-found: error
+
+  clean-up:
+    # Only after a successful build, so a failed run never removes the last good app.
+    needs: windows-portable
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Delete artifacts of earlier runs
+        run: |
+          gh api --paginate "repos/$GH_REPO/actions/artifacts?per_page=100" \
+            --jq ".artifacts[] | select(.workflow_run.id != $GITHUB_RUN_ID) | .id" |
+          while read -r id; do
+            gh api -X DELETE "repos/$GH_REPO/actions/artifacts/$id"
+            echo "Deleted artifact $id"
+          done

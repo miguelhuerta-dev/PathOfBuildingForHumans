@@ -5,6 +5,8 @@ export interface EngineItem {
   name: string;
   base?: string;
   rarity?: string;
+  /** Official icon URL (web.poecdn.com); only present for the character's own items. */
+  icon?: string;
   implicits: string[];
   explicits: string[];
 }
@@ -74,6 +76,7 @@ export interface Upgrade {
   slot: string;
   item: Omit<EngineItem, "slot">;
   current?: string;
+  currentIcon?: string;
   dps: number;
   ehp: number;
   dpsChange: number;
@@ -85,6 +88,7 @@ export interface Upgrade {
 }
 
 export interface PassiveNode {
+  id?: number;
   name: string;
   type: "Notable" | "Keystone" | "Mastery" | "Normal" | string;
   ascendancy?: boolean;
@@ -97,6 +101,12 @@ export interface PassiveComparison {
   shared: number;
   extra: number;
   missing: PassiveNode[];
+  /** Allocated node ids of each tree, for the passive tree map. */
+  guideNodes?: number[];
+  characterNodes?: number[];
+  /** Chosen mastery effect id by mastery node id. */
+  guideMasteries?: Record<string, number>;
+  characterMasteries?: Record<string, number>;
 }
 
 /** What `load_character`, `load_guide` and `select_guide_stage` return. */

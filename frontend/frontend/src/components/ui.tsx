@@ -61,7 +61,7 @@ export function MetalMeter({ label, value, max, className = "" }: MetalMeterProp
       aria-valuemin={0}
       aria-valuemax={max}
     >
-      <div className="metal-bar h-full shadow-[0_0_10px_rgba(230,180,90,0.45)]" style={{ width: `${percent}%` }} />
+      <div className="metal-bar meter-fill h-full shadow-[0_0_10px_rgba(230,180,90,0.45)]" style={{ width: `${percent}%` }} />
     </div>
   );
 }

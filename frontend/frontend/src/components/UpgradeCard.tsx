@@ -1,16 +1,11 @@
 import { atlasArt } from "../assets/atlas";
 import type { Upgrade } from "../types/Engine";
 import { changeTone, formatSignedPercent } from "../utils/format";
+import { rarityStyle } from "../utils/rarity";
 import AtlasFrame from "./AtlasFrame";
+import ItemIcon from "./ItemIcon";
+import { officialIcon } from "../config/features";
 import { AtlasStarIcon } from "./icons";
-
-const rarityStyles: Record<string, { label: string; title: string }> = {
-  NORMAL: { label: "NORMAL ITEM", title: "text-parchment" },
-  MAGIC: { label: "MAGIC ITEM", title: "text-[#8fa8ff]" },
-  RARE: { label: "RARE ITEM", title: "text-[#f2d27a]" },
-  UNIQUE: { label: "UNIQUE ITEM", title: "text-[#e08a3c]" },
-  RELIC: { label: "RELIC ITEM", title: "text-[#8fe0a0]" },
-};
 
 
 interface UpgradeCardProps {
@@ -20,7 +15,7 @@ interface UpgradeCardProps {
 
 /** The guide's item for one slot, with the measured effect of equipping it. */
 function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
-  const style = rarityStyles[(upgrade.item.rarity ?? "RARE").toUpperCase()] ?? rarityStyles.RARE;
+  const style = rarityStyle(upgrade.item.rarity);
   const isRing = upgrade.slot.startsWith("Ring");
   const mods = [...upgrade.item.implicits, ...upgrade.item.explicits].slice(0, 6);
 
@@ -29,7 +24,7 @@ function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
       <p className="font-display text-[13px] tracking-[0.3em] text-parchment-dim">
         {style.label} · {upgrade.slot.toUpperCase()}
       </p>
-      <h3 className={`engraved font-display text-[26px] font-semibold tracking-[0.04em] ${style.title}`}>
+      <h3 className={`engraved font-display text-[26px] font-semibold tracking-[0.04em] ${style.tone}`}>
         {upgrade.item.name.toUpperCase()}
       </h3>
       {upgrade.item.base && upgrade.item.base !== upgrade.item.name && (
@@ -42,7 +37,11 @@ function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
 
       <div className="relative mx-auto mt-5 h-36 w-36">
         <div className="absolute inset-[18%] bg-[radial-gradient(circle,rgba(220,170,90,0.25),transparent_70%)]" />
-        {isRing ? (
+        {officialIcon(upgrade.item.icon) ? (
+          <div className="absolute inset-[18%] flex items-center justify-center overflow-hidden">
+            <ItemIcon src={upgrade.item.icon} className="h-auto max-h-full w-auto max-w-full" />
+          </div>
+        ) : isRing ? (
           <img
             src={atlasArt.itemRareRing}
             alt=""
@@ -73,8 +72,11 @@ function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
         </p>
       </div>
 
-      <p className="mt-3 text-[16px] text-parchment-faint">
-        Replaces {upgrade.current ? <span className="text-parchment-dim">{upgrade.current}</span> : "an empty slot"}
+      <p className="mt-3 flex items-center justify-center gap-2 text-[16px] text-parchment-faint">
+        {upgrade.current && <ItemIcon src={upgrade.currentIcon} className="h-10 w-10" />}
+        <span>
+          Replaces {upgrade.current ? <span className="text-parchment-dim">{upgrade.current}</span> : "an empty slot"}
+        </span>
       </p>
 
       {onViewDetails && (

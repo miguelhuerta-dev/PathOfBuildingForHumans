@@ -57,7 +57,7 @@ pub fn raw_url(input: &str) -> Option<String> {
 /// Accepts a code or a share link and returns the build XML.
 pub async fn resolve(input: &str) -> Result<String, String> {
     let code = if let Some(url) = raw_url(input) {
-        reqwest::Client::new()
+        crate::http::client()
             .get(&url)
             .send()
             .await
@@ -100,9 +100,18 @@ mod tests {
 
     #[test]
     fn maps_share_links() {
-        assert_eq!(raw_url("https://pobb.in/AbC123").as_deref(), Some("https://pobb.in/AbC123/raw"));
-        assert_eq!(raw_url("https://pastebin.com/xyz").as_deref(), Some("https://pastebin.com/raw/xyz"));
-        assert_eq!(raw_url("https://pastebin.com/raw/xyz").as_deref(), Some("https://pastebin.com/raw/xyz"));
+        assert_eq!(
+            raw_url("https://pobb.in/AbC123").as_deref(),
+            Some("https://pobb.in/AbC123/raw")
+        );
+        assert_eq!(
+            raw_url("https://pastebin.com/xyz").as_deref(),
+            Some("https://pastebin.com/raw/xyz")
+        );
+        assert_eq!(
+            raw_url("https://pastebin.com/raw/xyz").as_deref(),
+            Some("https://pastebin.com/raw/xyz")
+        );
         assert_eq!(raw_url("eNrtWl"), None);
     }
 }

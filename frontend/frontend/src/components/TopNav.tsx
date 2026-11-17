@@ -18,7 +18,7 @@ interface NavProps {
 }
 
 const linkClass =
-  "engraved font-display text-[15px] font-semibold tracking-[0.18em] text-[#dccca6] transition-colors hover:text-gold focus-visible:text-gold";
+  "engraved font-display text-[15px] font-semibold tracking-[0.18em] text-[#cfc6b8] transition-colors hover:text-gold focus-visible:text-gold";
 
 /** Collapsed navigation for narrow windows, styled as a framed parchment list. */
 function NavMenu({ page, onNavigate }: NavProps) {
@@ -92,7 +92,7 @@ function NavMenu({ page, onNavigate }: NavProps) {
  */
 function TopNav({ page, onNavigate }: NavProps) {
   return (
-    <header data-tauri-drag-region className="nav-plate relative z-20 -mx-4 -mt-2 select-none px-5 py-2.5">
+    <header data-tauri-drag-region className="nav-plate relative z-20 select-none px-5 py-2.5">
       <div data-tauri-drag-region className="flex items-center justify-between gap-6">
         <button
           type="button"
@@ -110,7 +110,7 @@ function TopNav({ page, onNavigate }: NavProps) {
                 type="button"
                 aria-current={page === link.page ? "page" : undefined}
                 onClick={() => onNavigate(link.page)}
-                className={`${linkClass} border-b pb-0.5 ${page === link.page ? "border-gold text-gold" : "border-transparent"}`}
+                className={`${linkClass} border-b-2 pb-0.5 ${page === link.page ? "border-[#8a2219] text-gold" : "border-transparent"}`}
               >
                 {link.label.toUpperCase()}
               </button>

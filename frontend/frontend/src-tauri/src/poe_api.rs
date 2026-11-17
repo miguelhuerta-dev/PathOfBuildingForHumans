@@ -7,19 +7,6 @@
 use serde_json::{json, Map, Value};
 
 const BASE: &str = "https://www.pathofexile.com/character-window";
-const USER_AGENT: &str = concat!(
-    "PathOfBuildingForHumans/",
-    env!("CARGO_PKG_VERSION"),
-    " (+https://github.com/miguelhuerta-dev/PathOfBuildingForHumans)"
-);
-
-fn client() -> Result<reqwest::Client, String> {
-    reqwest::Client::builder()
-        .user_agent(USER_AGENT)
-        .timeout(std::time::Duration::from_secs(20))
-        .build()
-        .map_err(|e| format!("Could not start the HTTP client: {e}"))
-}
 
 /// Percent-encodes a query value (account names contain `#`, character names may contain spaces).
 pub fn encode(value: &str) -> String {
@@ -34,7 +21,7 @@ pub fn encode(value: &str) -> String {
 }
 
 async fn get_json(url: &str) -> Result<Value, String> {
-    let response = client()?
+    let response = crate::http::client()
         .get(url)
         .send()
         .await
@@ -42,7 +29,9 @@ async fn get_json(url: &str) -> Result<Value, String> {
 
     let status = response.status();
     if status.as_u16() == 403 {
-        return Err("This profile is private. In your pathofexile.com privacy settings, make the Characters tab public.".into());
+        return Err(
+            "This profile is private. In your pathofexile.com privacy settings, make the Characters tab public.".into(),
+        );
     }
     if status.as_u16() == 404 {
         return Err("Account or character not found. Check the account name, including the #1234 at the end.".into());
@@ -54,7 +43,10 @@ async fn get_json(url: &str) -> Result<Value, String> {
         return Err(format!("pathofexile.com answered with error {status}."));
     }
 
-    let body = response.text().await.map_err(|e| format!("Could not read the response: {e}"))?;
+    let body = response
+        .text()
+        .await
+        .map_err(|e| format!("Could not read the response: {e}"))?;
     if body.trim() == "false" {
         return Err("This profile is private or the character does not exist.".into());
     }
@@ -100,11 +92,17 @@ pub fn merge_character(items: Value, passives: Value) -> Value {
         .cloned()
         .unwrap_or_default();
 
-    merged.insert("equipment".into(), items.get("items").cloned().unwrap_or_else(|| json!([])));
+    merged.insert(
+        "equipment".into(),
+        items.get("items").cloned().unwrap_or_else(|| json!([])),
+    );
     if let Some(guardian) = items.get("guardian") {
         merged.insert("guardian".into(), guardian.clone());
     }
-    merged.insert("jewels".into(), passives.get("items").cloned().unwrap_or_else(|| json!([])));
+    merged.insert(
+        "jewels".into(),
+        passives.get("items").cloned().unwrap_or_else(|| json!([])),
+    );
     merged.insert("passives".into(), passives);
     Value::Object(merged)
 }
