@@ -102,8 +102,14 @@ local function stageNumbers(title)
 	return numbers
 end
 
+-- Path of Building colour codes ("^7", "^xFF8800") are for its own UI; the app shows plain text.
+local function plainText(text)
+	if type(text) ~= "string" then return text end
+	return (text:gsub("%^x%x%x%x%x%x%x", ""):gsub("%^%d", ""))
+end
+
 local function cleanTitle(title)
-	return ((title or ""):gsub("%s*{[%d,%s]*}%s*$", ""))
+	return (plainText(title or ""):gsub("%s*{[%d,%s]*}%s*$", ""))
 end
 
 local function matchingSetId(orderList, sets, wanted)
@@ -325,7 +331,7 @@ local function summarize(extra, icons)
 			}
 		end
 		skills[#skills + 1] = {
-			label = group.displayLabel or group.label,
+			label = plainText(group.displayLabel or group.label),
 			slot = group.slot,
 			main = index == build.mainSocketGroup,
 			gems = gems,
@@ -348,7 +354,7 @@ local function summarize(extra, icons)
 			class = build.spec and build.spec.curClassName or nil,
 			ascendancy = build.spec and build.spec.curAscendClassName or nil,
 			level = build.characterLevel,
-			mainSkill = mainGroup and mainGroup.displayLabel or nil,
+			mainSkill = mainGroup and plainText(mainGroup.displayLabel) or nil,
 		},
 		keystones = keystones,
 		stats = stats,
