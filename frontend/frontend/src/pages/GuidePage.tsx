@@ -157,7 +157,9 @@ function PassivesPanel({ archive }: { archive: Archive }) {
   const passives = archive.result?.passives;
   const yourClass = archive.result?.character?.character.class;
   const guideClass = archive.result?.guide?.character.class;
-  const tree = usePassiveTree(passives, yourClass);
+  // Without a character the guide's own class start anchors the map.
+  const hasCharacter = Boolean(archive.result?.character);
+  const tree = usePassiveTree(passives, yourClass ?? guideClass);
   const passiveIcons = usePassiveIcons(tree.iconKeys, archive.clientLog || null);
   const [focus, setFocus] = useState<MapFocus | null>(null);
   if (!passives) return null;
@@ -200,17 +202,26 @@ function PassivesPanel({ archive }: { archive: Archive }) {
   return (
     <AtlasFrame>
       <AtlasSectionHeader title="Passive Tree" icon={<AtlasStarIcon className="h-7 w-7" />} />
-      <p className="text-[19px] text-parchment">
-        You have taken <span className="text-gold">{passives.shared}</span> of the guide's{" "}
-        <span className="text-gold">{passives.guidePoints}</span> points for this stage
-        {passives.extra > 0 ? `, plus ${passives.extra} the guide does not use` : ""}.
-      </p>
-      <MetalMeter
-        label="Guide passive points taken"
-        value={passives.shared}
-        max={passives.guidePoints}
-        className="mt-3 max-w-xl"
-      />
+      {hasCharacter ? (
+        <>
+          <p className="text-[19px] text-parchment">
+            You have taken <span className="text-gold">{passives.shared}</span> of the guide's{" "}
+            <span className="text-gold">{passives.guidePoints}</span> points for this stage
+            {passives.extra > 0 ? `, plus ${passives.extra} the guide does not use` : ""}.
+          </p>
+          <MetalMeter
+            label="Guide passive points taken"
+            value={passives.shared}
+            max={passives.guidePoints}
+            className="mt-3 max-w-xl"
+          />
+        </>
+      ) : (
+        <p className="text-[19px] text-parchment">
+          The guide takes <span className="text-gold">{passives.guidePoints}</span> points at this stage. Connect your
+          character on the Character page to see which ones you already have.
+        </p>
+      )}
       {yourClass && guideClass && yourClass !== guideClass && (
         <ErrorNote className="mt-4">
           This guide is for a {guideClass} and your character is a {yourClass}. Each class starts in a different part
@@ -347,9 +358,10 @@ function GuidePage({ archive }: { archive: Archive }) {
                 </div>
               )}
 
-              <PassivesPanel archive={archive} />
             </>
           )}
+
+          <PassivesPanel archive={archive} />
 
           <GemsPanel you={comparing ? you : undefined} guide={guide} />
         </>

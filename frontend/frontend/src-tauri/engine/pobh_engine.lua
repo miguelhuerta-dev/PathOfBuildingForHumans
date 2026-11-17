@@ -509,6 +509,12 @@ elseif request.kind == "build" then
 	local stages = loadGuide(request.xml, request.name, request.stage, nil)
 	result = summarize()
 	result.stages = stages
+	-- The guide's tree on its own, so it can be drawn before a character is connected.
+	local guideNodes = allocatedPassives()
+	local passives = comparePassives(guideNodes, {})
+	passives.guideNodes, passives.guideMasteries = treeSnapshot(guideNodes)
+	passives.characterNodes, passives.characterMasteries = {}, setmetatable({}, { __jsontype = "object" })
+	result.passives = passives
 elseif request.kind == "compare" then
 	local level = request.character and request.character.level
 	local stages = loadGuide(request.xml, request.name, request.stage, level)

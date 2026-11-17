@@ -80,7 +80,12 @@ async fn evaluate_guide(app: &tauri::AppHandle, session: &Session) -> Result<Val
     let character = session.character.lock().unwrap().clone();
     let result = match character {
         Some(raw) => run_engine(json!({ "kind": "compare", "character": raw, "xml": xml, "stage": stage })).await?,
-        None => json!({ "guide": run_engine(json!({ "kind": "build", "xml": xml, "stage": stage })).await? }),
+        None => {
+            // The guide's own tree comes with it; it sits beside the guide like a comparison's.
+            let mut guide = run_engine(json!({ "kind": "build", "xml": xml, "stage": stage })).await?;
+            let passives = guide.as_object_mut().and_then(|fields| fields.remove("passives"));
+            json!({ "guide": guide, "passives": passives })
+        }
     };
     Ok(with_item_icons(app, result).await)
 }
