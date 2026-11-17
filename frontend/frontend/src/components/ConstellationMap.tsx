@@ -122,18 +122,34 @@ const Edges = memo(function Edges({ graph, guide, owned, starts }: LayerProps) {
         const lit = isTaken(sa) && isTaken(sb);
         const planned = !lit && sa !== "idle" && sb !== "idle";
         const wormhole = from.kind === "wormhole" && to.kind === "wormhole";
+        const colour = lit ? "#d9b36c" : planned ? "#86d6b4" : "#8c7f68";
         return (
-          <line
-            key={`${a}-${b}`}
-            x1={from.x}
-            y1={from.y}
-            x2={to.x}
-            y2={to.y}
-            stroke={lit ? "#d9b36c" : planned ? "#86d6b4" : "#8c7f68"}
-            strokeOpacity={lit ? 0.9 : planned ? 0.6 : 0.38}
-            strokeWidth={lit ? 16 : 9}
-            strokeDasharray={planned || wormhole ? "40 30" : undefined}
-          />
+          <g key={`${a}-${b}`}>
+            <line
+              x1={from.x}
+              y1={from.y}
+              x2={to.x}
+              y2={to.y}
+              stroke={colour}
+              // With a plan on the map, the rest of the tree steps back.
+              strokeOpacity={lit ? 0.9 : planned ? 0.75 : guide.size > 0 ? 0.22 : 0.38}
+              strokeWidth={lit ? 16 : 9}
+              strokeDasharray={planned || wormhole ? "40 30" : undefined}
+            />
+            {/* The path also keeps a minimum width on screen, so it stays readable when zoomed out. */}
+            {(lit || planned) && (
+              <line
+                x1={from.x}
+                y1={from.y}
+                x2={to.x}
+                y2={to.y}
+                stroke={colour}
+                strokeOpacity={0.85}
+                strokeWidth={lit ? 2.5 : 2}
+                vectorEffect="non-scaling-stroke"
+              />
+            )}
+          </g>
         );
       })}
     </g>
@@ -162,12 +178,13 @@ const Nodes = memo(function Nodes({
           <g
             key={node.id}
             data-id={node.id}
-            opacity={style.opacity}
+            opacity={state === "idle" && guide.size > 0 ? 0.45 : style.opacity}
             className={clickable && node.kind !== "root" ? "cursor-pointer" : undefined}
           >
             {/* Generous invisible hit area: small passives are only a few pixels wide when zoomed out. */}
             <circle cx={node.x} cy={node.y} r={Math.max(r * 1.8, HIT_RADIUS)} fill="transparent" />
             {state === "owned" && <circle cx={node.x} cy={node.y} r={r * 1.9} fill="url(#constellation-glow)" />}
+            {state === "target" && <circle cx={node.x} cy={node.y} r={r * 2} fill="url(#constellation-plan)" />}
             {iconId ? (
               <>
                 <circle cx={node.x} cy={node.y} r={r} fill="#0b0907" />
@@ -182,9 +199,25 @@ const Nodes = memo(function Nodes({
                   stroke={style.stroke}
                   strokeWidth={isTaken(state) ? strokeWidth * 1.5 : strokeWidth}
                 />
+                {state !== "idle" && (
+                  <circle
+                    cx={node.x}
+                    cy={node.y}
+                    r={r}
+                    fill="none"
+                    stroke={style.stroke}
+                    strokeWidth={2}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                )}
               </>
             ) : (
-              <circle cx={node.x} cy={node.y} r={r} fill={style.fill} stroke={style.stroke} strokeWidth={strokeWidth} />
+              <>
+                <circle cx={node.x} cy={node.y} r={r} fill={style.fill} stroke={style.stroke} strokeWidth={strokeWidth} />
+                {state !== "idle" && (
+                  <circle cx={node.x} cy={node.y} r={r} fill={style.fill} stroke={style.stroke} strokeWidth={2} vectorEffect="non-scaling-stroke" />
+                )}
+              </>
             )}
             {ring && (
               <circle cx={node.x} cy={node.y} r={r * 1.35} fill="none" stroke={style.stroke} strokeWidth={8} />
@@ -251,13 +284,10 @@ function openingView(graph: TreeGraph, whole: ViewBox, focusIds: Iterable<number
   const xs = nodes.map((node) => node.x);
   const ys = nodes.map((node) => node.y);
   const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-  const aspect = whole.w / whole.h;
-  // Wide enough for every node, never closer than the readable opening scale, never wider than the tree.
-  const w = Math.min(
-    whole.w,
-    Math.max(OPENING_WIDTH, maxX - minX + OPENING_MARGIN * 2, (maxY - minY + OPENING_MARGIN * 2) * aspect),
-  );
-  const h = w / aspect;
+  // Just the box around those nodes: the SVG fits it into the map whatever the map's shape, so a
+  // wide route fills a wide map. Never closer than the readable opening scale, never wider than the tree.
+  const w = Math.min(whole.w, Math.max(OPENING_WIDTH, maxX - minX + OPENING_MARGIN * 2));
+  const h = Math.min(whole.h, Math.max(OPENING_WIDTH / 2, maxY - minY + OPENING_MARGIN * 2));
   return { x: (minX + maxX) / 2 - w / 2, y: (minY + maxY) / 2 - h / 2, w, h };
 }
 
@@ -440,6 +470,10 @@ function ConstellationMap({
           <radialGradient id="constellation-glow">
             <stop offset="0%" stopColor="#f2dfa8" stopOpacity={0.55} />
             <stop offset="100%" stopColor="#f2dfa8" stopOpacity={0} />
+          </radialGradient>
+          <radialGradient id="constellation-plan">
+            <stop offset="0%" stopColor="#86d6b4" stopOpacity={0.45} />
+            <stop offset="100%" stopColor="#86d6b4" stopOpacity={0} />
           </radialGradient>
           <IconSymbols icons={icons} ids={iconIds} />
         </defs>
