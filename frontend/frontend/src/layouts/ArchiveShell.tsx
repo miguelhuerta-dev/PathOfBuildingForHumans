@@ -3,6 +3,30 @@ import AtlasBackground from "../components/AtlasBackground";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasScene from "../components/AtlasScene";
 import TopNav, { type Page } from "../components/TopNav";
+import { GitHubIcon } from "../components/icons";
+import { desktop, isDesktopApp } from "../lib/desktop";
+
+const PROFILE_URL = "https://github.com/miguelhuerta-dev";
+
+/** The author's GitHub profile. The desktop app opens it in the system browser. */
+function ProfileLink() {
+  return (
+    <a
+      href={PROFILE_URL}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(event) => {
+        if (!isDesktopApp) return;
+        event.preventDefault();
+        void desktop.openProfile();
+      }}
+      className="nav-plate mx-auto mt-6 inline-flex items-center gap-3 border border-gold-dim/60 px-5 py-2.5 font-display text-[13px] tracking-[0.2em] text-parchment-dim transition hover:border-gold hover:text-gold"
+    >
+      <GitHubIcon className="h-5 w-5" />
+      MIGUELHUERTA-DEV
+    </a>
+  );
+}
 
 function Motto({ lines, align }: { lines: string[]; align: "left" | "right" }) {
   return (
@@ -54,6 +78,7 @@ function ArchiveShell({ page, onNavigate, children }: ArchiveShellProps) {
             This product isn't affiliated with or endorsed by Grinding Gear Games in any way. Calculations by
             Path of Building Community.
           </p>
+          <ProfileLink />
         </footer>
       </AtlasFrame>
     </div>

@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import type { EngineItem } from "../types/Engine";
+import { atlasArt } from "../assets/atlas";
 import { rarityStyle } from "../utils/rarity";
 import AtlasFrame from "./AtlasFrame";
 import AtlasSectionHeader from "./AtlasSectionHeader";
@@ -40,36 +41,14 @@ function slotLabel(slot: string): string {
   return slot;
 }
 
-/** A chain of iron links, the divider between the doll and the belt pouches. */
+/** A chain of black iron links, the divider between the doll and the belt pouches. */
 function IronChain() {
-  const LINK = 22;
-  const count = 22;
   return (
-    <svg aria-hidden="true" viewBox={`0 0 ${LINK * count + 12} 24`} className="my-4 h-6 w-full" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <linearGradient id="iron-link-face" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8a817a" />
-          <stop offset="45%" stopColor="#3b3430" />
-          <stop offset="100%" stopColor="#0e0b0a" />
-        </linearGradient>
-        <linearGradient id="iron-link-edge" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4a423d" />
-          <stop offset="100%" stopColor="#0b0908" />
-        </linearGradient>
-      </defs>
-      {Array.from({ length: count }, (_, i) => {
-        const x = 6 + i * LINK;
-        // Links alternate: one seen flat (an open oval), the next seen edge-on (a thick bar).
-        return i % 2 === 0 ? (
-          <g key={i}>
-            <rect x={x} y={4} width={LINK + 8} height={16} rx={8} fill="none" stroke="#050404" strokeWidth={5.5} />
-            <rect x={x} y={4} width={LINK + 8} height={16} rx={8} fill="none" stroke="url(#iron-link-face)" strokeWidth={3.5} />
-          </g>
-        ) : (
-          <rect key={i} x={x + 2} y={9.5} width={LINK + 4} height={5} rx={2.5} fill="url(#iron-link-edge)" stroke="#050404" strokeWidth={1} />
-        );
-      })}
-    </svg>
+    <div
+      aria-hidden="true"
+      className="my-4 h-7 w-full bg-repeat-x [filter:saturate(0.15)_brightness(0.85)_drop-shadow(0_3px_3px_rgba(0,0,0,0.9))]"
+      style={{ backgroundImage: `url(${atlasArt.chain})`, backgroundSize: "auto 100%", backgroundPosition: "center" }}
+    />
   );
 }
 

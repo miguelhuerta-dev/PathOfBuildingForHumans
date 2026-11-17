@@ -147,3 +147,29 @@ pub async fn passive_icons(
     .await
     .map_err(|e| format!("Reading the game's icons was interrupted: {e}"))?
 }
+
+/// The author's GitHub profile, linked from the footer.
+const PROFILE_URL: &str = "https://github.com/miguelhuerta-dev";
+
+/// Opens the author's GitHub profile in the system browser. Only this fixed
+/// address can be opened, so the page cannot use it to launch anything else.
+#[tauri::command]
+pub fn open_profile() -> Result<(), String> {
+    let mut command = if cfg!(windows) {
+        let mut command = std::process::Command::new("rundll32");
+        command.args(["url.dll,FileProtocolHandler", PROFILE_URL]);
+        command
+    } else if cfg!(target_os = "macos") {
+        let mut command = std::process::Command::new("open");
+        command.arg(PROFILE_URL);
+        command
+    } else {
+        let mut command = std::process::Command::new("xdg-open");
+        command.arg(PROFILE_URL);
+        command
+    };
+    command
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| format!("Could not open the browser: {e}"))
+}

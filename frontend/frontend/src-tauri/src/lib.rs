@@ -28,6 +28,7 @@ pub fn run() {
             commands::watch_client_log,
             commands::stop_watching_client_log,
             commands::passive_icons,
+            commands::open_profile,
         ])
         .setup(|app| {
             // The portable app unpacks its engine on first launch; start now so

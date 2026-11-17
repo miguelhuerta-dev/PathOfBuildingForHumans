@@ -19,12 +19,12 @@ function AtlasScene() {
         <img
           src={atlasArt.scenePillar}
           alt=""
-          className="absolute -left-48 top-0 h-full w-auto max-w-none brightness-[0.6] xl:-left-44"
+          className="absolute -left-56 top-0 h-full w-auto max-w-none brightness-[0.7] xl:-left-52"
         />
         <img
           src={atlasArt.scenePillar}
           alt=""
-          className="absolute -right-48 top-0 h-full w-auto max-w-none -scale-x-100 brightness-[0.6] xl:-right-44"
+          className="absolute -right-56 top-0 h-full w-auto max-w-none -scale-x-100 brightness-[0.7] xl:-right-52"
         />
         <CandleGlow className="-right-24 top-20 h-96 w-96" />
         <img src={atlasArt.sceneCandles} alt="" className="absolute -right-6 top-44 h-64" />
@@ -33,7 +33,8 @@ function AtlasScene() {
         <img src={atlasArt.sceneCandles} alt="" className="absolute -left-10 top-[52%] h-60 opacity-80" />
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 hidden h-[34rem] lg:block" aria-hidden="true">
+      {/* The desk props sink into the dark: muted so the black iron stays the main material. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 hidden h-[34rem] brightness-[0.55] saturate-[0.6] lg:block" aria-hidden="true">
         <CandleGlow className="-left-20 bottom-24 h-[30rem] w-[30rem]" />
         <img src={atlasArt.sceneBooks} alt="" className="absolute -left-24 -bottom-6 w-[30rem]" />
         <img src={atlasArt.sceneCandles} alt="" className="absolute bottom-[19rem] left-6 h-56" />

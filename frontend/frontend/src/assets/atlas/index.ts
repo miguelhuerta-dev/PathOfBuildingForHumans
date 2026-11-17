@@ -6,10 +6,11 @@ import sceneBooks from "./scene-books.webp";
 import sceneAstrolabe from "./scene-astrolabe.webp";
 import sceneCoins from "./scene-coins.webp";
 import sceneParchmentMap from "./scene-parchment-map.webp";
-import scenePillar from "./scene-pillar.webp";
+import scenePillar from "./scene-pillar-iron.webp";
 import frameItem from "./frame-item.webp";
-import medallion from "./ui-medallion.webp";
-import pendant from "./ui-pendant.webp";
+import medallion from "./ui-medallion-iron.webp";
+import pendant from "./ui-pendant-iron.webp";
+import chain from "./chain-iron.webp";
 
 export const atlasArt = {
   starAtlas,
@@ -25,4 +26,6 @@ export const atlasArt = {
   frameItem,
   medallion,
   pendant,
+  /** A horizontal iron chain, for dividers. */
+  chain,
 };

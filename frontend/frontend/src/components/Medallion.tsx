@@ -8,7 +8,8 @@ interface MedallionProps {
 }
 
 const tones = {
-  gold: "bg-[radial-gradient(circle_at_50%_40%,#3a2a14,#0b0907_75%)] text-gold",
+  // "gold" is the archive's standard medallion: black iron with a pale bone sigil.
+  gold: "bg-[radial-gradient(circle_at_50%_40%,#2a2522,#070606_75%)] text-[#d9cfc1]",
   blood: "bg-[radial-gradient(circle_at_50%_40%,#5a1610,#120403_75%)] text-[#f08a78]",
 };
 

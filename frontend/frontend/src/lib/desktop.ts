@@ -38,6 +38,8 @@ export const desktop = {
       Object.entries(icons).map(([key, source]) => [key, source.startsWith("data:") ? source : convertFileSrc(source)]),
     );
   },
+  /** Opens the author's GitHub profile in the system browser. */
+  openProfile: () => call<void>("open_profile"),
   onZoneEntered: (handler: (zone: string) => void): Promise<UnlistenFn> =>
     listen<string>("zone-entered", (event) => handler(event.payload)),
 };
