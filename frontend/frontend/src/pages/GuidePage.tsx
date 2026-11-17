@@ -155,7 +155,9 @@ const NEXT_LIMIT = 8;
 
 function PassivesPanel({ archive }: { archive: Archive }) {
   const passives = archive.result?.passives;
-  const tree = usePassiveTree(passives, archive.result?.character?.character.class);
+  const yourClass = archive.result?.character?.character.class;
+  const guideClass = archive.result?.guide?.character.class;
+  const tree = usePassiveTree(passives, yourClass);
   const passiveIcons = usePassiveIcons(tree.iconKeys, archive.clientLog || null);
   const [focus, setFocus] = useState<MapFocus | null>(null);
   if (!passives) return null;
@@ -209,6 +211,12 @@ function PassivesPanel({ archive }: { archive: Archive }) {
         max={passives.guidePoints}
         className="mt-3 max-w-xl"
       />
+      {yourClass && guideClass && yourClass !== guideClass && (
+        <ErrorNote className="mt-4">
+          This guide is for a {guideClass} and your character is a {yourClass}. Each class starts in a different part
+          of the tree, so the guide's passives are far from yours. Load a {yourClass} guide to follow it.
+        </ErrorNote>
+      )}
 
       {tree.loadError && <ErrorNote className="mt-4">{tree.loadError}</ErrorNote>}
       {tree.graph && passives.guideNodes && (

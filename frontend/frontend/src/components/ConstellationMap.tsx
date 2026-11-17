@@ -237,13 +237,35 @@ function fitView(graph: TreeGraph): ViewBox {
   return { x: minX - PADDING, y: minY - PADDING, w: maxX - minX + PADDING * 2, h: maxY - minY + PADDING * 2 };
 }
 
-/** Opens on the player's start, at a scale where passives are readable. */
-function openingView(graph: TreeGraph, whole: ViewBox, starts: Starts): ViewBox {
-  const [first] = starts;
-  const centre = first === undefined ? undefined : graph.byId.get(first);
-  if (!centre) return whole;
-  const h = (whole.h / whole.w) * OPENING_WIDTH;
-  return { x: centre.x - OPENING_WIDTH / 2, y: centre.y - h / 2, w: OPENING_WIDTH, h };
+/** Margin in tree units around the passives the opening view frames. */
+const OPENING_MARGIN = 900;
+
+/**
+ * Opens on what matters: the player's start, their passives and the guide's,
+ * all in view. With nothing allocated yet it shows the start at a scale where
+ * passives are readable.
+ */
+function openingView(graph: TreeGraph, whole: ViewBox, focusIds: Iterable<number>): ViewBox {
+  const nodes = [...new Set(focusIds)].flatMap((id) => graph.byId.get(id) ?? []);
+  if (nodes.length === 0) return whole;
+  const xs = nodes.map((node) => node.x);
+  const ys = nodes.map((node) => node.y);
+  const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const aspect = whole.w / whole.h;
+  // Wide enough for every node, never closer than the readable opening scale, never wider than the tree.
+  const w = Math.min(
+    whole.w,
+    Math.max(OPENING_WIDTH, maxX - minX + OPENING_MARGIN * 2, (maxY - minY + OPENING_MARGIN * 2) * aspect),
+  );
+  const h = w / aspect;
+  return { x: (minX + maxX) / 2 - w / 2, y: (minY + maxY) / 2 - h / 2, w, h };
+}
+
+/** Changes when the plan or the starts change, but not when the player takes another passive. */
+function planKey(guide: ReadonlySet<number>, starts: Starts): string {
+  let sum = 0;
+  for (const id of guide) sum += id;
+  return `${[...starts].join()}|${guide.size}|${sum}`;
 }
 
 function choiceText(node: TreeNode, effect: number | undefined): string | undefined {
@@ -270,15 +292,16 @@ function ConstellationMap({
     () => new Map(Object.keys(icons).map((name, index) => [name, `constellation-icon-${index}`])),
     [icons],
   );
-  const [view, setView] = useState<ViewBox>(() => openingView(graph, home, starts));
+  const [view, setView] = useState<ViewBox>(() => openingView(graph, home, [...starts, ...guide, ...owned]));
   const [hover, setHover] = useState<{ node: TreeNode; left: number; top: number } | null>(null);
   const drag = useRef<{ x: number; y: number; view: ViewBox; moved: boolean } | null>(null);
 
-  // A new tree or another class start re-opens the map on the player's start.
-  const [opened, setOpened] = useState({ graph, starts });
-  if (opened.graph !== graph || [...opened.starts].join() !== [...starts].join()) {
-    setOpened({ graph, starts });
-    setView(openingView(graph, fitView(graph), starts));
+  // A new tree, guide or class start re-opens the map framing the plan; taking a passive keeps the view.
+  const plan = planKey(guide, starts);
+  const [opened, setOpened] = useState({ graph, plan });
+  if (opened.graph !== graph || opened.plan !== plan) {
+    setOpened({ graph, plan });
+    setView(openingView(graph, fitView(graph), [...starts, ...guide, ...owned]));
   }
 
   /** Screen pixel to tree units, using the SVG's own transform (handles letterboxing). */
