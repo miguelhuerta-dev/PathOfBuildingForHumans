@@ -1,47 +1,266 @@
+import { useState, type CSSProperties } from "react";
 import type { EngineItem } from "../types/Engine";
 import { rarityStyle } from "../utils/rarity";
 import AtlasFrame from "./AtlasFrame";
 import AtlasSectionHeader from "./AtlasSectionHeader";
 import ItemIcon from "./ItemIcon";
-import { SigilIcon } from "./icons";
+import { SkullIcon } from "./icons";
 
-const SLOT_ORDER = [
-  "Weapon 1", "Weapon 2", "Helmet", "Body Armour", "Gloves", "Boots",
-  "Amulet", "Ring 1", "Ring 2", "Ring 3", "Belt",
-  "Flask 1", "Flask 2", "Flask 3", "Flask 4", "Flask 5",
-];
+/**
+ * The armoury: the character's gear laid out as on the in-game inventory
+ * (weapons at the sides, armour down the middle, jewellery between), in black
+ * iron with a blood-dark glow, and the item under the pointer read out in full.
+ */
 
-function slotRank(slot: string) {
-  const index = SLOT_ORDER.indexOf(slot);
-  return index === -1 ? SLOT_ORDER.length : index;
+/** Place of each slot on an 8 × 6 grid of inventory cells: column, row, width, height. */
+const DOLL: Record<string, [number, number, number, number]> = {
+  "Weapon 1": [1, 1, 2, 4],
+  Helmet: [4, 1, 2, 2],
+  "Weapon 2": [7, 1, 2, 4],
+  "Ring 3": [3, 2, 1, 1],
+  Amulet: [6, 2, 1, 1],
+  "Ring 1": [3, 3, 1, 1],
+  "Body Armour": [4, 3, 2, 3],
+  "Ring 2": [6, 3, 1, 1],
+  Gloves: [2, 5, 2, 2],
+  Belt: [4, 6, 2, 1],
+  Boots: [6, 5, 2, 2],
+};
+/** Slots always drawn, even when empty, so the silhouette reads as an inventory. */
+const CORE_SLOTS = Object.keys(DOLL).filter((slot) => slot !== "Ring 3");
+const FLASKS = ["Flask 1", "Flask 2", "Flask 3", "Flask 4", "Flask 5"];
+
+/** Passive tree sockets ("Jewel 26725") and abyssal sockets in gear ("Belt Abyssal Socket 1"). */
+const isJewel = (slot: string) => slot.startsWith("Jewel") || slot.includes("Abyssal Socket");
+
+/** Slot name for people: tree sockets are known by an internal node id, which means nothing to a player. */
+function slotLabel(slot: string): string {
+  if (slot.startsWith("Jewel")) return "Jewel";
+  if (slot.includes("Abyssal Socket")) return `${slot.split(" Abyssal")[0]} abyss jewel`;
+  return slot;
 }
 
-/** The character's worn gear, with official icons when available. */
+/** A chain of iron links, the divider between the doll and the belt pouches. */
+function IronChain() {
+  const LINK = 22;
+  const count = 22;
+  return (
+    <svg aria-hidden="true" viewBox={`0 0 ${LINK * count + 12} 24`} className="my-4 h-6 w-full" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="iron-link-face" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#8a817a" />
+          <stop offset="45%" stopColor="#3b3430" />
+          <stop offset="100%" stopColor="#0e0b0a" />
+        </linearGradient>
+        <linearGradient id="iron-link-edge" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#4a423d" />
+          <stop offset="100%" stopColor="#0b0908" />
+        </linearGradient>
+      </defs>
+      {Array.from({ length: count }, (_, i) => {
+        const x = 6 + i * LINK;
+        // Links alternate: one seen flat (an open oval), the next seen edge-on (a thick bar).
+        return i % 2 === 0 ? (
+          <g key={i}>
+            <rect x={x} y={4} width={LINK + 8} height={16} rx={8} fill="none" stroke="#050404" strokeWidth={5.5} />
+            <rect x={x} y={4} width={LINK + 8} height={16} rx={8} fill="none" stroke="url(#iron-link-face)" strokeWidth={3.5} />
+          </g>
+        ) : (
+          <rect key={i} x={x + 2} y={9.5} width={LINK + 4} height={5} rx={2.5} fill="url(#iron-link-edge)" stroke="#050404" strokeWidth={1} />
+        );
+      })}
+    </svg>
+  );
+}
+
+interface SlotProps {
+  slot: string;
+  item?: EngineItem;
+  selected: boolean;
+  onSelect: (slot: string) => void;
+  style?: CSSProperties;
+  className?: string;
+}
+
+function Slot({ slot, item, selected, onSelect, style, className = "" }: SlotProps) {
+  if (!item) {
+    return (
+      <div className={`iron-slot iron-slot--empty ${className}`} style={style} aria-hidden="true">
+        <span className="px-1 text-center font-display text-[10px] tracking-[0.12em] text-parchment-faint">
+          {slot.toUpperCase()}
+        </span>
+      </div>
+    );
+  }
+  const rarity = rarityStyle(item.rarity);
+  return (
+    <button
+      type="button"
+      title={`${slotLabel(slot)}: ${item.name}`}
+      aria-pressed={selected}
+      onMouseEnter={() => onSelect(slot)}
+      onFocus={() => onSelect(slot)}
+      onClick={() => onSelect(slot)}
+      className={`iron-slot iron-slot--filled ${selected ? "border-[rgb(var(--rarity)/0.85)]" : ""} ${className}`}
+      style={{ ...style, "--rarity": rarity.rgb } as CSSProperties}
+    >
+      <ItemIcon src={item.icon} className="h-[86%] w-[86%]" />
+    </button>
+  );
+}
+
+/** The selected item read out like the game's tooltip. */
+function ItemDetails({ item }: { item?: EngineItem }) {
+  if (!item) {
+    return <p className="text-[17px] text-parchment-faint">Point at an item to read its properties.</p>;
+  }
+  const rarity = rarityStyle(item.rarity);
+  return (
+    <article className="iron-tooltip" style={{ "--rarity": rarity.rgb } as CSSProperties}>
+      <header className="iron-tooltip__head px-5 py-3 text-center">
+        <p className="font-display text-[12px] tracking-[0.2em] text-parchment-faint">{slotLabel(item.slot).toUpperCase()}</p>
+        <h3 className={`font-display text-[20px] leading-tight ${rarity.tone}`}>{item.name}</h3>
+        {item.base && item.base !== item.name && <p className={`text-[16px] ${rarity.tone} opacity-80`}>{item.base}</p>}
+      </header>
+      <div className="flex flex-col gap-3 px-5 py-4 text-center text-[15px] leading-snug">
+        {item.implicits.length > 0 && (
+          <ul className="text-[#9fb6d8]">
+            {item.implicits.map((line, index) => (
+              <li key={`i${index}`}>{line}</li>
+            ))}
+          </ul>
+        )}
+        {item.implicits.length > 0 && item.explicits.length > 0 && (
+          <div className="mx-auto h-px w-2/3 bg-gradient-to-r from-transparent via-[#6b1d16] to-transparent" aria-hidden="true" />
+        )}
+        {item.explicits.length > 0 ? (
+          <ul className="text-[#a9b8e8]">
+            {item.explicits.map((line, index) => (
+              <li key={`e${index}`}>{line}</li>
+            ))}
+          </ul>
+        ) : (
+          item.implicits.length === 0 && <p className="text-parchment-faint">No modifiers.</p>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/** Every equipped item by slot, in its rarity colour; pointing at one reads it out. */
+function GearLedger({ items, selected, onSelect }: { items: EngineItem[]; selected?: string; onSelect: (slot: string) => void }) {
+  return (
+    <ul className="mt-5 grid gap-x-6 sm:grid-cols-2">
+      {items.map((item) => (
+        <li key={item.slot}>
+          <button
+            type="button"
+            onMouseEnter={() => onSelect(item.slot)}
+            onFocus={() => onSelect(item.slot)}
+            onClick={() => onSelect(item.slot)}
+            className={`flex w-full items-baseline gap-3 border-b border-[#2a201c] py-1.5 text-left transition hover:border-[#6b1d16] ${
+              selected === item.slot ? "border-[#7a2219]" : ""
+            }`}
+          >
+            <span className="w-28 shrink-0 font-display text-[11px] tracking-[0.14em] text-parchment-faint">
+              {slotLabel(item.slot).toUpperCase()}
+            </span>
+            <span className={`min-w-0 truncate text-[16px] ${rarityStyle(item.rarity).tone}`}>{item.name}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const SLOT_ORDER = [...Object.keys(DOLL), ...FLASKS];
+const slotRank = (slot: string) => {
+  const index = SLOT_ORDER.indexOf(slot);
+  return index === -1 ? SLOT_ORDER.length : index;
+};
+
+/** The character's worn gear, flasks and socketed jewels, with official icons when available. */
 function EquipmentPanel({ items }: { items: EngineItem[] }) {
-  const sorted = [...items].sort((a, b) => slotRank(a.slot) - slotRank(b.slot));
-  if (sorted.length === 0) return null;
+  const bySlot = new Map(items.map((item) => [item.slot, item]));
+  const jewels = items.filter((item) => isJewel(item.slot));
+  const firstFilled = [...CORE_SLOTS, ...FLASKS].find((slot) => bySlot.has(slot)) ?? jewels[0]?.slot;
+  const [selected, setSelected] = useState<string | undefined>(firstFilled);
+  if (items.length === 0) return null;
+
+  const dollSlots = [...CORE_SLOTS, ...(bySlot.has("Ring 3") ? ["Ring 3"] : [])];
+  const current = (selected && bySlot.get(selected)) || (firstFilled ? bySlot.get(firstFilled) : undefined);
 
   return (
-    <AtlasFrame>
-      <AtlasSectionHeader title="Equipped Artifacts" icon={<SigilIcon className="h-7 w-7" />} />
-      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {sorted.map((item) => (
-          <li key={item.slot} className="flex items-center gap-3 border border-gold-dim/25 bg-black/40 p-2">
-            <span className="grid h-16 w-16 shrink-0 place-items-center border border-gold-dim/40 bg-[radial-gradient(circle_at_50%_40%,#2a2016,#0a0705_75%)] shadow-[inset_0_0_10px_#000]">
-              <ItemIcon src={item.icon} className="h-14 w-14" />
-            </span>
-            <span className="min-w-0">
-              <span className="block font-display text-[12px] tracking-[0.16em] text-parchment-dim">
-                {item.slot.toUpperCase()}
-              </span>
-              <span className={`block truncate text-[17px] ${rarityStyle(item.rarity).tone}`}>{item.name}</span>
-              {item.base && item.base !== item.name && (
-                <span className="block truncate text-[14px] text-parchment-faint">{item.base}</span>
-              )}
-            </span>
-          </li>
-        ))}
-      </ul>
+    <AtlasFrame variant="iron">
+      <AtlasSectionHeader title="Equipped Artifacts" tone="blood" icon={<SkullIcon className="h-7 w-7" />} />
+      <div className="grid items-start gap-8 lg:grid-cols-[auto_minmax(0,1fr)]">
+        <div className="mx-auto w-fit [--cell:44px] sm:[--cell:54px]">
+          <div
+            className="grid gap-1.5"
+            style={{ gridTemplateColumns: "repeat(8, var(--cell))", gridTemplateRows: "repeat(6, var(--cell))" }}
+          >
+            {dollSlots.map((slot) => {
+              const [column, row, width, height] = DOLL[slot];
+              return (
+                <Slot
+                  key={slot}
+                  slot={slot}
+                  item={bySlot.get(slot)}
+                  selected={current?.slot === slot}
+                  onSelect={setSelected}
+                  style={{ gridColumn: `${column} / span ${width}`, gridRow: `${row} / span ${height}` }}
+                />
+              );
+            })}
+          </div>
+
+          <IronChain />
+
+          <div className="flex justify-center gap-1.5">
+            {FLASKS.map((slot) => (
+              <Slot
+                key={slot}
+                slot={slot}
+                item={bySlot.get(slot)}
+                selected={current?.slot === slot}
+                onSelect={setSelected}
+                className="h-[calc(var(--cell)*2)] w-[var(--cell)]"
+              />
+            ))}
+          </div>
+
+          {jewels.length > 0 && (
+            <>
+              <h3 className="mt-5 text-center font-display text-[12px] tracking-[0.2em] text-parchment-faint">
+                SOCKETED JEWELS
+              </h3>
+              <div className="mt-2 flex max-w-[calc(var(--cell)*8+42px)] flex-wrap justify-center gap-1.5">
+                {jewels.map((item) => (
+                  <Slot
+                    key={item.slot}
+                    slot={item.slot}
+                    item={item}
+                    selected={current?.slot === item.slot}
+                    onSelect={setSelected}
+                    className="h-[var(--cell)] w-[var(--cell)]"
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div>
+          <div aria-live="polite">
+            <ItemDetails item={current} />
+          </div>
+          <GearLedger
+            items={[...items].sort((a, b) => slotRank(a.slot) - slotRank(b.slot))}
+            selected={current?.slot}
+            onSelect={setSelected}
+          />
+        </div>
+      </div>
     </AtlasFrame>
   );
 }

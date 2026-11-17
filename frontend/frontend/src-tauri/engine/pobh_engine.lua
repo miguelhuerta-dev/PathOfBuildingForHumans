@@ -224,6 +224,19 @@ local function gearSlots()
 	return list
 end
 
+-- Jewel sockets on allocated passives, in a stable order.
+local function jewelSlots()
+	local list = {}
+	local allocated = build.spec and build.spec.allocNodes or {}
+	for slotName, slot in pairs(build.itemsTab.slots or {}) do
+		if slot.nodeId and allocated[slot.nodeId] and not slotName:match("Swap") then
+			list[#list + 1] = { name = slotName, slot = slot }
+		end
+	end
+	table.sort(list, function(a, b) return a.name < b.name end)
+	return list
+end
+
 local function equippedItem(slot)
 	local id = slot.selItemId
 	if id and id ~= 0 then
@@ -240,8 +253,20 @@ local INVENTORY_SLOTS = {
 	Belt = "Belt", Amulet = "Amulet", Ring = "Ring 1", Ring2 = "Ring 2", Ring3 = "Ring 3",
 }
 
-local function iconsBySlot(equipment)
+-- Socketed jewels have no slot name in the profile; they are matched by name.
+local function jewelKey(name)
+	return "jewel:" .. tostring(name or "")
+end
+
+local function iconsBySlot(equipment, jewels)
 	local icons = {}
+	for _, item in ipairs(jewels or {}) do
+		local icon = type(item.icon) == "string" and item.icon:match("^https://web%.poecdn%.com/") and item.icon
+		if icon then
+			if item.name and item.name ~= "" then icons[jewelKey(item.name)] = icon end
+			if item.typeLine then icons[jewelKey(item.typeLine)] = icon end
+		end
+	end
 	for _, item in ipairs(equipment or {}) do
 		local icon = type(item.icon) == "string" and item.icon:match("^https://web%.poecdn%.com/") and item.icon
 		local slot = INVENTORY_SLOTS[item.inventoryId]
@@ -273,6 +298,16 @@ local function summarize(extra, icons)
 			local described = describeItem(item)
 			described.slot = entry.name
 			described.icon = icons and icons[entry.name] or nil
+			items[#items + 1] = described
+		end
+	end
+	-- Jewels in allocated passive sockets.
+	for _, entry in ipairs(jewelSlots()) do
+		local item = equippedItem(entry.slot)
+		if item then
+			local described = describeItem(item)
+			described.slot = entry.name
+			described.icon = icons and (icons[jewelKey(described.name)] or icons[jewelKey(described.base)]) or nil
 			items[#items + 1] = described
 		end
 	end
@@ -463,7 +498,7 @@ end
 local result
 if request.kind == "character" then
 	loadCharacter(request.character)
-	result = summarize({ name = request.character.name, league = request.character.league }, iconsBySlot(request.character.equipment))
+	result = summarize({ name = request.character.name, league = request.character.league }, iconsBySlot(request.character.equipment, request.character.jewels))
 elseif request.kind == "build" then
 	local stages = loadGuide(request.xml, request.name, request.stage, nil)
 	result = summarize()
@@ -484,7 +519,7 @@ elseif request.kind == "compare" then
 	end
 
 	loadCharacter(request.character)
-	local icons = iconsBySlot(request.character.equipment)
+	local icons = iconsBySlot(request.character.equipment, request.character.jewels)
 	local character = summarize({ name = request.character.name, league = request.character.league }, icons)
 	local characterNodes = allocatedPassives()
 	local passives = comparePassives(guideNodes, characterNodes)

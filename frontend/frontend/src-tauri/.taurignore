@@ -1,0 +1,3 @@
+# Path of Building writes caches into the engine folder while it calculates;
+# changes there are not app code and must not restart `tauri dev`.
+engine/

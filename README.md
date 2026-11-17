@@ -52,9 +52,10 @@ The dashboard is the first screen every player sees. It must answer three questi
 | Guides from PoB codes, pobb.in or pastebin links, with stages (Maxroll-style) | v0.2.0 |
 | Recommended Artifact: guide items ranked by measured DPS/EHP gain | v0.2.0 |
 | Passive tree and gem comparison against the guide | v0.2.0 |
-| Passive tree map with the game's own icons, compared with the guide | Unreleased |
-| Atlas passive tree drawn over the star atlas, with progress against a guide's Atlas link | Unreleased |
+| Passive tree map with the game's own icons, compared with the guide | v0.3.0 |
+| Atlas passive tree drawn over the star atlas, with progress against a guide's Atlas link | v0.3.0 |
 | Desktop app with a custom title bar (Windows portable) | v0.1 |
+| Single-file portable app, published as a GitHub Release | v0.3.0 |
 | League meta and prices (poe.ninja) | Planned |
 | Official OAuth account connection | Planned |
 | Build snapshots and history | Planned |
@@ -74,6 +75,7 @@ The full guide lives in [`docs/visual_language.md`](docs/visual_language.md).
 
 - **v0.1** Atlas Archive UI, desktop app
 - **v0.2.0** Live character, Path of Building engine, guides with stages, upgrade advisor
+- **v0.3.0** Atlas and passive tree maps with the game's own icons, single-file portable app
 - **Next** League meta and prices, official OAuth
 
 See [`docs/roadmap.md`](docs/roadmap.md) and the RFCs in [`rfc/`](rfc).

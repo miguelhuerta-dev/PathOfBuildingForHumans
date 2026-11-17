@@ -3,7 +3,8 @@ import { atlasArt } from "../assets/atlas";
 
 interface AtlasFrameProps {
   children: ReactNode;
-  variant?: "outer" | "panel" | "card";
+  /** "iron" is the panel's frame tarnished to black iron, for the armoury. */
+  variant?: "outer" | "panel" | "card" | "iron";
   pendant?: boolean;
   className?: string;
   contentClassName?: string;

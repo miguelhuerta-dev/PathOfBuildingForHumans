@@ -136,6 +136,8 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
             <StatCard title="EHP" value={formatNumber(build.stats.TotalEHP ?? 0)} icon={<ShieldIcon className="h-4 w-4" />} />
           </section>
 
+          <EquipmentPanel items={build.items} />
+
           <div className="mt-4 grid items-stretch gap-x-5 gap-y-10 lg:grid-cols-[1.12fr_1fr]">
             <AtlasFrame className="flex flex-col" contentClassName="flex flex-1 flex-col">
               <AtlasSectionHeader title="Threat Register" tone="blood" icon={<SkullIcon className="h-7 w-7" />} />
@@ -176,7 +178,6 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
             </AtlasFrame>
           </div>
 
-          <EquipmentPanel items={build.items} />
         </>
       )}
 
