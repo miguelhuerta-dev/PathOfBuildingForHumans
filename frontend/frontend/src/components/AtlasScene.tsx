@@ -36,17 +36,19 @@ function AtlasScene() {
       {/* The desk props sink into the dark: muted so the black iron stays the main material. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 hidden h-[34rem] brightness-[0.55] saturate-[0.6] lg:block" aria-hidden="true">
         <CandleGlow className="-left-20 bottom-24 h-[30rem] w-[30rem]" />
-        <img src={atlasArt.sceneBooks} alt="" className="absolute -left-24 -bottom-6 w-[30rem]" />
+        <img src={atlasArt.sceneBooks} alt="" loading="lazy" decoding="async" className="absolute -left-24 -bottom-6 w-[30rem]" />
         <img src={atlasArt.sceneCandles} alt="" className="absolute bottom-[19rem] left-6 h-56" />
-        <img src={atlasArt.sceneCoins} alt="" className="absolute bottom-0 left-[22rem] w-52" />
+        <img src={atlasArt.sceneCoins} alt="" loading="lazy" decoding="async" className="absolute bottom-0 left-[22rem] w-52" />
 
         <CandleGlow className="-right-20 bottom-10 h-80 w-80" />
         <img
           src={atlasArt.sceneParchmentMap}
+          loading="lazy"
+          decoding="async"
           alt=""
           className="absolute -bottom-20 -right-16 w-[36rem] rotate-[-8deg]"
         />
-        <img src={atlasArt.sceneAstrolabe} alt="" className="absolute -right-20 bottom-10 w-72" />
+        <img src={atlasArt.sceneAstrolabe} alt="" loading="lazy" decoding="async" className="absolute -right-20 bottom-10 w-72" />
       </div>
     </>
   );

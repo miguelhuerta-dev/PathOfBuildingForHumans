@@ -92,7 +92,7 @@ function NavMenu({ page, onNavigate }: NavProps) {
  */
 function TopNav({ page, onNavigate }: NavProps) {
   return (
-    <header data-tauri-drag-region className="nav-plate relative z-20 -mx-4 -mt-2 select-none px-5 py-2.5">
+    <header data-tauri-drag-region className="nav-plate relative z-20 select-none px-5 py-2.5">
       <div data-tauri-drag-region className="flex items-center justify-between gap-6">
         <button
           type="button"

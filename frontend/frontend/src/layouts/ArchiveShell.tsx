@@ -66,7 +66,10 @@ function ArchiveShell({ page, onNavigate, children }: ArchiveShellProps) {
           <Motto align="right" lines={["KNOWLEDGE", "BUILDS", "SURVIVAL"]} />
         </div>
 
-        <main className="flex flex-col gap-4">{children}</main>
+        {/* Keyed by page so each page's panels rise in when it opens. */}
+        <main key={page} className="reveal flex flex-col gap-4">
+          {children}
+        </main>
 
         <footer className="pb-4 pt-14 text-center md:pb-24">
           <p className="font-display text-[14px] leading-relaxed tracking-[0.24em] text-parchment-faint">

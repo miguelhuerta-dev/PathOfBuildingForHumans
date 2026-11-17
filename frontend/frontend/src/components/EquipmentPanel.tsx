@@ -95,7 +95,7 @@ function ItemDetails({ item }: { item?: EngineItem }) {
   }
   const rarity = rarityStyle(item.rarity);
   return (
-    <article className="iron-tooltip" style={{ "--rarity": rarity.rgb } as CSSProperties}>
+    <article key={item.slot} className="iron-tooltip fade-in" style={{ "--rarity": rarity.rgb } as CSSProperties}>
       <header className="iron-tooltip__head px-5 py-3 text-center">
         <p className="font-display text-[12px] tracking-[0.2em] text-parchment-faint">{slotLabel(item.slot).toUpperCase()}</p>
         <h3 className={`font-display text-[20px] leading-tight ${rarity.tone}`}>{item.name}</h3>

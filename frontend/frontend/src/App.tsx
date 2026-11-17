@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import type { Page } from "./components/TopNav";
 import ArchiveShell from "./layouts/ArchiveShell";
 import Dashboard from "./pages/Dashboard";
-import GuidePage from "./pages/GuidePage";
-import AtlasPage from "./pages/AtlasPage";
-import { AboutPage } from "./pages/InfoPages";
+
+// The dashboard opens first; the other pages load the first time they are visited.
+const GuidePage = lazy(() => import("./pages/GuidePage"));
+const AtlasPage = lazy(() => import("./pages/AtlasPage"));
+const AboutPage = lazy(() => import("./pages/InfoPages").then((module) => ({ default: module.AboutPage })));
 import { useArchive } from "./state/useArchive";
 
 /** Atlas progress is kept per league; without a character it goes to Standard. */
@@ -21,9 +23,11 @@ function App() {
   return (
     <ArchiveShell page={page} onNavigate={setPage}>
       {page === "character" && <Dashboard archive={archive} onNavigate={setPage} />}
-      {page === "guide" && <GuidePage archive={archive} />}
-      {page === "atlas" && <AtlasPage league={league} clientLog={archive.clientLog || null} />}
-      {page === "about" && <AboutPage />}
+      <Suspense fallback={<p className="text-center text-[17px] text-parchment-faint">Opening the archive…</p>}>
+        {page === "guide" && <GuidePage archive={archive} />}
+        {page === "atlas" && <AtlasPage league={league} clientLog={archive.clientLog || null} />}
+        {page === "about" && <AboutPage />}
+      </Suspense>
     </ArchiveShell>
   );
 }
