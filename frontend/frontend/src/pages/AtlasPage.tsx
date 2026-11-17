@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
+import NextSteps from "../components/NextSteps";
 import ConstellationMap, { MapLegend, type MapFocus } from "../components/ConstellationMap";
 import { AtlasStarIcon, QuillIcon, SigilIcon } from "../components/icons";
 import { ErrorNote, MetalMeter } from "../components/ui";
@@ -102,7 +103,6 @@ function ProgressPanel({ progress, onFocus, onToggle }: {
   onFocus: (id: number) => void;
   onToggle: (id: number) => void;
 }) {
-  const next = progress.next.slice(0, NEXT_LIMIT);
   return (
     <AtlasFrame>
       <AtlasSectionHeader title="Atlas Progress" icon={<SigilIcon className="h-7 w-7" />} />
@@ -119,38 +119,10 @@ function ProgressPanel({ progress, onFocus, onToggle }: {
           <MetalMeter label="Guide Atlas passives taken" value={progress.done} max={progress.total} className="mt-2" />
           <p className="mt-2 text-[15px] text-parchment-faint">{progress.spent} passives marked in total.</p>
 
-          {next.length > 0 ? (
-            <>
-              <h3 className="mt-6 font-display text-[14px] tracking-[0.18em] text-parchment-dim">NEXT ON YOUR PATH</h3>
-              <ul className="mt-2 flex flex-col divide-y divide-gold-dim/20">
-                {next.map(({ node, distance }) => (
-                  <li key={node.id} className="flex items-center gap-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => onFocus(node.id)}
-                      className="min-w-0 flex-1 text-left hover:text-gold"
-                      title="Show on the map"
-                    >
-                      <span className="block truncate text-[17px] text-parchment">{node.name}</span>
-                      <span className="block text-[14px] text-parchment-faint">
-                        {node.region ?? "The Atlas"} ·{" "}
-                        {distance === 1 ? "can be taken now" : Number.isFinite(distance) ? `${distance} points away` : "not connected yet"}
-                      </span>
-                    </button>
-                    {distance === 1 && (
-                      <button type="button" onClick={() => onToggle(node.id)} className={secondaryButton}>
-                        TAKEN
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              {progress.next.length > NEXT_LIMIT && (
-                <p className="mt-2 text-[15px] text-parchment-faint">
-                  And {progress.next.length - NEXT_LIMIT} more beyond these.
-                </p>
-              )}
-            </>
+          {progress.next.length > 0 ? (
+            <div className="mt-6">
+              <NextSteps steps={progress.next} limit={NEXT_LIMIT} onFocus={onFocus} onTake={onToggle} />
+            </div>
           ) : (
             <p className="mt-4 text-[17px] text-verdigris">Every passive of the guide's Atlas is taken.</p>
           )}
@@ -223,10 +195,8 @@ export default function AtlasPage({ league, clientLog }: AtlasPageProps) {
               focus={focus}
               icons={passiveIcons.icons}
             />
-            <MapLegend />
-            {passiveIcons.unavailable && (
-              <p className="mt-2 text-[14px] text-parchment-faint">{passiveIcons.unavailable}</p>
-            )}
+            <MapLegend icons={Object.keys(passiveIcons.icons).length > 0} />
+            {passiveIcons.note && <p className="mt-2 text-[14px] text-parchment-faint">{passiveIcons.note}</p>}
           </>
         ) : (
           !atlas.loadError && <p className="text-[17px] text-parchment-faint">Unrolling the star charts…</p>

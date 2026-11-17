@@ -8,10 +8,15 @@ export interface PassiveIconsState {
   icons: PassiveIcons;
   /** Why the game's icons could not be shown, if they could not. */
   unavailable: string | null;
+  /** True while the icons are being read from the game. */
+  loading: boolean;
+  /** A line to show under the map: what is happening, or why there are no icons. */
+  note: string | null;
 }
 
 const NONE: PassiveIcons = {};
 const BROWSER_NOTE = "The game's own icons are shown in the desktop app, read from your Path of Exile installation.";
+const READING_NOTE = "Reading the passive icons from your Path of Exile installation…";
 
 /** One read per set of icons and game location, shared by every page that asks. */
 const requests = new Map<string, Promise<PassiveIcons>>();
@@ -52,8 +57,11 @@ export function usePassiveIcons(keys: readonly string[], clientLog: string | nul
     };
   }, [id, sorted, clientLog]);
 
-  if (!isDesktopApp) return { icons: NONE, unavailable: BROWSER_NOTE };
+  if (!isDesktopApp) return { icons: NONE, unavailable: BROWSER_NOTE, loading: false, note: BROWSER_NOTE };
   // Results for an earlier request (another game location) are not shown.
   const current = result?.id === id ? result : null;
-  return { icons: current?.icons ?? NONE, unavailable: current?.error ?? null };
+  // The first read decodes the textures (a few seconds); later ones come from the cache.
+  const loading = sorted.length > 0 && current === null;
+  const unavailable = current?.error ?? null;
+  return { icons: current?.icons ?? NONE, unavailable, loading, note: loading ? READING_NOTE : unavailable };
 }

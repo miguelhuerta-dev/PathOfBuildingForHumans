@@ -49,7 +49,8 @@ const isTaken = (state: NodeState) => state === "owned" || state === "extra";
 
 const NODE_STYLE: Record<NodeState, { fill: string; stroke: string; opacity: number }> = {
   owned: { fill: "#f2dfa8", stroke: "#d9b36c", opacity: 1 },
-  extra: { fill: "#a8864b", stroke: "#d9b36c", opacity: 0.9 },
+  // Bronze, not gold: with icons the ring is what tells it apart from a guide passive.
+  extra: { fill: "#a8864b", stroke: "#a8864b", opacity: 0.9 },
   target: { fill: "#0b0907", stroke: "#86d6b4", opacity: 1 },
   idle: { fill: "#15110d", stroke: "#bcae8f", opacity: 0.7 },
 };
@@ -92,10 +93,10 @@ const RegionLabels = memo(function RegionLabels({ graph }: { graph: TreeGraph })
           y={region.y}
           textAnchor="middle"
           dominantBaseline="middle"
-          fontSize={150}
-          letterSpacing={18}
+          fontSize={120}
+          letterSpacing={12}
           fill="#d9b36c"
-          fillOpacity={0.42}
+          fillOpacity={0.3}
           stroke="#000"
           strokeOpacity={0.6}
           strokeWidth={14}
@@ -510,18 +511,26 @@ function ConstellationMap({
 }
 
 /** Colour key for the node states, shown under a map. */
-export function MapLegend() {
-  const items = [
-    { label: "Taken", swatch: "bg-[#f2dfa8] border-gold" },
-    { label: "In the guide, not taken", swatch: "bg-ink border-verdigris" },
-    { label: "Taken, not in the guide", swatch: "bg-gold-dim border-gold" },
-    { label: "Not planned", swatch: "bg-stone border-parchment-faint opacity-60" },
-  ];
+export function MapLegend({ icons = false }: { icons?: boolean }) {
+  // With the game's icons a passive's state shows as its ring; without them, as its fill.
+  const items = icons
+    ? [
+        { label: "Taken", swatch: "border-[3px] border-[#d9b36c] bg-[#3a2c1a] shadow-[0_0_8px_#f2dfa8aa]" },
+        { label: "In the guide, not taken", swatch: "border-2 border-verdigris bg-[#2a2016]" },
+        { label: "Taken, not in the guide", swatch: "border-[3px] border-[#a8864b] bg-[#3a2c1a]" },
+        { label: "Not planned", swatch: "border-2 border-parchment-faint bg-[#15110d] opacity-60" },
+      ]
+    : [
+        { label: "Taken", swatch: "border-2 border-gold bg-[#f2dfa8]" },
+        { label: "In the guide, not taken", swatch: "border-2 border-verdigris bg-ink" },
+        { label: "Taken, not in the guide", swatch: "border-2 border-[#a8864b] bg-gold-dim" },
+        { label: "Not planned", swatch: "border-2 border-parchment-faint bg-stone opacity-60" },
+      ];
   return (
     <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[15px] text-parchment-dim">
       {items.map((item) => (
         <li key={item.label} className="flex items-center gap-2">
-          <span aria-hidden="true" className={`inline-block h-3.5 w-3.5 rounded-full border-2 ${item.swatch}`} />
+          <span aria-hidden="true" className={`inline-block h-4 w-4 rounded-full ${item.swatch}`} />
           {item.label}
         </li>
       ))}

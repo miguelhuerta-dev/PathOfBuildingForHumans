@@ -3,6 +3,7 @@ import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import UpgradeCard from "../components/UpgradeCard";
 import ConstellationMap, { MapLegend, type MapFocus } from "../components/ConstellationMap";
+import NextSteps from "../components/NextSteps";
 import ItemIcon from "../components/ItemIcon";
 import { AtlasStarIcon, QuillIcon, SigilIcon, SwordIcon } from "../components/icons";
 import type { Archive } from "../state/useArchive";
@@ -150,6 +151,8 @@ function CompareTable({ you, guide }: { you: EngineBuild; guide: EngineBuild }) 
   );
 }
 
+const NEXT_LIMIT = 8;
+
 function PassivesPanel({ archive }: { archive: Archive }) {
   const passives = archive.result?.passives;
   const tree = usePassiveTree(passives, archive.result?.character?.character.class);
@@ -220,22 +223,29 @@ function PassivesPanel({ archive }: { archive: Archive }) {
             icons={passiveIcons.icons}
             label="Your passive tree compared with the guide's"
           />
-          <MapLegend />
+          <MapLegend icons={Object.keys(passiveIcons.icons).length > 0} />
           <p className="mt-2 text-[14px] text-parchment-faint">
             Passive tree {tree.graph.tree.version}. Ascendancy passives are listed below.
-            {passiveIcons.unavailable && ` ${passiveIcons.unavailable}`}
+            {passiveIcons.note && ` ${passiveIcons.note}`}
           </p>
         </div>
       )}
 
-      <div className="mt-6 flex flex-col gap-4">
-        {group("ASCENDANCY", ascendancy, "text-[#f2d27a]")}
-        {group("KEYSTONES", keystones, "text-[#f2d27a]")}
-        {group("NOTABLES", notables, "text-parchment")}
-        {group("MASTERIES", masteries, "text-arcane")}
-        {passives.missing.length === 0 && (
-          <p className="text-[18px] text-verdigris">You have every key passive of this stage.</p>
+      <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+        {tree.progress && tree.progress.next.length > 0 && (
+          <div>
+            <NextSteps steps={tree.progress.next} limit={NEXT_LIMIT} onFocus={(id) => setFocus({ id })} />
+          </div>
         )}
+        <div className="flex flex-col gap-4">
+          {group("ASCENDANCY", ascendancy, "text-[#f2d27a]")}
+          {group("KEYSTONES", keystones, "text-[#f2d27a]")}
+          {group("NOTABLES", notables, "text-parchment")}
+          {group("MASTERIES", masteries, "text-arcane")}
+          {passives.missing.length === 0 && (
+            <p className="text-[18px] text-verdigris">You have every key passive of this stage.</p>
+          )}
+        </div>
       </div>
     </AtlasFrame>
   );
