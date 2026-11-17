@@ -1,14 +1,22 @@
 name: Desktop app (Windows portable)
 
 # Runs only on demand (Actions tab → Run workflow) or when a version tag is pushed.
+# A tag publishes a GitHub Release with the single-file app; a manual run keeps
+# the app as a short-lived workflow artifact. Older artifacts and releases are
+# removed afterwards so they do not fill the account's storage.
 on:
   workflow_dispatch:
   push:
     tags: ["v*"]
 
+permissions:
+  contents: read
+
 jobs:
   windows-portable:
     runs-on: windows-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: frontend/frontend
@@ -50,20 +58,57 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build desktop app
-        run: npx tauri build
-
-      - name: Assemble portable folder
+      - name: Build the single-file app
         shell: pwsh
         run: |
-          $out = "portable/PathOfBuildingForHumans"
-          New-Item -ItemType Directory -Force -Path "$out/engine" | Out-Null
-          Copy-Item "src-tauri/target/release/path-of-building-for-humans.exe" "$out/PathOfBuildingForHumans.exe"
-          Copy-Item src-tauri/engine/pobh_engine.lua, src-tauri/engine/luajit.exe, src-tauri/engine/lua51.dll, src-tauri/engine/lua-utf8.dll "$out/engine"
-          Copy-Item -Recurse src-tauri/engine/pob "$out/engine/pob"
+          $name = if ($env:GITHUB_REF_TYPE -eq "tag") { "PathOfBuildingForHumans-$env:GITHUB_REF_NAME-windows.exe" } else { "PathOfBuildingForHumans-windows.exe" }
+          ./scripts/build-portable.ps1 -OutFile "portable/$name"
+
+      - name: Publish the release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          # Add a RELEASE_TOKEN secret (a personal access token with Contents:
+          # write) for the release to be published under your account; without
+          # it the release is published by github-actions.
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+        run: gh release create $env:GITHUB_REF_NAME (Get-ChildItem portable/*.exe).FullName --title $env:GITHUB_REF_NAME --generate-notes
 
       - uses: actions/upload-artifact@v4
+        if: github.ref_type != 'tag'
         with:
           name: PathOfBuildingForHumans-windows-portable
-          path: frontend/frontend/portable/PathOfBuildingForHumans
+          path: frontend/frontend/portable/*.exe
+          retention-days: 7
           if-no-files-found: error
+
+  clean-up:
+    # Only after a successful build, so a failed run never removes the last good app.
+    needs: windows-portable
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Delete artifacts of earlier runs
+        run: |
+          gh api --paginate "repos/$GH_REPO/actions/artifacts?per_page=100" \
+            --jq ".artifacts[] | select(.workflow_run.id != $GITHUB_RUN_ID) | .id" |
+          while read -r id; do
+            gh api -X DELETE "repos/$GH_REPO/actions/artifacts/$id"
+            echo "Deleted artifact $id"
+          done
+
+      - name: Delete older releases (their git tags are kept)
+        if: github.ref_type == 'tag'
+        run: |
+          gh release list --limit 1000 --json tagName --jq '.[].tagName' |
+          while read -r tag; do
+            if [ "$tag" != "$GITHUB_REF_NAME" ]; then
+              gh release delete "$tag" --yes
+              echo "Deleted release $tag"
+            fi
+          done

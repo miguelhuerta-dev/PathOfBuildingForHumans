@@ -13,6 +13,8 @@ export interface AtlasNode {
   choices?: string[];
   /** League mechanic the node belongs to (Breach, Delirium…). */
   region?: string;
+  /** Name of the game's icon (e.g. "AtlasTrees/ThreadNode1"); the image is read from the installed game. */
+  icon?: string;
 }
 
 export interface AtlasRegion {

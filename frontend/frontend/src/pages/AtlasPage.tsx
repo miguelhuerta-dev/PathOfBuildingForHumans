@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import AtlasTreeMap, { type AtlasFocus } from "../components/AtlasTreeMap";
@@ -6,6 +6,7 @@ import { AtlasStarIcon, QuillIcon, SigilIcon } from "../components/icons";
 import { ErrorNote, MetalMeter } from "../components/ui";
 import type { AtlasProgress } from "../atlas/progress";
 import { useAtlasProgress, type AtlasProgressState } from "../state/useAtlasProgress";
+import { usePassiveIcons } from "../state/usePassiveIcons";
 
 const NEXT_LIMIT = 8;
 
@@ -200,10 +201,23 @@ function Legend() {
   );
 }
 
+const NO_KEYS: string[] = [];
+
+interface AtlasPageProps {
+  league: string;
+  /** The game's Client.txt, when the player chose one: it also locates the game for its icons. */
+  clientLog: string | null;
+}
+
 /** The Atlas passive tree: the guide's plan, what the player has taken and what comes next. */
-export default function AtlasPage({ league }: { league: string }) {
+export default function AtlasPage({ league, clientLog }: AtlasPageProps) {
   const atlas = useAtlasProgress(league);
   const [focus, setFocus] = useState<AtlasFocus | null>(null);
+  const iconKeys = useMemo(
+    () => atlas.graph?.tree.nodes.flatMap((node) => (node.icon ? [node.icon] : [])) ?? NO_KEYS,
+    [atlas.graph],
+  );
+  const passiveIcons = usePassiveIcons(iconKeys, clientLog);
 
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[1fr_380px]">
@@ -222,8 +236,12 @@ export default function AtlasPage({ league }: { league: string }) {
               owned={atlas.owned}
               onToggle={atlas.toggleOwned}
               focus={focus}
+              icons={passiveIcons.icons}
             />
             <Legend />
+            {passiveIcons.unavailable && (
+              <p className="mt-2 text-[14px] text-parchment-faint">{passiveIcons.unavailable}</p>
+            )}
           </>
         ) : (
           !atlas.loadError && <p className="text-[17px] text-parchment-faint">Unrolling the star charts…</p>

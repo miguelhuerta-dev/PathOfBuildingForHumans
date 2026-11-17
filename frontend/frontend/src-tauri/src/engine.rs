@@ -3,38 +3,60 @@
 //! Expected layout of the engine folder:
 //!   engine/
 //!     luajit(.exe), lua51.dll, lua-utf8.dll|.so
-//!     pobh_engine.lua
+//!     pobh_engine.lua, engine.lock.json
 //!     pob/src/...           Path of Building Community `src`
 //!     pob/runtime/lua/...   its pure-Lua libraries
 //!
 //! The folder is looked up, in order: `POBH_ENGINE_DIR`, `engine/` next to the
-//! executable, then `src-tauri/engine` in development builds.
+//! executable, the engine packed inside the executable (see `engine_pack`),
+//! then `src-tauri/engine` in development builds.
 
+use crate::{engine_pack, jewel_data};
 use serde_json::Value;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Output};
+use std::sync::Mutex;
 
 const MARKER: &str = "@@POBH_RESULT@@";
 
-pub fn engine_dir() -> Result<PathBuf, String> {
+fn is_engine(dir: &Path) -> bool {
+    dir.join("pobh_engine.lua").is_file() && dir.join("pob").join("src").is_dir()
+}
+
+fn find_engine_dir() -> Result<PathBuf, String> {
     let mut candidates = Vec::new();
     if let Ok(dir) = std::env::var("POBH_ENGINE_DIR") {
         candidates.push(PathBuf::from(dir));
     }
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(parent) = exe.parent() {
-            candidates.push(parent.join("engine"));
+    if let Some(parent) = std::env::current_exe().ok().as_deref().and_then(Path::parent) {
+        candidates.push(parent.join("engine"));
+    }
+    if let Some(found) = candidates.into_iter().find(|dir| is_engine(dir)) {
+        return Ok(found);
+    }
+    if let Some(dir) = engine_pack::unpacked()? {
+        if is_engine(&dir) {
+            return Ok(dir);
         }
     }
-    if cfg!(debug_assertions) {
-        candidates.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("engine"));
+    let dev = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("engine");
+    if cfg!(debug_assertions) && is_engine(&dev) {
+        return Ok(dev);
     }
-    candidates
-        .into_iter()
-        .find(|dir| dir.join("pobh_engine.lua").is_file() && dir.join("pob").join("src").is_dir())
-        .ok_or_else(|| {
-            "The calculation engine was not found. Keep the 'engine' folder next to the app.".to_string()
-        })
+    Err("The calculation engine was not found. Keep the 'engine' folder next to the app.".to_string())
+}
+
+/// The engine folder, looked up (and unpacked) once, the first time it is needed.
+pub fn engine_dir() -> Result<PathBuf, String> {
+    static FOUND: Mutex<Option<PathBuf>> = Mutex::new(None);
+    let mut found = FOUND.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    // Checked again in case the folder was removed while the app was open.
+    if let Some(dir) = found.as_ref().filter(|dir| is_engine(dir)) {
+        return Ok(dir.clone());
+    }
+    let dir = find_engine_dir()?;
+    *found = Some(dir.clone());
+    Ok(dir)
 }
 
 fn luajit_path(dir: &Path) -> PathBuf {
@@ -50,6 +72,19 @@ fn luajit_path(dir: &Path) -> PathBuf {
 /// Sends one request to the engine and returns its JSON result.
 pub fn run(request: &Value) -> Result<Value, String> {
     let dir = engine_dir()?;
+    let mut output = run_once(&dir, request)?;
+
+    // Builds with timeless or abyss jewels need lookup tables that the portable
+    // app downloads on first use. If that fails the build is still calculated,
+    // only without those jewels' effects.
+    let missing = jewel_data::missing_tables(&String::from_utf8_lossy(&output.stdout));
+    if !missing.is_empty() && jewel_data::download(&dir, &missing).is_ok() {
+        output = run_once(&dir, request)?;
+    }
+    parse_output(&output)
+}
+
+fn run_once(dir: &Path, request: &Value) -> Result<Output, String> {
     let pob_src = dir.join("pob").join("src");
 
     let mut request_file = tempfile::Builder::new()
@@ -61,7 +96,7 @@ pub fn run(request: &Value) -> Result<Value, String> {
         .map_err(|e| format!("Could not prepare the calculation: {e}"))?;
 
     let lib_ext = if cfg!(windows) { "dll" } else { "so" };
-    let mut command = Command::new(luajit_path(&dir));
+    let mut command = Command::new(luajit_path(dir));
     command
         .current_dir(&pob_src)
         .arg(dir.join("pobh_engine.lua"))
@@ -76,11 +111,13 @@ pub fn run(request: &Value) -> Result<Value, String> {
         command.creation_flags(CREATE_NO_WINDOW);
     }
 
-    let output = command
+    command
         .output()
-        .map_err(|e| format!("Could not start the calculation engine: {e}"))?;
-    let stdout = String::from_utf8_lossy(&output.stdout);
+        .map_err(|e| format!("Could not start the calculation engine: {e}"))
+}
 
+fn parse_output(output: &Output) -> Result<Value, String> {
+    let stdout = String::from_utf8_lossy(&output.stdout);
     match stdout.lines().find_map(|line| line.split_once(MARKER).map(|(_, json)| json)) {
         Some(json) => serde_json::from_str(json).map_err(|e| format!("The engine returned unreadable data: {e}")),
         None => {

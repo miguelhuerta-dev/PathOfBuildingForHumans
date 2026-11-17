@@ -50,6 +50,12 @@ function position(node) {
   };
 }
 
+// Only the icon's name is kept, e.g. "AtlasTrees/ThreadNode1". The desktop app
+// reads the image itself from the player's installed game (src-tauri/src/game_files).
+const ICON_PREFIX = "Art/2DArt/SkillIcons/passives/";
+const iconKey = (path) =>
+  path?.startsWith(ICON_PREFIX) && path.endsWith(".png") ? path.slice(ICON_PREFIX.length, -".png".length) : undefined;
+
 /** "[DemonicEvocator|Demonic Evocator]" -> "Demonic Evocator". */
 const cleanText = (text) => text.replace(/\[(?:[^\]|]*\|)?([^\]]*)\]/g, "$1");
 
@@ -95,6 +101,8 @@ for (const [id, node] of Object.entries(nodes)) {
   if (!at) continue;
   const kind = kindOf(id, node);
   const entry = { id: Number(id), kind, name: node.name || "Heart of the Atlas", ...at };
+  const icon = iconKey(node.icon);
+  if (icon && kind !== "wormhole") entry.icon = icon;
   const stats = (node.stats ?? []).map(cleanText);
   if (stats.length) entry.stats = stats;
   if (node.variantEffects?.length) entry.choices = node.variantEffects.map((v) => v.stats.map(cleanText).join(" "));

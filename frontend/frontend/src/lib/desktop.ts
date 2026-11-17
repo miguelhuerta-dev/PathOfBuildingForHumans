@@ -30,6 +30,9 @@ export const desktop = {
   detectClientLog: () => call<string | null>("detect_client_log"),
   watchClientLog: (path: string) => call<void>("watch_client_log", { path }),
   stopWatchingClientLog: () => call<void>("stop_watching_client_log"),
+  /** Passive skill icons read from the installed game, as PNG data URLs by icon name. */
+  passiveIcons: (keys: string[], clientLog: string | null) =>
+    call<Record<string, string>>("passive_icons", { keys, clientLog }),
   onZoneEntered: (handler: (zone: string) => void): Promise<UnlistenFn> =>
     listen<string>("zone-entered", (event) => handler(event.payload)),
 };

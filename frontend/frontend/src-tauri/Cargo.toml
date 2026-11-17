@@ -15,19 +15,33 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-reqwest = { version = "0.12", default-features = false, features = ["native-tls", "json"] }
+reqwest = { version = "0.12", default-features = false, features = ["native-tls", "json", "blocking"] }
 base64 = "0.22"
 flate2 = "1"
 tempfile = "3"
+tar = "0.4"
+# Reading icons from the installed game: Oodle bundles, DDS textures, PNG output.
+oozextract = { version = "0.5.7", default-features = false }
+bcdec_rs = "0.2"
+png = "0.18"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.61", features = [
   "Win32_Foundation",
   "Win32_Graphics_Dwm",
+  "Win32_System_Registry",
 ] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+# Decompressing the game's 100 MB file index takes seconds unoptimised;
+# keep these fast in debug builds too.
+[profile.dev.package.oozextract]
+opt-level = 3
+
+[profile.dev.package.bcdec_rs]
+opt-level = 3
 
 [profile.release]
 codegen-units = 1

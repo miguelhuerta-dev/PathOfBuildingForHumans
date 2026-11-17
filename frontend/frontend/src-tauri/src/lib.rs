@@ -1,10 +1,14 @@
 mod client_log;
 mod engine;
+mod engine_pack;
+mod game_files;
 mod guide;
 mod item_icons;
+mod jewel_data;
 mod poe_api;
 
 use serde_json::{json, Value};
+use std::collections::BTreeMap;
 use std::sync::Mutex;
 use tauri::{Manager, State};
 
@@ -123,6 +127,21 @@ fn stop_watching_client_log(session: State<'_, Session>) {
     session.watcher.stop();
 }
 
+/// Passive skill icons read from the player's installed game (see `game_files`).
+#[tauri::command]
+async fn passive_icons(
+    app: tauri::AppHandle,
+    keys: Vec<String>,
+    client_log: Option<String>,
+) -> Result<BTreeMap<String, String>, String> {
+    let cache = app.path().app_cache_dir().ok();
+    tauri::async_runtime::spawn_blocking(move || {
+        game_files::passive_icons(&keys, client_log.as_deref().map(std::path::Path::new), cache)
+    })
+    .await
+    .map_err(|e| format!("Reading the game's icons was interrupted: {e}"))?
+}
+
 /// Windows 11: rounded corners and a bronze 1px window border.
 /// Ignored silently on Windows 10, which does not support these attributes.
 #[cfg(windows)]
@@ -168,8 +187,14 @@ pub fn run() {
             detect_client_log,
             watch_client_log,
             stop_watching_client_log,
+            passive_icons,
         ])
         .setup(|app| {
+            // The portable app unpacks its engine on first launch; start now so
+            // the first calculation does not wait for it.
+            std::thread::spawn(|| {
+                let _ = engine::engine_dir();
+            });
             #[cfg(windows)]
             if let Some(window) = app.get_webview_window("main") {
                 style_window_border(&window);

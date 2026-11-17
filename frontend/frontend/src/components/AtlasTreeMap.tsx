@@ -2,10 +2,13 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEv
 import { atlasArt } from "../assets/atlas";
 import type { AtlasGraph } from "../atlas/progress";
 import type { AtlasNode, AtlasNodeKind } from "../atlas/types";
+import type { PassiveIcons } from "../state/usePassiveIcons";
 
 /**
  * The Atlas passive tree drawn as a constellation chart over the painted star
- * atlas. Only positions and texts come from GGG's data; every mark is ours.
+ * atlas. Positions and texts come from GGG's data; the frames and marks are
+ * ours. In the desktop app each passive also shows its icon, read from the
+ * player's own Path of Exile installation (never bundled or downloaded).
  */
 
 interface ViewBox {
@@ -48,6 +51,27 @@ interface LayerProps {
   guide: Set<number>;
   owned: Set<number>;
 }
+
+/** SVG id of each icon's <symbol>, by icon name. */
+type IconIds = ReadonlyMap<string, string>;
+
+const ICON_CLIP = "atlas-icon-clip";
+
+/** Each icon is defined once and reused by every passive that shows it. */
+const IconSymbols = memo(function IconSymbols({ icons, ids }: { icons: PassiveIcons; ids: IconIds }) {
+  return (
+    <>
+      <clipPath id={ICON_CLIP} clipPathUnits="objectBoundingBox">
+        <circle cx={0.5} cy={0.5} r={0.5} />
+      </clipPath>
+      {[...ids].map(([name, id]) => (
+        <symbol key={id} id={id} viewBox="0 0 1 1">
+          <image href={icons[name]} width={1} height={1} clipPath={`url(#${ICON_CLIP})`} />
+        </symbol>
+      ))}
+    </>
+  );
+});
 
 const RegionLabels = memo(function RegionLabels({ graph }: { graph: AtlasGraph }) {
   return (
@@ -106,7 +130,7 @@ const Edges = memo(function Edges({ graph, guide, owned }: LayerProps) {
   );
 });
 
-const Nodes = memo(function Nodes({ graph, guide, owned }: LayerProps) {
+const Nodes = memo(function Nodes({ graph, guide, owned, iconIds }: LayerProps & { iconIds: IconIds }) {
   return (
     <g>
       {graph.tree.nodes.map((node) => {
@@ -114,19 +138,24 @@ const Nodes = memo(function Nodes({ graph, guide, owned }: LayerProps) {
         const style = NODE_STYLE[state];
         const r = RADIUS[node.kind];
         const ring = node.kind === "keystone" || node.kind === "root";
+        const iconId = node.icon ? iconIds.get(node.icon) : undefined;
+        const strokeWidth = node.kind === "normal" ? 8 : 12;
         return (
           <g key={node.id} data-id={node.id} opacity={style.opacity} className="cursor-pointer">
             {/* Generous invisible hit area: small passives are only a few pixels wide when zoomed out. */}
             <circle cx={node.x} cy={node.y} r={Math.max(r * 1.8, HIT_RADIUS)} fill="transparent" />
             {state === "owned" && <circle cx={node.x} cy={node.y} r={r * 1.9} fill="url(#atlas-glow)" />}
-            <circle
-              cx={node.x}
-              cy={node.y}
-              r={r}
-              fill={style.fill}
-              stroke={style.stroke}
-              strokeWidth={node.kind === "normal" ? 8 : 12}
-            />
+            {iconId ? (
+              <>
+                <circle cx={node.x} cy={node.y} r={r} fill="#0b0907" />
+                <use href={`#${iconId}`} x={node.x - r} y={node.y - r} width={r * 2} height={r * 2} />
+                {/* Passives outside the plan stay dim, like unlit stars. */}
+                {state === "idle" && <circle cx={node.x} cy={node.y} r={r} fill="#0b0907" fillOpacity={0.5} />}
+                <circle cx={node.x} cy={node.y} r={r} fill="none" stroke={style.stroke} strokeWidth={strokeWidth} />
+              </>
+            ) : (
+              <circle cx={node.x} cy={node.y} r={r} fill={style.fill} stroke={style.stroke} strokeWidth={strokeWidth} />
+            )}
             {ring && (
               <circle cx={node.x} cy={node.y} r={r * 1.35} fill="none" stroke={style.stroke} strokeWidth={8} />
             )}
@@ -148,7 +177,11 @@ export interface AtlasFocus {
 interface AtlasTreeMapProps extends LayerProps {
   onToggle: (id: number) => void;
   focus?: AtlasFocus | null;
+  /** The game's icons by name; passives without one keep the app's own mark. */
+  icons?: PassiveIcons;
 }
+
+const NO_ICONS: PassiveIcons = {};
 
 const TOOLTIP_WIDTH = 288;
 
@@ -168,10 +201,14 @@ function openingView(graph: AtlasGraph, whole: ViewBox): ViewBox {
   return { x: centre.x - OPENING_WIDTH / 2, y: centre.y - h / 2, w: OPENING_WIDTH, h };
 }
 
-function AtlasTreeMap({ graph, guide, owned, onToggle, focus }: AtlasTreeMapProps) {
+function AtlasTreeMap({ graph, guide, owned, onToggle, focus, icons = NO_ICONS }: AtlasTreeMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const home = useMemo(() => fitView(graph), [graph]);
+  const iconIds = useMemo<IconIds>(
+    () => new Map(Object.keys(icons).map((name, index) => [name, `atlas-icon-${index}`])),
+    [icons],
+  );
   const [view, setView] = useState<ViewBox>(() => openingView(graph, home));
   const [hover, setHover] = useState<{ node: AtlasNode; left: number; top: number } | null>(null);
   const drag = useRef<{ x: number; y: number; view: ViewBox; moved: boolean } | null>(null);
@@ -312,10 +349,11 @@ function AtlasTreeMap({ graph, guide, owned, onToggle, focus }: AtlasTreeMapProp
             <stop offset="0%" stopColor="#f2dfa8" stopOpacity={0.55} />
             <stop offset="100%" stopColor="#f2dfa8" stopOpacity={0} />
           </radialGradient>
+          <IconSymbols icons={icons} ids={iconIds} />
         </defs>
         <RegionLabels graph={graph} />
         <Edges graph={graph} guide={guide} owned={owned} />
-        <Nodes graph={graph} guide={guide} owned={owned} />
+        <Nodes graph={graph} guide={guide} owned={owned} iconIds={iconIds} />
         {focusNode && (
           <circle
             cx={focusNode.x}

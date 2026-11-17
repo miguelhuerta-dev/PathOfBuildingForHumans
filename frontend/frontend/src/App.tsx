@@ -22,7 +22,7 @@ function App() {
     <ArchiveShell page={page} onNavigate={setPage}>
       {page === "character" && <Dashboard archive={archive} onNavigate={setPage} />}
       {page === "guide" && <GuidePage archive={archive} />}
-      {page === "atlas" && <AtlasPage league={league} />}
+      {page === "atlas" && <AtlasPage league={league} clientLog={archive.clientLog || null} />}
       {page === "about" && <AboutPage />}
     </ArchiveShell>
   );

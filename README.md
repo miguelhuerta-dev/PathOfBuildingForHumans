@@ -106,6 +106,11 @@ GGG's official [atlastree-export](https://github.com/grindinggear/atlastree-expo
 node scripts/update-atlas-tree.mjs
 ```
 
+In the desktop app each passive shows its icon from the game. The icons are **read from the player's own Path
+of Exile installation** (Steam or Epic; any Steam library is found, or the folder of the chosen `Client.txt`),
+decoded and cached on that computer only: the app never ships nor downloads GGG's art. Without the game the
+map keeps its own marks. The standalone client (`Content.ggpk`) is not supported yet.
+
 A guide's Atlas is loaded from an official Atlas tree link
 (`pathofexile.com/fullscreen-atlas-skill-tree/…`). Public profiles do not include the Atlas tree, so players
 mark the passives they have by clicking them (or load their own Atlas link); progress is kept per league.
@@ -142,18 +147,24 @@ app in debug mode and opens the executable in Visual Studio. Press F5 to run it 
 breakpoints in `src-tauri/src/*.rs` work once the file is open in VS. For the TypeScript side use the app's
 DevTools (right-click → Inspect) or set the VS project's Debugger Type to *JavaScript (WebView2)*.
 
-To build it locally:
+To build the portable app locally (Windows):
 
-```bash
-npm run desktop:build
+```powershell
+./scripts/build-portable.ps1
 ```
 
-The executable is written to `frontend/frontend/src-tauri/target/release/`.
+It writes `frontend/frontend/portable/PathOfBuildingForHumans.exe`: one file with the calculation engine packed
+inside. On first launch the engine is unpacked to `%LOCALAPPDATA%\PathOfBuildingForHumans\engine`. Timeless
+and abyss jewel tables (about 170 MB, most of Path of Building's size) are not packed; the app downloads the
+one a build needs from the pinned Path of Building release the first time it is used.
 
-**Portable Windows build without installing Rust:** run the **Desktop app (Windows portable)** workflow from
-the **Actions** tab, or push a version tag such as `v0.2.0`. Download the `PathOfBuildingForHumans-windows-portable`
-artifact: a folder with `PathOfBuildingForHumans.exe` and its `engine` folder. Keep them together; no
-installation is needed on Windows 10 and 11 (it uses the WebView2 runtime that ships with Windows).
+**Releases:** push a version tag such as `v0.3.0` and the **Desktop app (Windows portable)** workflow
+publishes a GitHub Release with `PathOfBuildingForHumans-v0.3.0-windows.exe`. Running the workflow by hand
+from the **Actions** tab keeps the app as an artifact for 7 days instead. After each successful run the
+workflow deletes older artifacts and older releases (their git tags are kept). To publish releases under
+your own account instead of `github-actions`, add a `RELEASE_TOKEN` repository secret: a fine-grained
+personal access token with *Contents: read and write* on this repository. No installation is needed on
+Windows 10 and 11 (the app uses the WebView2 runtime that ships with Windows).
 
 ## Project structure
 
@@ -169,8 +180,8 @@ frontend/frontend/     React + TypeScript + Vite + Tailwind app
   src/state/           Account, character and guide state
   src-tauri/           Desktop app (Tauri): PoE profiles, guide decoding, Client.txt watcher
   src-tauri/engine/    Path of Building bridge and pinned engine versions
-  scripts/             Engine setup for development
-.github/workflows/     Windows portable build
+  scripts/             Engine setup, portable build, Atlas data update, VS debugging
+.github/workflows/     Windows portable build and releases
 ```
 
 ## Disclaimer

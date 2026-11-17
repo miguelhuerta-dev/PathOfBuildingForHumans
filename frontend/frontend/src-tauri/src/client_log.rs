@@ -10,19 +10,12 @@ use std::sync::Arc;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
-/// Common install locations of the log on Windows.
-pub fn default_candidates() -> Vec<PathBuf> {
-    let mut list = Vec::new();
-    for root in ["C:\\Program Files (x86)", "C:\\Program Files"] {
-        list.push(PathBuf::from(root).join("Grinding Gear Games\\Path of Exile\\logs\\Client.txt"));
-        list.push(PathBuf::from(root).join("Steam\\steamapps\\common\\Path of Exile\\logs\\Client.txt"));
-    }
-    list.push(PathBuf::from("C:\\Games\\Path of Exile\\logs\\Client.txt"));
-    list
-}
-
+/// The log of the installed game, in any Steam library or the usual folders.
 pub fn detect() -> Option<PathBuf> {
-    default_candidates().into_iter().find(|p| p.is_file())
+    crate::game_files::game_folders()
+        .into_iter()
+        .map(|game| game.join("logs").join("Client.txt"))
+        .find(|path| path.is_file())
 }
 
 /// Extracts the area name from a log line, if the line is a zone change.
