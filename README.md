@@ -180,13 +180,13 @@ inside. On first launch the engine is unpacked to `%LOCALAPPDATA%\PathOfBuilding
 and abyss jewel tables (about 170 MB, most of Path of Building's size) are not packed; the app downloads the
 one a build needs from the pinned Path of Building release the first time it is used.
 
-**Releases:** push a version tag such as `v0.3.0` and the **Desktop app (Windows portable)** workflow
-publishes a GitHub Release with `PathOfBuildingForHumans-v0.3.0-windows.exe`. Running the workflow by hand
-from the **Actions** tab keeps the app as an artifact for 7 days instead. After each successful run the
-workflow deletes older artifacts and older releases (their git tags are kept). To publish releases under
-your own account instead of `github-actions`, add a `RELEASE_TOKEN` repository secret: a fine-grained
-personal access token with *Contents: read and write* on this repository. No installation is needed on
-Windows 10 and 11 (the app uses the WebView2 runtime that ships with Windows).
+**Releases:** push a version tag such as `v0.3.0` (or run the **Desktop app (Windows portable)** workflow
+by hand from the **Actions** tab). The workflow builds `PathOfBuildingForHumans-v0.3.0-windows.exe` and
+keeps it as a workflow artifact for 7 days, together with `release-notes-v0.3.0.md` (that version's section
+of `CHANGELOG.md`). Download it and publish the GitHub Release by hand. After each successful build the
+workflow deletes the artifacts of earlier runs, so they do not fill the Actions storage; releases are never
+touched. No installation is needed on Windows 10 and 11 (the app uses the WebView2 runtime that ships with
+Windows).
 
 ## Project structure
 
