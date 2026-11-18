@@ -58,36 +58,125 @@ function GemSocket({ gem, details, owned }: { gem: EngineGem; details: GemDetail
   );
 }
 
-/** The item the group is socketed in, as a small iron socket with its art and kind. */
-function SocketItem({ slot, item }: { slot: string; item?: EngineItem }) {
-  const rarity = rarityStyle(item?.rarity);
+/** Slots that can hold that many linked sockets, most likely first. */
+const SLOTS_FOR_LINKS: Record<number, string[]> = {
+  6: ["Body Armour", "Weapon 1"],
+  5: ["Body Armour", "Weapon 1"],
+  4: ["Helmet", "Gloves", "Boots", "Body Armour", "Weapon 1"],
+  3: ["Weapon 1", "Weapon 2", "Helmet", "Gloves", "Boots", "Body Armour"],
+  2: ["Weapon 2", "Weapon 1", "Gloves", "Boots", "Helmet", "Body Armour"],
+  1: ["Weapon 2", "Weapon 1", "Boots", "Gloves", "Helmet", "Body Armour"],
+};
+
+/**
+ * The slot each group goes in. Groups the guide places keep their slot; the
+ * others get one by how many links they need (a 6-link needs a body armour or a
+ * two-handed weapon, a 4-link fits a helmet, gloves or boots), largest first and
+ * never two groups in one item.
+ */
+function inferSlots(groups: EngineSkillGroup[]): (string | undefined)[] {
+  const taken = new Set(groups.flatMap((group) => (group.slot ? [group.slot] : [])));
+  const slots: (string | undefined)[] = groups.map((group) => group.slot);
+  const order = groups
+    .map((group, index) => ({ index, links: Math.min(6, group.gems.length) }))
+    .filter(({ index }) => !groups[index].slot)
+    .sort((a, b) => b.links - a.links);
+  for (const { index, links } of order) {
+    const slot = (SLOTS_FOR_LINKS[links] ?? SLOTS_FOR_LINKS[1]).find((candidate) => !taken.has(candidate));
+    if (slot) {
+      taken.add(slot);
+      slots[index] = slot;
+    }
+  }
+  return slots;
+}
+
+/**
+ * The linked sockets a group needs, laid out as on an item: one column up to
+ * three, then two columns in a zigzag, each socket in its gem's colour.
+ */
+function LinkedSockets({ rims }: { rims: string[] }) {
+  const twoColumns = rims.length > 3;
+  const at = (index: number) => {
+    if (!twoColumns) return { x: 50, y: 18 + index * 32 };
+    const row = Math.floor(index / 2);
+    const left = row % 2 === 0 ? index % 2 === 0 : index % 2 === 1;
+    return { x: left ? 32 : 68, y: 18 + row * 32 };
+  };
+  const height = (twoColumns ? Math.ceil(rims.length / 2) : rims.length) * 32 + 4;
   return (
-    <span className="flex shrink-0 flex-col items-center gap-1" title={item ? `${slot}: ${item.name}` : slot}>
+    <svg viewBox={`0 0 100 ${height}`} className="h-[86%] w-[86%]" aria-hidden="true">
+      {rims.slice(1).map((_, index) => {
+        const a = at(index);
+        const b = at(index + 1);
+        return <line key={index} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#6e665f" strokeWidth={6} strokeLinecap="round" />;
+      })}
+      {rims.map((rim, index) => {
+        const { x, y } = at(index);
+        return <circle key={index} cx={x} cy={y} r={11} fill="#0b0909" stroke={`rgb(${rim})`} strokeWidth={4} />;
+      })}
+    </svg>
+  );
+}
+
+/**
+ * Where the group is socketed: the guide's item, with its art and kind; or, when
+ * the guide names no item (levelling links), the linked sockets it calls for.
+ */
+function SocketItem({
+  slot,
+  item,
+  rims,
+  suggested,
+}: {
+  slot?: string;
+  item?: EngineItem;
+  rims: string[];
+  /** The slot was worked out from the links: any item of that kind will do, the art only shows the kind. */
+  suggested?: boolean;
+}) {
+  const rarity = rarityStyle(suggested ? undefined : item?.rarity);
+  const links = `${rims.length}-link`;
+  const label = slot ? (suggested ? `${slot} · ${links}` : slot) : `Any item · ${links}`;
+  const title = suggested ? `Any ${slot?.replace(/ d$/, "").toLowerCase()} with ${rims.length} linked sockets` : item ? `${slot}: ${item.name}` : label;
+  return (
+    <span className="flex w-20 shrink-0 flex-col items-center gap-1" title={title}>
       <span
-        className={`iron-slot ${item ? "iron-slot--filled" : "iron-slot--empty"} h-16 w-16`}
+        className={`iron-slot ${item ? "iron-slot--filled" : ""} h-20 w-16`}
         style={{ "--rarity": rarity.rgb } as CSSProperties}
       >
         {item ? (
-          <ItemIcon src={item.icon} className="absolute inset-[8%] h-[84%] w-[84%] object-contain" />
+          <>
+            <ItemIcon src={item.icon} className={`absolute inset-[8%] h-[84%] w-[84%] object-contain ${suggested ? "opacity-70" : ""}`} />
+            {/* The sockets it must have, over the art, as on an item in the game. */}
+            {suggested && (
+              <span className="absolute inset-x-[18%] bottom-[6%] top-[6%] grid place-items-center">
+                <LinkedSockets rims={rims} />
+              </span>
+            )}
+          </>
         ) : (
-          <span className="px-1 text-center font-display text-[9px] tracking-[0.1em] text-parchment-faint">
-            {slot.toUpperCase()}
-          </span>
+          <LinkedSockets rims={rims} />
         )}
       </span>
-      <span className="font-display text-[10px] tracking-[0.14em] text-parchment-faint">{slot.toUpperCase()}</span>
+      <span className="text-center font-display text-[10px] leading-tight tracking-[0.12em] text-parchment-faint">
+        {label.toUpperCase()}
+      </span>
     </span>
   );
 }
 
 function GroupCard({
   group,
+  slot,
   item,
   ownedGems,
   details,
 }: {
   group: EngineSkillGroup;
-  /** The guide's item in the group's slot, when it has one. */
+  /** The group's slot: the guide's, or one worked out from its links. */
+  slot?: string;
+  /** The guide's item in that slot, when it has one. */
   item?: EngineItem;
   ownedGems?: Set<string>;
   details: (name: string) => GemDetails | null;
@@ -95,18 +184,14 @@ function GroupCard({
   const owns = (gem: EngineGem) => (ownedGems ? ownedGems.has(gem.name) : undefined);
   const missing = ownedGems ? group.gems.filter((gem) => !ownedGems.has(gem.name)) : [];
   return (
-    <li className={`iron-card px-4 py-3 ${group.main ? "iron-card--main" : ""}`}>
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="font-display text-[12px] tracking-[0.18em] text-parchment-faint">
-            {(group.slot ?? "Socketed").toUpperCase()}
-            {group.main && <span className="text-gold"> · MAIN SKILL</span>}
-          </p>
-          {group.label && <p className="mt-0.5 truncate text-[17px] text-parchment">{group.label}</p>}
-          {item && <p className={`truncate text-[14px] ${rarityStyle(item.rarity).tone}`}>{item.name}</p>}
-        </div>
-        {group.slot && <SocketItem slot={group.slot} item={item} />}
-      </div>
+    <li className={`iron-card flex gap-4 px-4 py-3 ${group.main ? "iron-card--main" : ""}`}>
+      <div className="min-w-0 flex-1">
+      <p className="font-display text-[12px] tracking-[0.18em] text-parchment-faint">
+        {(group.slot ?? (slot ? `${slot} (suggested)` : "Socketed")).toUpperCase()}
+        {group.main && <span className="text-gold"> · MAIN SKILL</span>}
+      </p>
+      {group.label && <p className="mt-0.5 truncate text-[17px] text-parchment">{group.label}</p>}
+      {item && group.slot && <p className={`truncate text-[14px] ${rarityStyle(item.rarity).tone}`}>{item.name}</p>}
 
       {/* The sockets, joined by iron links like a socketed item's. */}
       <div className="mt-3 flex flex-wrap items-center gap-y-3">
@@ -135,6 +220,14 @@ function GroupCard({
       {ownedGems && missing.length === 0 && (
         <p className="mt-2 font-display text-[12px] tracking-[0.16em] text-verdigris">ALL GEMS OWNED</p>
       )}
+      </div>
+      {/* Its own column on the right, so the gems sit right under the title. */}
+      <SocketItem
+        slot={slot}
+        item={item}
+        suggested={!group.slot && slot !== undefined}
+        rims={group.gems.map((gem) => ATTRIBUTE_RIM[details(gem.name)?.attribute ?? ""] ?? NEUTRAL_RIM)}
+      />
     </li>
   );
 }
@@ -144,6 +237,7 @@ function GemLinksPanel({ guide, you }: { guide: EngineBuild; you?: EngineBuild }
   const details = useGemSources(you?.character.class ?? guide.character.class);
   const groups = guide.skills.filter(isRealGroup);
   if (groups.length === 0) return null;
+  const slots = inferSlots(groups);
   const ownedGems = you ? new Set(you.skills.flatMap((group) => group.gems.map((gem) => gem.name))) : undefined;
 
   return (
@@ -159,7 +253,8 @@ function GemLinksPanel({ guide, you }: { guide: EngineBuild; you?: EngineBuild }
           <GroupCard
             key={`${group.label}-${index}`}
             group={group}
-            item={group.slot ? guide.items.find((item) => item.slot === group.slot) : undefined}
+            slot={slots[index]}
+            item={slots[index] ? guide.items.find((item) => item.slot === slots[index]) : undefined}
             ownedGems={ownedGems}
             details={details}
           />
