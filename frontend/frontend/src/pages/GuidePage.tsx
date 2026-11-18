@@ -321,6 +321,19 @@ function PassivesPanel({ archive }: { archive: Archive }) {
  * Whether the character already has a guide item: uniques by name anywhere,
  * other gear by base type in the same slot (rares are named at random).
  */
+/**
+ * Guide items without an icon (magic flasks and other bases poe.ninja does not
+ * list) borrow the official icon of a character item of the same base.
+ */
+function withCharacterIcons(items: EngineItem[], you?: EngineBuild): EngineItem[] {
+  if (!you) return items;
+  return items.map((item) => {
+    if (item.icon || !item.base) return item;
+    const same = you.items.find((own) => own.base === item.base && own.icon);
+    return same ? { ...item, icon: same.icon } : item;
+  });
+}
+
 function ownsItem(you: EngineBuild, item: EngineItem): boolean {
   if ((item.rarity ?? "").toUpperCase() === "UNIQUE") return you.items.some((own) => own.name === item.name);
   return you.items.some((own) => own.slot === item.slot && (own.base === item.base || own.name === item.name));
@@ -346,7 +359,7 @@ function GuidePage({ archive }: { archive: Archive }) {
           <StageSelector archive={archive} guide={guide} />
 
           <EquipmentPanel
-            items={guide.items}
+            items={withCharacterIcons(guide.items, you)}
             title="Artifacts of this Stage"
             intro={[
               guide.itemsFromStage
