@@ -148,6 +148,21 @@ pub async fn passive_icons(
     .map_err(|e| format!("Reading the game's icons was interrupted: {e}"))?
 }
 
+/// Item art by base name, read from the player's installed game (see `game_files`).
+#[tauri::command]
+pub async fn item_art(
+    app: tauri::AppHandle,
+    bases: Vec<String>,
+    client_log: Option<String>,
+) -> Result<BTreeMap<String, String>, String> {
+    let cache = app.path().app_cache_dir().ok();
+    tauri::async_runtime::spawn_blocking(move || {
+        game_files::item_art(&bases, client_log.as_deref().map(std::path::Path::new), cache)
+    })
+    .await
+    .map_err(|e| format!("Reading the game's item art was interrupted: {e}"))?
+}
+
 /// The author's GitHub profile, linked from the footer.
 const PROFILE_URL: &str = "https://github.com/miguelhuerta-dev";
 

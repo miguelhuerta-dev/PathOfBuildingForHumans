@@ -395,7 +395,7 @@ function GuidePage({ archive }: { archive: Archive }) {
                       {upgrades.slice(1, 8).map((upgrade) => (
                         <li key={upgrade.slot} className="flex flex-wrap items-center justify-between gap-x-4 py-3">
                           <span className="flex items-center gap-3">
-                            <ItemIcon src={upgrade.item.icon} className="h-12 w-12 shrink-0" />
+                            <ItemIcon src={upgrade.item.icon} base={upgrade.item.base} className="h-12 w-12 shrink-0" />
                             <span>
                             <span className="font-display text-[13px] tracking-[0.16em] text-parchment-dim">
                               {upgrade.slot.toUpperCase()}

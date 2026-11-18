@@ -38,6 +38,13 @@ export const desktop = {
       Object.entries(icons).map(([key, source]) => [key, source.startsWith("data:") ? source : convertFileSrc(source)]),
     );
   },
+  /** Item art read from the installed game, as image URLs by base name ("Divine Life Flask"). */
+  itemArt: async (bases: string[], clientLog: string | null) => {
+    const art = await call<Record<string, string>>("item_art", { bases, clientLog });
+    return Object.fromEntries(
+      Object.entries(art).map(([base, source]) => [base, source.startsWith("data:") ? source : convertFileSrc(source)]),
+    );
+  },
   /** Opens the author's GitHub profile in the system browser. */
   openProfile: () => call<void>("open_profile"),
   onZoneEntered: (handler: (zone: string) => void): Promise<UnlistenFn> =>

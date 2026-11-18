@@ -68,7 +68,7 @@ function SocketItem({ slot, item }: { slot: string; item?: EngineItem }) {
         style={{ "--rarity": rarity.rgb } as CSSProperties}
       >
         {item ? (
-          <ItemIcon src={item.icon} className="absolute inset-[8%] h-[84%] w-[84%] object-contain" />
+          <ItemIcon src={item.icon} base={item.base} className="absolute inset-[8%] h-[84%] w-[84%] object-contain" />
         ) : (
           <span className="px-1 text-center font-display text-[9px] tracking-[0.1em] text-parchment-faint">
             {slot.toUpperCase()}

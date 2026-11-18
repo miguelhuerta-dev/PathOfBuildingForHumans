@@ -39,7 +39,7 @@ function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
         <div className="absolute inset-[18%] bg-[radial-gradient(circle,rgba(220,170,90,0.25),transparent_70%)]" />
         {officialIcon(upgrade.item.icon) ? (
           <div className="absolute inset-[18%] flex items-center justify-center overflow-hidden">
-            <ItemIcon src={upgrade.item.icon} className="h-auto max-h-full w-auto max-w-full" />
+            <ItemIcon src={upgrade.item.icon} base={upgrade.item.base} className="h-auto max-h-full w-auto max-w-full" />
           </div>
         ) : isRing ? (
           <img
