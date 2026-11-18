@@ -149,7 +149,8 @@ local function stageForLevel(stages, level)
 		end
 		highest = math.max(highest, stage.maxLevel or 0)
 	end
-	if level > highest then
+	-- Only for guides that do give level ranges; otherwise any level would land here.
+	if highest > 0 and level > highest then
 		for _, stage in ipairs(stages) do
 			if not stage.minLevel then
 				return stage.index
@@ -159,30 +160,161 @@ local function stageForLevel(stages, level)
 	return nil
 end
 
+-- Item or skill set that belongs to a stage. Guides link them in one of three ways:
+-- stage numbers in braces (Maxroll: "Early Campaign {1,2}"), the same title as the
+-- tree ("End-Game Gear WAND"), or the same position when there are as many sets as
+-- trees (levelling trees paired with "Act 1", "Act 2"…).
+local function setForStage(orderList, sets, index, spec)
+	local wanted = stageNumbers(spec.title)
+	if next(wanted) then
+		return matchingSetId(orderList, sets, wanted)
+	end
+	local title = cleanTitle(spec.title)
+	for _, id in ipairs(orderList or {}) do
+		if cleanTitle(sets[id] and sets[id].title) == title then
+			return id
+		end
+	end
+	if #(orderList or {}) == #build.treeTab.specList then
+		return orderList[index]
+	end
+end
+
+-- False when the guide has gear for some stages but not for the chosen one, so a
+-- levelling stage does not show end-game gear.
+local stageHasItems = true
+
 local function applyStage(index)
 	local spec = build.treeTab.specList and build.treeTab.specList[index]
 	if not spec then return end
 	build.treeTab:SetActiveSpec(index)
-	local wanted = stageNumbers(spec.title)
-	if next(wanted) then
-		local itemSetId = matchingSetId(build.itemsTab.itemSetOrderList, build.itemsTab.itemSets, wanted)
-		if itemSetId then
-			build.itemsTab:SetActiveItemSet(itemSetId)
-		end
-		local skillSetId = matchingSetId(build.skillsTab.skillSetOrderList, build.skillsTab.skillSets, wanted)
-		if skillSetId and build.skillsTab.SetActiveSkillSet then
-			build.skillsTab:SetActiveSkillSet(skillSetId)
-		end
+	local itemSetId = setForStage(build.itemsTab.itemSetOrderList, build.itemsTab.itemSets, index, spec)
+	if itemSetId then
+		build.itemsTab:SetActiveItemSet(itemSetId)
+	end
+	stageHasItems = itemSetId ~= nil or #(build.itemsTab.itemSetOrderList or {}) <= 1
+	local skillSetId = setForStage(build.skillsTab.skillSetOrderList, build.skillsTab.skillSets, index, spec)
+	if skillSetId and build.skillsTab.SetActiveSkillSet then
+		build.skillsTab:SetActiveSkillSet(skillSetId)
 	end
 	runCallback("OnFrame")
 	pickMainSkill()
 end
 
-local function loadGuide(xml, name, stage, level)
+-- Allocated passives of a tree, without class and ascendancy starts.
+local function specPoints(spec)
+	local count = 0
+	for _, node in pairs(spec.allocNodes or {}) do
+		if node.type ~= "ClassStart" and node.type ~= "AscendClassStart" then
+			count = count + 1
+		end
+	end
+	return count
+end
+
+-- Without level ranges in the titles, the stage to work towards is the smallest
+-- tree that still has more passives than the character has taken.
+local function stageForPoints(points)
+	if not points then return nil end
+	local best, bestCount
+	for index, spec in ipairs(build.treeTab.specList or {}) do
+		local count = specPoints(spec)
+		if count > points and (not bestCount or count < bestCount) then
+			best, bestCount = index, count
+		end
+	end
+	return best
+end
+
+-- The order the guide takes its ascendancy passives in. Trees are sorted by how
+-- many points they spend (levelling first), and each passive is placed in the
+-- Labyrinth whose two points first allow it.
+local LABS = { "Normal Labyrinth", "Cruel Labyrinth", "Merciless Labyrinth", "Eternal Labyrinth" }
+
+local function ascendancyPlan()
+	local specs = {}
+	for _, spec in ipairs(build.treeTab.specList or {}) do
+		specs[#specs + 1] = spec
+	end
+	table.sort(specs, function(a, b) return specPoints(a) < specPoints(b) end)
+	local seen, plan = {}, {}
+	for _, spec in ipairs(specs) do
+		local taken = 0
+		for _, node in pairs(spec.allocNodes or {}) do
+			if node.ascendancyName and node.type ~= "AscendClassStart" then
+				taken = taken + 1
+			end
+		end
+		local lab = math.max(1, math.min(#LABS, math.ceil(taken / 2)))
+		local new = {}
+		for id, node in pairs(spec.allocNodes or {}) do
+			if node.ascendancyName and node.type ~= "AscendClassStart" and not seen[id] then
+				seen[id] = true
+				new[#new + 1] = { id = id, name = plainText(node.dn or node.name), notable = node.isNotable or false,
+					icon = node.icon, stats = node.sd, lab = lab, labName = LABS[lab] }
+			end
+		end
+		table.sort(new, function(a, b) return a.id < b.id end)
+		for _, entry in ipairs(new) do
+			plan[#plan + 1] = entry
+		end
+	end
+	return plan
+end
+
+-- The bandit quest choice, with the reward Path of Building applies for it.
+local BANDIT_REWARDS = {
+	None = { label = "Kill all three", reward = "1 extra Passive Skill Point" },
+	Oak = { label = "Help Oak", reward = "+40 to maximum Life" },
+	Kraityn = { label = "Help Kraityn", reward = "8% increased Movement Speed" },
+	Alira = { label = "Help Alira", reward = "+15% to all Elemental Resistances" },
+}
+
+local function banditChoice()
+	local choice = build.configTab.input.bandit or "None"
+	local entry = BANDIT_REWARDS[choice] or BANDIT_REWARDS.None
+	return { choice = choice, label = entry.label, reward = entry.reward }
+end
+
+-- The guide's Pantheon powers, with every soul's effect from Path of Building's data.
+local function pantheonGod(id)
+	local god = id and data.pantheons and data.pantheons[id]
+	if not god then return nil end
+	local souls = {}
+	for index, soul in ipairs(god.souls or {}) do
+		local lines = {}
+		for _, mod in ipairs(soul.mods or {}) do
+			lines[#lines + 1] = mod.line
+		end
+		souls[#souls + 1] = { name = soul.name, lines = lines, upgrade = index > 1 }
+	end
+	local name = (god.souls and god.souls[1] and god.souls[1].name or id):gsub("^Soul of ", ""):gsub("^%l", string.upper)
+	return { id = id, name = name, major = god.isMajorGod or false, souls = souls }
+end
+
+local function pantheonChoice()
+	local input = build.configTab.input
+	return { major = pantheonGod(input.pantheonMajorGod), minor = pantheonGod(input.pantheonMinorGod) }
+end
+
+-- Stage-wide guidance read from the guide while it is loaded.
+local function guideExtras(guide)
+	guide.ascendancyPlan = ascendancyPlan()
+	guide.bandit = banditChoice()
+	guide.pantheon = pantheonChoice()
+	if not stageHasItems then
+		guide.items = {}
+		guide.noStageItems = true
+	end
+	return guide
+end
+
+local function loadGuide(xml, name, stage, level, points)
 	loadBuildFromXML(xml, name or "Guide")
 	recalc()
+	stageHasItems = true
 	local stages = listStages()
-	local chosen = stage or stageForLevel(stages, level)
+	local chosen = stage or stageForLevel(stages, level) or stageForPoints(points)
 	if chosen then
 		applyStage(chosen)
 	end
@@ -507,7 +639,7 @@ if request.kind == "character" then
 	result = summarize({ name = request.character.name, league = request.character.league }, iconsBySlot(request.character.equipment, request.character.jewels))
 elseif request.kind == "build" then
 	local stages = loadGuide(request.xml, request.name, request.stage, nil)
-	result = summarize()
+	result = guideExtras(summarize())
 	result.stages = stages
 	-- The guide's tree on its own, so it can be drawn before a character is connected.
 	local guideNodes = allocatedPassives()
@@ -517,13 +649,16 @@ elseif request.kind == "build" then
 	result.passives = passives
 elseif request.kind == "compare" then
 	local level = request.character and request.character.level
-	local stages = loadGuide(request.xml, request.name, request.stage, level)
-	local guide = summarize()
+	local characterTree = request.character and request.character.passives
+	local points = characterTree and characterTree.hashes and #characterTree.hashes or nil
+	local stages = loadGuide(request.xml, request.name, request.stage, level, points)
+	local guide = guideExtras(summarize())
 	guide.stages = stages
 	local guideNodes = allocatedPassives()
 	local guideIds, guideMasteries = treeSnapshot(guideNodes)
 	local guideItems = {}
-	for _, entry in ipairs(gearSlots()) do
+	-- No upgrade advice from end-game gear while the guide has none for this stage.
+	for _, entry in ipairs(stageHasItems and gearSlots() or {}) do
 		local item = equippedItem(entry.slot)
 		if item then
 			guideItems[#guideItems + 1] = { slot = entry.name, raw = item:BuildRaw(), info = describeItem(item) }

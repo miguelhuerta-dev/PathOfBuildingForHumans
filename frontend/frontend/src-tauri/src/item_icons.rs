@@ -11,15 +11,17 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 const OVERVIEW: &str = "https://poe.ninja/poe1/api/economy/stash/current/item/overview";
-const TYPES: [&str; 6] = [
+const TYPES: [&str; 7] = [
     "BaseType",
     "UniqueWeapon",
     "UniqueArmour",
     "UniqueAccessory",
     "UniqueFlask",
     "UniqueJewel",
+    "SkillGem",
 ];
-const CACHE_FILE: &str = "item-icons.json";
+/// Versioned: a new set of types makes older caches stale at once.
+const CACHE_FILE: &str = "item-icons-v2.json";
 const CACHE_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const ICON_PREFIX: &str = "https://web.poecdn.com/";
 
@@ -113,11 +115,42 @@ fn decorate_item(item: &mut Value, index: &Index) {
     }
 }
 
-/// Adds icons to the guide's items and to the recommended upgrades.
+/// Gems are listed by Path of Building without "Support" ("Minion Damage"),
+/// and by poe.ninja with it ("Minion Damage Support").
+fn decorate_gem(gem: &mut Value, index: &Index) {
+    if gem.get("icon").is_some() {
+        return;
+    }
+    let Some(name) = gem.get("name").and_then(Value::as_str) else {
+        return;
+    };
+    let icon = index
+        .get(name)
+        .or_else(|| index.get(&format!("{name} Support")))
+        .cloned();
+    if let Some(icon) = icon {
+        gem["icon"] = Value::String(icon);
+    }
+}
+
+fn decorate_gems(build: Option<&mut Value>, index: &Index) {
+    let Some(groups) = build.and_then(|b| b.get_mut("skills")).and_then(Value::as_array_mut) else {
+        return;
+    };
+    for group in groups {
+        if let Some(gems) = group.get_mut("gems").and_then(Value::as_array_mut) {
+            gems.iter_mut().for_each(|gem| decorate_gem(gem, index));
+        }
+    }
+}
+
+/// Adds icons to the guide's items, both sides' gems and the recommended upgrades.
 pub fn decorate(result: &mut Value, index: &Index) {
     if index.is_empty() {
         return;
     }
+    decorate_gems(result.get_mut("guide"), index);
+    decorate_gems(result.get_mut("character"), index);
     if let Some(items) = result.pointer_mut("/guide/items").and_then(Value::as_array_mut) {
         items.iter_mut().for_each(|item| decorate_item(item, index));
     }
@@ -154,5 +187,24 @@ mod tests {
         );
         assert_eq!(result["upgrades"][1]["item"]["icon"], "https://web.poecdn.com/hh.png");
         assert!(result["upgrades"][2]["item"].get("icon").is_none());
+    }
+
+    #[test]
+    fn finds_gem_icons_with_or_without_support() {
+        let mut index = Index::new();
+        index.insert("Summon Raging Spirit".into(), "https://web.poecdn.com/srs.png".into());
+        index.insert("Minion Damage Support".into(), "https://web.poecdn.com/md.png".into());
+        let mut result = json!({
+            "guide": { "skills": [ { "gems": [ { "name": "Summon Raging Spirit" }, { "name": "Minion Damage" } ] } ] }
+        });
+        decorate(&mut result, &index);
+        assert_eq!(
+            result["guide"]["skills"][0]["gems"][0]["icon"],
+            "https://web.poecdn.com/srs.png"
+        );
+        assert_eq!(
+            result["guide"]["skills"][0]["gems"][1]["icon"],
+            "https://web.poecdn.com/md.png"
+        );
     }
 }
