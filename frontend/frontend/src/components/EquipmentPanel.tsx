@@ -55,13 +55,27 @@ function IronChain() {
 interface SlotProps {
   slot: string;
   item?: EngineItem;
+  /** Comparing with a guide: true when the character already has it, false when it is still sought. */
+  owned?: boolean;
   selected: boolean;
   onSelect: (slot: string) => void;
   style?: CSSProperties;
   className?: string;
 }
 
-function Slot({ slot, item, selected, onSelect, style, className = "" }: SlotProps) {
+/** Gold check for an item the character has; an ember mark for one still to find. */
+function OwnedMark({ owned }: { owned?: boolean }) {
+  if (owned === undefined) return null;
+  return owned ? (
+    <span className="absolute right-1 top-1 z-10 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-bold text-ink" aria-label="You have it">
+      ✓
+    </span>
+  ) : (
+    <span className="absolute right-1 top-1 z-10 h-2.5 w-2.5 rotate-45 border border-ember bg-ember/40" aria-label="Still to find" />
+  );
+}
+
+function Slot({ slot, item, owned, selected, onSelect, style, className = "" }: SlotProps) {
   if (!item) {
     return (
       <div className={`iron-slot iron-slot--empty ${className}`} style={style} aria-hidden="true">
@@ -85,6 +99,7 @@ function Slot({ slot, item, selected, onSelect, style, className = "" }: SlotPro
     >
       {/* A fixed box inside the socket: tall art (staves, bows) scales down instead of spilling out. */}
       <ItemIcon src={item.icon} className="absolute inset-[7%] h-[86%] w-[86%] object-contain" />
+      <OwnedMark owned={owned} />
     </button>
   );
 }
@@ -128,7 +143,17 @@ function ItemDetails({ item }: { item?: EngineItem }) {
 }
 
 /** Every equipped item by slot, in its rarity colour; pointing at one reads it out. */
-function GearLedger({ items, selected, onSelect }: { items: EngineItem[]; selected?: string; onSelect: (slot: string) => void }) {
+function GearLedger({
+  items,
+  selected,
+  onSelect,
+  owned,
+}: {
+  items: EngineItem[];
+  selected?: string;
+  onSelect: (slot: string) => void;
+  owned?: (item: EngineItem) => boolean;
+}) {
   return (
     <ul className="mt-5 grid gap-x-6 sm:grid-cols-2">
       {items.map((item) => (
@@ -145,7 +170,12 @@ function GearLedger({ items, selected, onSelect }: { items: EngineItem[]; select
             <span className="w-28 shrink-0 font-display text-[11px] tracking-[0.14em] text-parchment-faint">
               {slotLabel(item.slot).toUpperCase()}
             </span>
-            <span className={`min-w-0 truncate text-[16px] ${rarityStyle(item.rarity).tone}`}>{item.name}</span>
+            <span className={`min-w-0 flex-1 truncate text-[16px] ${rarityStyle(item.rarity).tone}`}>{item.name}</span>
+            {owned && (
+              <span className={`shrink-0 text-[12px] ${owned(item) ? "text-gold" : "text-ember"}`}>
+                {owned(item) ? "✓" : "SEEK"}
+              </span>
+            )}
           </button>
         </li>
       ))}
@@ -160,19 +190,39 @@ const slotRank = (slot: string) => {
 };
 
 /** The character's worn gear, flasks and socketed jewels, with official icons when available. */
-function EquipmentPanel({ items }: { items: EngineItem[] }) {
+interface EquipmentPanelProps {
+  items: EngineItem[];
+  title?: string;
+  /** A line under the title. */
+  intro?: string;
+  /** Marks each item as owned or still sought (the guide's gear against the character's). */
+  owned?: (item: EngineItem) => boolean;
+  /** Shown instead of the armoury when there are no items. */
+  emptyNote?: string;
+}
+
+function EquipmentPanel({ items, title = "Equipped Artifacts", intro, owned, emptyNote }: EquipmentPanelProps) {
   const bySlot = new Map(items.map((item) => [item.slot, item]));
   const jewels = items.filter((item) => isJewel(item.slot));
   const firstFilled = [...CORE_SLOTS, ...FLASKS].find((slot) => bySlot.has(slot)) ?? jewels[0]?.slot;
   const [selected, setSelected] = useState<string | undefined>(firstFilled);
-  if (items.length === 0) return null;
+  if (items.length === 0 && !emptyNote) return null;
+  if (items.length === 0) {
+    return (
+      <AtlasFrame variant="iron">
+        <AtlasSectionHeader title={title} tone="blood" icon={<SkullIcon className="h-7 w-7" />} />
+        <p className="text-[17px] text-parchment-dim">{emptyNote}</p>
+      </AtlasFrame>
+    );
+  }
 
   const dollSlots = [...CORE_SLOTS, ...(bySlot.has("Ring 3") ? ["Ring 3"] : [])];
   const current = (selected && bySlot.get(selected)) || (firstFilled ? bySlot.get(firstFilled) : undefined);
 
   return (
     <AtlasFrame variant="iron">
-      <AtlasSectionHeader title="Equipped Artifacts" tone="blood" icon={<SkullIcon className="h-7 w-7" />} />
+      <AtlasSectionHeader title={title} tone="blood" icon={<SkullIcon className="h-7 w-7" />} />
+      {intro && <p className="-mt-1 mb-4 text-[16px] text-parchment-dim">{intro}</p>}
       <div className="grid items-start gap-8 lg:grid-cols-[auto_minmax(0,1fr)]">
         <div className="mx-auto w-fit [--cell:44px] sm:[--cell:54px]">
           <div
@@ -186,6 +236,7 @@ function EquipmentPanel({ items }: { items: EngineItem[] }) {
                   key={slot}
                   slot={slot}
                   item={bySlot.get(slot)}
+                  owned={owned && bySlot.get(slot) ? owned(bySlot.get(slot)!) : undefined}
                   selected={current?.slot === slot}
                   onSelect={setSelected}
                   style={{ gridColumn: `${column} / span ${width}`, gridRow: `${row} / span ${height}` }}
@@ -220,6 +271,7 @@ function EquipmentPanel({ items }: { items: EngineItem[] }) {
                     key={item.slot}
                     slot={item.slot}
                     item={item}
+                    owned={owned ? owned(item) : undefined}
                     selected={current?.slot === item.slot}
                     onSelect={setSelected}
                     className="h-[var(--cell)] w-[var(--cell)]"
@@ -238,6 +290,7 @@ function EquipmentPanel({ items }: { items: EngineItem[] }) {
             items={[...items].sort((a, b) => slotRank(a.slot) - slotRank(b.slot))}
             selected={current?.slot}
             onSelect={setSelected}
+            owned={owned}
           />
         </div>
       </div>

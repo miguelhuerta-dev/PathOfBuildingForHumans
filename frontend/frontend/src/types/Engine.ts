@@ -16,6 +16,8 @@ export interface EngineGem {
   level?: number;
   quality?: number;
   enabled: boolean;
+  /** Official icon URL (web.poecdn.com), when known. */
+  icon?: string;
 }
 
 export interface EngineSkillGroup {
@@ -70,6 +72,47 @@ export interface EngineBuild {
   items: EngineItem[];
   skills: EngineSkillGroup[];
   stages?: GuideStage[];
+  /** Guides only: the order the ascendancy passives are taken in. */
+  ascendancyPlan?: AscendancyStep[];
+  /** Guides only: the bandit quest choice. */
+  bandit?: BanditChoice;
+  /** Guides only: the Pantheon powers. */
+  pantheon?: { major?: PantheonGod; minor?: PantheonGod };
+  /** Guides only: the guide has gear for other stages but none for this one. */
+  noStageItems?: boolean;
+}
+
+export interface AscendancyStep {
+  id: number;
+  name: string;
+  notable: boolean;
+  /** Game icon path, e.g. "Art/2DArt/SkillIcons/passives/Necromancer/….png". */
+  icon?: string;
+  stats?: string[];
+  /** 1 to 4: the Labyrinth whose points first allow this passive. */
+  lab: number;
+  labName: string;
+}
+
+export interface BanditChoice {
+  /** "None" (kill all three), "Oak", "Kraityn" or "Alira". */
+  choice: string;
+  label: string;
+  reward: string;
+}
+
+export interface PantheonSoul {
+  name: string;
+  lines: string[];
+  /** Upgrades are unlocked by capturing that soul's map boss. */
+  upgrade: boolean;
+}
+
+export interface PantheonGod {
+  id: string;
+  name: string;
+  major: boolean;
+  souls: PantheonSoul[];
 }
 
 export interface Upgrade {
