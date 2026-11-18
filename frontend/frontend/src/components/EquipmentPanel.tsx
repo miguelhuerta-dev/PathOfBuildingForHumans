@@ -111,7 +111,7 @@ function ItemDetails({ item }: { item?: EngineItem }) {
   }
   const rarity = rarityStyle(item.rarity);
   return (
-    <article key={item.slot} className="iron-tooltip fade-in" style={{ "--rarity": rarity.rgb } as CSSProperties}>
+    <article key={item.slot} className="iron-tooltip fade-in min-h-full" style={{ "--rarity": rarity.rgb } as CSSProperties}>
       <header className="iron-tooltip__head px-5 py-3 text-center">
         <p className="font-display text-[12px] tracking-[0.2em] text-parchment-faint">{slotLabel(item.slot).toUpperCase()}</p>
         <h3 className={`font-display text-[20px] leading-tight ${rarity.tone}`}>{item.name}</h3>
@@ -283,7 +283,9 @@ function EquipmentPanel({ items, title = "Equipped Artifacts", intro, owned, emp
         </div>
 
         <div>
-          <div aria-live="polite">
+          {/* Fixed height: a longer item must not push the ledger, or the row under the
+              pointer changes and the read-out flickers between items. */}
+          <div aria-live="polite" className="iron-scroll h-[19rem] overflow-y-auto">
             <ItemDetails item={current} />
           </div>
           <GearLedger
