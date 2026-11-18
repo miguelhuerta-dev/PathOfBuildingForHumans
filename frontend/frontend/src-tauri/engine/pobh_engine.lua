@@ -180,15 +180,44 @@ local function setForStage(orderList, sets, index, spec)
 	end
 end
 
--- False when the guide has gear for some stages but not for the chosen one, so a
--- levelling stage does not show end-game gear.
+-- Allocated passives of a tree, without class and ascendancy starts.
+local function specPoints(spec)
+	local count = 0
+	for _, node in pairs(spec.allocNodes or {}) do
+		if node.type ~= "ClassStart" and node.type ~= "AscendClassStart" then
+			count = count + 1
+		end
+	end
+	return count
+end
+
+-- False when the guide has no gear at all for the chosen stage.
 local stageHasItems = true
+-- When the chosen stage has no gear of its own, the title of the nearest stage
+-- (by passives spent) whose gear is shown instead.
+local stageItemsFrom = nil
 
 local function applyStage(index)
 	local spec = build.treeTab.specList and build.treeTab.specList[index]
 	if not spec then return end
 	build.treeTab:SetActiveSpec(index)
 	local itemSetId = setForStage(build.itemsTab.itemSetOrderList, build.itemsTab.itemSets, index, spec)
+	stageItemsFrom = nil
+	if not itemSetId and #(build.itemsTab.itemSetOrderList or {}) > 1 then
+		-- Borrow the gear of the closest stage that has some, preferring the cheaper tree.
+		local points, best, bestGap = specPoints(spec), nil, nil
+		for other, otherSpec in ipairs(build.treeTab.specList) do
+			local otherSet = other ~= index and setForStage(build.itemsTab.itemSetOrderList, build.itemsTab.itemSets, other, otherSpec)
+			if otherSet then
+				local gap = math.abs(specPoints(otherSpec) - points)
+				if not bestGap or gap < bestGap then
+					best, bestGap = otherSet, gap
+					stageItemsFrom = cleanTitle(otherSpec.title)
+				end
+			end
+		end
+		itemSetId = best
+	end
 	if itemSetId then
 		build.itemsTab:SetActiveItemSet(itemSetId)
 	end
@@ -199,17 +228,6 @@ local function applyStage(index)
 	end
 	runCallback("OnFrame")
 	pickMainSkill()
-end
-
--- Allocated passives of a tree, without class and ascendancy starts.
-local function specPoints(spec)
-	local count = 0
-	for _, node in pairs(spec.allocNodes or {}) do
-		if node.type ~= "ClassStart" and node.type ~= "AscendClassStart" then
-			count = count + 1
-		end
-	end
-	return count
 end
 
 -- Without level ranges in the titles, the stage to work towards is the smallest
@@ -306,6 +324,7 @@ local function guideExtras(guide)
 		guide.items = {}
 		guide.noStageItems = true
 	end
+	guide.itemsFromStage = stageItemsFrom
 	return guide
 end
 

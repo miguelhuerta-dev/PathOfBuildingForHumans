@@ -21,6 +21,48 @@ function Signed({ value }: { value: number }) {
   return <span className={changeTone(value)}>{formatSignedPercent(value)}</span>;
 }
 
+/** Guides opened before, as a shelf of iron plates: open one to switch, or forget it. */
+function GuideLibrary({ archive }: { archive: Archive }) {
+  if (archive.savedGuides.length === 0) return null;
+  const busy = archive.guideState === "loading";
+  return (
+    <div className="mt-6">
+      <h3 className="font-display text-[13px] tracking-[0.2em] text-parchment-dim">YOUR GUIDE LIBRARY</h3>
+      <ul className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {archive.savedGuides.map((saved) => {
+          const open = saved.input === archive.guideInput;
+          return (
+            <li key={saved.input} className={`iron-card flex items-center gap-3 px-3 py-2 ${open ? "iron-card--main" : ""}`}>
+              <QuillIcon className={`h-6 w-6 shrink-0 ${open ? "text-gold" : "text-parchment-faint"}`} />
+              <button
+                type="button"
+                disabled={busy || open}
+                onClick={() => void archive.loadGuide(saved.input)}
+                className="min-w-0 flex-1 text-left disabled:cursor-default"
+                title={open ? "Open now" : "Open this guide"}
+              >
+                <span className={`block truncate text-[16px] ${open ? "text-gold" : "text-parchment"}`}>{saved.title}</span>
+                <span className="block text-[13px] text-parchment-faint">
+                  {open ? "Open now" : `Opened ${new Date(saved.openedAt).toLocaleDateString()}`}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => archive.removeSavedGuide(saved.input)}
+                aria-label={`Forget ${saved.title}`}
+                title="Forget this guide"
+                className="shrink-0 px-1 text-[18px] leading-none text-parchment-faint hover:text-ember"
+              >
+                ×
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function ImportPanel({ archive }: { archive: Archive }) {
   const [input, setInput] = useState("");
   const guide = archive.result?.guide;
@@ -74,6 +116,7 @@ function ImportPanel({ archive }: { archive: Archive }) {
         )}
         {archive.guideError && <ErrorNote>{archive.guideError}</ErrorNote>}
       </form>
+      <GuideLibrary archive={archive} />
     </AtlasFrame>
   );
 }
@@ -305,11 +348,12 @@ function GuidePage({ archive }: { archive: Archive }) {
           <EquipmentPanel
             items={guide.items}
             title="Artifacts of this Stage"
-            intro={
-              you
-                ? "The guide's gear for this stage. A gold mark is gear you already wear; an ember mark, gear still to find."
-                : "The guide's gear for this stage."
-            }
+            intro={[
+              guide.itemsFromStage
+                ? `This stage has no gear of its own: this is the gear of "${guide.itemsFromStage}", the nearest stage that has it.`
+                : "The guide's gear for this stage.",
+              you ? "A gold mark is gear you already wear; an ember mark, gear still to find." : "",
+            ].join(" ")}
             owned={you ? (item) => ownsItem(you, item) : undefined}
             emptyNote={
               guide.noStageItems
@@ -317,6 +361,10 @@ function GuidePage({ archive }: { archive: Archive }) {
                 : undefined
             }
           />
+
+          <GemLinksPanel guide={guide} you={comparing ? you : undefined} />
+
+          <PassivesPanel archive={archive} />
 
           {comparing && you && (
             <>
@@ -359,7 +407,6 @@ function GuidePage({ archive }: { archive: Archive }) {
             </>
           )}
 
-          <PassivesPanel archive={archive} />
 
           <AscensionPanel
             guide={guide}
@@ -367,7 +414,6 @@ function GuidePage({ archive }: { archive: Archive }) {
             clientLog={archive.clientLog || null}
           />
 
-          <GemLinksPanel guide={guide} you={comparing ? you : undefined} />
 
           <BanditPantheonPanel guide={guide} />
         </>

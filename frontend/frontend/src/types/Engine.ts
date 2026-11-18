@@ -78,8 +78,10 @@ export interface EngineBuild {
   bandit?: BanditChoice;
   /** Guides only: the Pantheon powers. */
   pantheon?: { major?: PantheonGod; minor?: PantheonGod };
-  /** Guides only: the guide has gear for other stages but none for this one. */
+  /** Guides only: the guide has no gear at all for this stage. */
   noStageItems?: boolean;
+  /** Guides only: this stage has no gear of its own; the gear shown is that stage's (the nearest one). */
+  itemsFromStage?: string;
 }
 
 export interface AscendancyStep {

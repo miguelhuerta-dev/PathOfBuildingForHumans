@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import demoCharacter from "../data/demo/demoCharacter.json";
 import { desktop, isDesktopApp } from "../lib/desktop";
 import { readSetting, writeSetting } from "../lib/settings";
+import { clearLastGuide, forgetGuide, readLastGuide, readSavedGuides, rememberGuide, type SavedGuide } from "./savedGuides";
 import type { CharacterSummary, EngineResult } from "../types/Engine";
 
 const STORAGE = {
@@ -93,13 +94,23 @@ export function useArchive() {
     if (selected) void loadCharacter(selected);
   }, [loadCharacter, selected]);
 
+  const [savedGuides, setSavedGuides] = useState<SavedGuide[]>(readSavedGuides);
+  const [guideInput, setGuideInput] = useState<string | null>(null);
+
   const loadGuide = useCallback(async (input: string) => {
-    if (!input.trim()) return;
+    const code = input.trim();
+    if (!code) return;
     setGuideState("loading");
     setGuideError(null);
     const request = ++latestRequest.current;
     try {
-      const next = await desktop.loadGuide(input.trim());
+      const next = await desktop.loadGuide(code);
+      // The engine now holds this guide, even if a newer answer (a zone refresh) is shown
+      // instead: remember it under its class and main skill, to reopen on the next start.
+      const build = next.guide?.character;
+      const title = [build?.ascendancy ?? build?.class, build?.mainSkill].filter(Boolean).join(" · ") || "Guide";
+      setSavedGuides(rememberGuide(code, title));
+      setGuideInput(code);
       if (request !== latestRequest.current) return setGuideState("idle");
       setResult((previous) => ({ ...previous, ...next }));
       setGuideState("idle");
@@ -130,9 +141,13 @@ export function useArchive() {
     // Answers still on their way would bring the guide back.
     latestRequest.current += 1;
     await desktop.clearGuide();
+    clearLastGuide();
+    setGuideInput(null);
     setGuideState("idle");
     setResult((previous) => (previous ? { character: previous.character } : previous));
   }, []);
+
+  const removeSavedGuide = useCallback((input: string) => setSavedGuides(forgetGuide(input)), []);
 
   const disconnect = useCallback(() => {
     setAccount("");
@@ -148,10 +163,15 @@ export function useArchive() {
   useEffect(() => {
     if (!isDesktopApp || restored.current) return;
     restored.current = true;
-    if (account) {
-      void loadCharacters(account);
-      if (selected) void loadCharacter(selected);
-    }
+    const lastGuide = readLastGuide();
+    void (async () => {
+      if (account) {
+        void loadCharacters(account);
+        if (selected) await loadCharacter(selected);
+      }
+      // After the character, so the guide opens already compared with it.
+      if (lastGuide) await loadGuide(lastGuide);
+    })();
     if (!clientLog) {
       desktop
         .detectClientLog()
@@ -163,7 +183,7 @@ export function useArchive() {
         })
         .catch(() => undefined);
     }
-  }, [account, clientLog, loadCharacter, loadCharacters, selected]);
+  }, [account, clientLog, loadCharacter, loadCharacters, loadGuide, selected]);
 
   // Watch Client.txt and refresh the character when the player changes zone.
   // The log listener lives as long as the log path; these refs let it call the
@@ -232,6 +252,11 @@ export function useArchive() {
     loadGuide,
     selectStage,
     clearGuide,
+    /** Guides opened before, most recent first. */
+    savedGuides,
+    removeSavedGuide,
+    /** The code or link of the open guide. */
+    guideInput,
     disconnect,
     clientLog,
     setClientLog: updateClientLog,

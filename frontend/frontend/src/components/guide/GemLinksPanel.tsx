@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 import { useGemSources, type GemDetails } from "../../state/useGemSources";
-import type { EngineBuild, EngineGem, EngineSkillGroup } from "../../types/Engine";
+import type { EngineBuild, EngineGem, EngineItem, EngineSkillGroup } from "../../types/Engine";
+import { rarityStyle } from "../../utils/rarity";
+import ItemIcon from "../ItemIcon";
 import AtlasFrame from "../AtlasFrame";
 import AtlasSectionHeader from "../AtlasSectionHeader";
 import { SigilIcon } from "../icons";
@@ -56,12 +58,37 @@ function GemSocket({ gem, details, owned }: { gem: EngineGem; details: GemDetail
   );
 }
 
+/** The item the group is socketed in, as a small iron socket with its art and kind. */
+function SocketItem({ slot, item }: { slot: string; item?: EngineItem }) {
+  const rarity = rarityStyle(item?.rarity);
+  return (
+    <span className="flex shrink-0 flex-col items-center gap-1" title={item ? `${slot}: ${item.name}` : slot}>
+      <span
+        className={`iron-slot ${item ? "iron-slot--filled" : "iron-slot--empty"} h-16 w-16`}
+        style={{ "--rarity": rarity.rgb } as CSSProperties}
+      >
+        {item ? (
+          <ItemIcon src={item.icon} className="absolute inset-[8%] h-[84%] w-[84%] object-contain" />
+        ) : (
+          <span className="px-1 text-center font-display text-[9px] tracking-[0.1em] text-parchment-faint">
+            {slot.toUpperCase()}
+          </span>
+        )}
+      </span>
+      <span className="font-display text-[10px] tracking-[0.14em] text-parchment-faint">{slot.toUpperCase()}</span>
+    </span>
+  );
+}
+
 function GroupCard({
   group,
+  item,
   ownedGems,
   details,
 }: {
   group: EngineSkillGroup;
+  /** The guide's item in the group's slot, when it has one. */
+  item?: EngineItem;
   ownedGems?: Set<string>;
   details: (name: string) => GemDetails | null;
 }) {
@@ -69,11 +96,17 @@ function GroupCard({
   const missing = ownedGems ? group.gems.filter((gem) => !ownedGems.has(gem.name)) : [];
   return (
     <li className={`iron-card px-4 py-3 ${group.main ? "iron-card--main" : ""}`}>
-      <p className="font-display text-[12px] tracking-[0.18em] text-parchment-faint">
-        {(group.slot ?? "Socketed").toUpperCase()}
-        {group.main && <span className="text-gold"> · MAIN SKILL</span>}
-      </p>
-      {group.label && <p className="mt-0.5 truncate text-[17px] text-parchment">{group.label}</p>}
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-[12px] tracking-[0.18em] text-parchment-faint">
+            {(group.slot ?? "Socketed").toUpperCase()}
+            {group.main && <span className="text-gold"> · MAIN SKILL</span>}
+          </p>
+          {group.label && <p className="mt-0.5 truncate text-[17px] text-parchment">{group.label}</p>}
+          {item && <p className={`truncate text-[14px] ${rarityStyle(item.rarity).tone}`}>{item.name}</p>}
+        </div>
+        {group.slot && <SocketItem slot={group.slot} item={item} />}
+      </div>
 
       {/* The sockets, joined by iron links like a socketed item's. */}
       <div className="mt-3 flex flex-wrap items-center gap-y-3">
@@ -123,7 +156,13 @@ function GemLinksPanel({ guide, you }: { guide: EngineBuild; you?: EngineBuild }
       </p>
       <ul className="grid gap-4 md:grid-cols-2">
         {groups.map((group, index) => (
-          <GroupCard key={`${group.label}-${index}`} group={group} ownedGems={ownedGems} details={details} />
+          <GroupCard
+            key={`${group.label}-${index}`}
+            group={group}
+            item={group.slot ? guide.items.find((item) => item.slot === group.slot) : undefined}
+            ownedGems={ownedGems}
+            details={details}
+          />
         ))}
       </ul>
     </AtlasFrame>
