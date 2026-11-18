@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 // The dashboard opens first; the other pages load the first time they are visited.
 const GuidePage = lazy(() => import("./pages/GuidePage"));
 const AtlasPage = lazy(() => import("./pages/AtlasPage"));
+const GlossaryPage = lazy(() => import("./pages/GlossaryPage"));
 const AboutPage = lazy(() => import("./pages/InfoPages").then((module) => ({ default: module.AboutPage })));
 import { useArchive } from "./state/useArchive";
 
@@ -26,6 +27,7 @@ function App() {
       <Suspense fallback={<p className="text-center text-[17px] text-parchment-faint">Opening the archive…</p>}>
         {page === "guide" && <GuidePage archive={archive} />}
         {page === "atlas" && <AtlasPage league={league} clientLog={archive.clientLog || null} />}
+        {page === "glossary" && <GlossaryPage />}
         {page === "about" && <AboutPage />}
       </Suspense>
     </ArchiveShell>

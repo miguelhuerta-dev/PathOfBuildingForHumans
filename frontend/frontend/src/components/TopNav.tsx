@@ -3,12 +3,13 @@ import Medallion from "./Medallion";
 import WindowControls from "./WindowControls";
 import { AtlasStarIcon } from "./icons";
 
-export type Page = "character" | "guide" | "atlas" | "about";
+export type Page = "character" | "guide" | "atlas" | "glossary" | "about";
 
 const navLinks: { page: Page; label: string }[] = [
   { page: "character", label: "Character" },
   { page: "guide", label: "Guide" },
   { page: "atlas", label: "Atlas" },
+  { page: "glossary", label: "Glossary" },
   { page: "about", label: "About" },
 ];
 
