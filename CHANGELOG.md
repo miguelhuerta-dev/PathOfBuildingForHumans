@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.4.0
+
+### New
+
+- **Guide stages, all of them.** Choosing a stage updates everything: its gear, gem links, passive tree, ascension
+  and the comparison with your character. A stage without gear of its own shows the gear of the nearest stage
+  that has it, and says so.
+- **Artifacts of this Stage.** The guide's items for the stage laid out like the in-game inventory, with real
+  icons (flasks and jewels included), a gold mark on what you already wear and an ember mark on what to find.
+- **Gem Links.** Each gem group drawn as linked sockets with every gem's icon. Gems you still lack say where your
+  class gets them in the campaign (act, quest and vendor). Beside each group, the item it goes in: the one the
+  guide names, or one worked out from its links (6 links: body armour; 4: helmet, gloves or boots).
+- **Ascension Path, Bandits and Pantheon.** The ascendancy passives in the order to take them per Labyrinth, who to
+  help or kill in Act 2 and why, and the guide's pantheon powers.
+- **Guide library.** Guides you load are remembered; the last one opens by itself with your last character.
+- **Glossary.** Path of Exile's terms and the archive's own words, searchable.
+- **Item art from your own game.** Items without an official icon (magic flasks, many guide bases) show the
+  picture your Path of Exile installation has for them. Nothing is bundled or downloaded.
+
+### Changed
+
+- The pillars beside the window stand whole and sharp in the margins; a narrow window is all frame.
+- The Passive Tree comes before "You and the Guide" on the Guide page.
+
+### Fixed
+
+- The Equipped Artifacts panel no longer jumps while you move the mouse over the item descriptions.
+- Tall weapons no longer spill out of their inventory slot.
+
 ## v0.3.0
 
 ### New

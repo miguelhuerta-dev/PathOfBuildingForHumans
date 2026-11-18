@@ -4,17 +4,63 @@ import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import UpgradeCard from "../components/UpgradeCard";
 import ConstellationMap, { MapLegend, type MapFocus } from "../components/ConstellationMap";
 import NextSteps from "../components/NextSteps";
+import EquipmentPanel from "../components/EquipmentPanel";
+import AscensionPanel from "../components/guide/AscensionPanel";
+import BanditPantheonPanel from "../components/guide/BanditPantheonPanel";
+import GemLinksPanel from "../components/guide/GemLinksPanel";
 import ItemIcon from "../components/ItemIcon";
 import { AtlasStarIcon, QuillIcon, SigilIcon, SwordIcon } from "../components/icons";
 import type { Archive } from "../state/useArchive";
 import { usePassiveIcons } from "../state/usePassiveIcons";
 import { usePassiveTree } from "../state/usePassiveTree";
-import type { EngineBuild, EngineStats } from "../types/Engine";
+import type { EngineBuild, EngineItem, EngineStats } from "../types/Engine";
 import { changeTone, formatNumber, formatSignedPercent } from "../utils/format";
 import { ChipGroup, ErrorNote, MetalMeter } from "../components/ui";
 
 function Signed({ value }: { value: number }) {
   return <span className={changeTone(value)}>{formatSignedPercent(value)}</span>;
+}
+
+/** Guides opened before, as a shelf of iron plates: open one to switch, or forget it. */
+function GuideLibrary({ archive }: { archive: Archive }) {
+  if (archive.savedGuides.length === 0) return null;
+  const busy = archive.guideState === "loading";
+  return (
+    <div className="mt-6">
+      <h3 className="font-display text-[13px] tracking-[0.2em] text-parchment-dim">YOUR GUIDE LIBRARY</h3>
+      <ul className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {archive.savedGuides.map((saved) => {
+          const open = saved.input === archive.guideInput;
+          return (
+            <li key={saved.input} className={`iron-card flex items-center gap-3 px-3 py-2 ${open ? "iron-card--main" : ""}`}>
+              <QuillIcon className={`h-6 w-6 shrink-0 ${open ? "text-gold" : "text-parchment-faint"}`} />
+              <button
+                type="button"
+                disabled={busy || open}
+                onClick={() => void archive.loadGuide(saved.input)}
+                className="min-w-0 flex-1 text-left disabled:cursor-default"
+                title={open ? "Open now" : "Open this guide"}
+              >
+                <span className={`block truncate text-[16px] ${open ? "text-gold" : "text-parchment"}`}>{saved.title}</span>
+                <span className="block text-[13px] text-parchment-faint">
+                  {open ? "Open now" : `Opened ${new Date(saved.openedAt).toLocaleDateString()}`}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => archive.removeSavedGuide(saved.input)}
+                aria-label={`Forget ${saved.title}`}
+                title="Forget this guide"
+                className="shrink-0 px-1 text-[18px] leading-none text-parchment-faint hover:text-ember"
+              >
+                ×
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
 }
 
 function ImportPanel({ archive }: { archive: Archive }) {
@@ -70,6 +116,7 @@ function ImportPanel({ archive }: { archive: Archive }) {
         )}
         {archive.guideError && <ErrorNote>{archive.guideError}</ErrorNote>}
       </form>
+      <GuideLibrary archive={archive} />
     </AtlasFrame>
   );
 }
@@ -270,35 +317,26 @@ function PassivesPanel({ archive }: { archive: Archive }) {
   );
 }
 
-function GemsPanel({ you, guide }: { you?: EngineBuild; guide: EngineBuild }) {
-  const owned = new Set(you?.skills.flatMap((group) => group.gems.map((gem) => gem.name)) ?? []);
-  const groups = guide.skills.filter((group) => group.gems.length > 0);
-  if (groups.length === 0) return null;
+/**
+ * Whether the character already has a guide item: uniques by name anywhere,
+ * other gear by base type in the same slot (rares are named at random).
+ */
+/**
+ * Guide items without an icon (magic flasks and other bases poe.ninja does not
+ * list) borrow the official icon of a character item of the same base.
+ */
+function withCharacterIcons(items: EngineItem[], you?: EngineBuild): EngineItem[] {
+  if (!you) return items;
+  return items.map((item) => {
+    if (item.icon || !item.base) return item;
+    const same = you.items.find((own) => own.base === item.base && own.icon);
+    return same ? { ...item, icon: same.icon } : item;
+  });
+}
 
-  return (
-    <AtlasFrame>
-      <AtlasSectionHeader title="Gem Links" icon={<SigilIcon className="h-7 w-7" />} />
-      {you && <p className="mb-4 text-[17px] text-parchment-dim">Gems you do not have yet are marked in ember.</p>}
-      <ul className="grid gap-3 md:grid-cols-2">
-        {groups.map((group, index) => (
-          <li key={`${group.label}-${index}`} className="border border-gold-dim/30 bg-black/40 px-4 py-3">
-            <p className="font-display text-[13px] tracking-[0.16em] text-parchment-dim">
-              {(group.slot ?? "Socketed").toUpperCase()}
-              {group.main ? " · MAIN SKILL" : ""}
-            </p>
-            <p className="mt-1 text-[17px] leading-relaxed">
-              {group.gems.map((gem, gemIndex) => (
-                <span key={`${gem.name}-${gemIndex}`}>
-                  {gemIndex > 0 && <span className="text-parchment-faint"> · </span>}
-                  <span className={you && !owned.has(gem.name) ? "text-ember" : "text-parchment"}>{gem.name}</span>
-                </span>
-              ))}
-            </p>
-          </li>
-        ))}
-      </ul>
-    </AtlasFrame>
-  );
+function ownsItem(you: EngineBuild, item: EngineItem): boolean {
+  if ((item.rarity ?? "").toUpperCase() === "UNIQUE") return you.items.some((own) => own.name === item.name);
+  return you.items.some((own) => own.slot === item.slot && (own.base === item.base || own.name === item.name));
 }
 
 function GuidePage({ archive }: { archive: Archive }) {
@@ -320,6 +358,27 @@ function GuidePage({ archive }: { archive: Archive }) {
 
           <StageSelector archive={archive} guide={guide} />
 
+          <EquipmentPanel
+            items={withCharacterIcons(guide.items, you)}
+            title="Artifacts of this Stage"
+            intro={[
+              guide.itemsFromStage
+                ? `This stage has no gear of its own: this is the gear of "${guide.itemsFromStage}", the nearest stage that has it.`
+                : "The guide's gear for this stage.",
+              you ? "A gold mark is gear you already wear; an ember mark, gear still to find." : "",
+            ].join(" ")}
+            owned={you ? (item) => ownsItem(you, item) : undefined}
+            emptyNote={
+              guide.noStageItems
+                ? "The guide lists no gear for this stage: wear what you find, with life and resistances first."
+                : undefined
+            }
+          />
+
+          <GemLinksPanel guide={guide} you={comparing ? you : undefined} />
+
+          <PassivesPanel archive={archive} />
+
           {comparing && you && (
             <>
               <CompareTable you={you} guide={guide} />
@@ -336,7 +395,7 @@ function GuidePage({ archive }: { archive: Archive }) {
                       {upgrades.slice(1, 8).map((upgrade) => (
                         <li key={upgrade.slot} className="flex flex-wrap items-center justify-between gap-x-4 py-3">
                           <span className="flex items-center gap-3">
-                            <ItemIcon src={upgrade.item.icon} className="h-12 w-12 shrink-0" />
+                            <ItemIcon src={upgrade.item.icon} base={upgrade.item.base} className="h-12 w-12 shrink-0" />
                             <span>
                             <span className="font-display text-[13px] tracking-[0.16em] text-parchment-dim">
                               {upgrade.slot.toUpperCase()}
@@ -361,9 +420,15 @@ function GuidePage({ archive }: { archive: Archive }) {
             </>
           )}
 
-          <PassivesPanel archive={archive} />
 
-          <GemsPanel you={comparing ? you : undefined} guide={guide} />
+          <AscensionPanel
+            guide={guide}
+            owned={archive.result?.passives?.characterNodes ? new Set(archive.result.passives.characterNodes) : undefined}
+            clientLog={archive.clientLog || null}
+          />
+
+
+          <BanditPantheonPanel guide={guide} />
         </>
       )}
     </>

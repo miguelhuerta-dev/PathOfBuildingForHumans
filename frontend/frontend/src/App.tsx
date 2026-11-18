@@ -6,8 +6,10 @@ import Dashboard from "./pages/Dashboard";
 // The dashboard opens first; the other pages load the first time they are visited.
 const GuidePage = lazy(() => import("./pages/GuidePage"));
 const AtlasPage = lazy(() => import("./pages/AtlasPage"));
+const GlossaryPage = lazy(() => import("./pages/GlossaryPage"));
 const AboutPage = lazy(() => import("./pages/InfoPages").then((module) => ({ default: module.AboutPage })));
 import { useArchive } from "./state/useArchive";
+import { GameLocation } from "./state/useItemArt";
 
 /** Atlas progress is kept per league; without a character it goes to Standard. */
 const DEFAULT_LEAGUE = "Standard";
@@ -21,14 +23,18 @@ function App() {
     DEFAULT_LEAGUE;
 
   return (
-    <ArchiveShell page={page} onNavigate={setPage}>
-      {page === "character" && <Dashboard archive={archive} onNavigate={setPage} />}
-      <Suspense fallback={<p className="text-center text-[17px] text-parchment-faint">Opening the archive…</p>}>
-        {page === "guide" && <GuidePage archive={archive} />}
-        {page === "atlas" && <AtlasPage league={league} clientLog={archive.clientLog || null} />}
-        {page === "about" && <AboutPage />}
-      </Suspense>
-    </ArchiveShell>
+    // Item icons read the game's art from where the player's game is.
+    <GameLocation.Provider value={archive.clientLog || null}>
+      <ArchiveShell page={page} onNavigate={setPage}>
+        {page === "character" && <Dashboard archive={archive} onNavigate={setPage} />}
+        <Suspense fallback={<p className="text-center text-[17px] text-parchment-faint">Opening the archive…</p>}>
+          {page === "guide" && <GuidePage archive={archive} />}
+          {page === "atlas" && <AtlasPage league={league} clientLog={archive.clientLog || null} />}
+          {page === "glossary" && <GlossaryPage />}
+          {page === "about" && <AboutPage />}
+        </Suspense>
+      </ArchiveShell>
+    </GameLocation.Provider>
   );
 }
 

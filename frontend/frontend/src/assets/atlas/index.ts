@@ -7,6 +7,8 @@ import sceneAstrolabe from "./scene-astrolabe.webp";
 import sceneCoins from "./scene-coins.webp";
 import sceneParchmentMap from "./scene-parchment-map.webp";
 import scenePillar from "./scene-pillar-iron.webp";
+import scenePantheon from "./scene-pantheon.webp";
+import sceneBandits from "./scene-bandits.webp";
 import frameItem from "./frame-item.webp";
 import medallion from "./ui-medallion-iron.webp";
 import pendant from "./ui-pendant-iron.webp";
@@ -23,6 +25,9 @@ export const atlasArt = {
   sceneCoins,
   sceneParchmentMap,
   scenePillar,
+  /** Painted backdrops of the guide's Pantheon and bandit panels. */
+  scenePantheon,
+  sceneBandits,
   frameItem,
   medallion,
   pendant,

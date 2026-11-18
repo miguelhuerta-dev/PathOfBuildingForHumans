@@ -1,0 +1,6 @@
+{
+  "$comment": "Quest rewards and vendor gems, from exile-leveling's game data export (MIT). Bump the commit each league and run scripts/update-gem-sources.mjs.",
+  "repository": "https://github.com/HeartofPhos/exile-leveling",
+  "license": "MIT",
+  "commit": "d6951db0ca9463e42074e1e05e9ffde3d42d1604"
+}
