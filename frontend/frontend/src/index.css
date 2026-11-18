@@ -214,6 +214,7 @@ body {
 .iron-slot {
   --rarity: 120 110 100;
   position: relative;
+  overflow: hidden;
   display: grid;
   place-items: center;
   background:

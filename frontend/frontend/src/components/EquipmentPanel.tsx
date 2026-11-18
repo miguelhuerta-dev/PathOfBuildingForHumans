@@ -83,7 +83,8 @@ function Slot({ slot, item, selected, onSelect, style, className = "" }: SlotPro
       className={`iron-slot iron-slot--filled ${selected ? "border-[rgb(var(--rarity)/0.85)]" : ""} ${className}`}
       style={{ ...style, "--rarity": rarity.rgb } as CSSProperties}
     >
-      <ItemIcon src={item.icon} className="h-[86%] w-[86%]" />
+      {/* A fixed box inside the socket: tall art (staves, bows) scales down instead of spilling out. */}
+      <ItemIcon src={item.icon} className="absolute inset-[7%] h-[86%] w-[86%] object-contain" />
     </button>
   );
 }
