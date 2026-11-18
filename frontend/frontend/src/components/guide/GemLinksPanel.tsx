@@ -115,7 +115,7 @@ function SocketItem({
       >
         {item ? (
           <>
-            <ItemIcon src={item.icon} className={`absolute inset-[8%] h-[84%] w-[84%] object-contain ${suggested ? "opacity-70" : ""}`} />
+            <ItemIcon src={item.icon} base={item.base} className={`absolute inset-[8%] h-[84%] w-[84%] object-contain ${suggested ? "opacity-70" : ""}`} />
             {/* The sockets it must have, over the art, as on an item in the game. */}
             {suggested && (
               <span className="absolute inset-x-[18%] bottom-[6%] top-[6%] grid place-items-center">

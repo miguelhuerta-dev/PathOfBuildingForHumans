@@ -5,13 +5,15 @@
 //! Without the game installed, the app falls back to its own drawings.
 
 mod bundles;
+mod dat;
 mod dds;
 mod install;
+mod item_art;
 
 pub use install::candidates as game_folders;
 
 use base64::Engine as _;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -69,6 +71,52 @@ fn data_url(png: &[u8]) -> String {
     )
 }
 
+/// The game's `Bundles2` folder.
+fn game_bundles(client_log: Option<&Path>) -> Result<PathBuf, String> {
+    let storage = install::find(client_log).ok_or(
+        "Path of Exile was not found on this computer. Choose its Client.txt in the dashboard to point to it.",
+    )?;
+    match storage {
+        install::Storage::Bundles(dir) => Ok(dir),
+        install::Storage::Ggpk => Err("Icons can be read from the Steam or Epic version of Path of Exile; \
+             the standalone client is not supported yet."
+            .into()),
+    }
+}
+
+/// The cache folder of the installed game version and the root holding every version.
+fn version_cache(cache_dir: Option<PathBuf>, bundles_dir: &Path) -> Option<(PathBuf, PathBuf)> {
+    let root = cache_dir?.join("game-icons");
+    Some((version_dir(&root, &bundles_dir.join("_.index.bin"))?, root))
+}
+
+/// Creates the version's cache folder (and `sub` in it), dropping older versions.
+fn open_cache(cache: Option<&(PathBuf, PathBuf)>, sub: &str) -> Option<PathBuf> {
+    let (dir, root) = cache?;
+    let target = dir.join(sub);
+    fs::create_dir_all(&target).ok()?;
+    remove_other_versions(root, dir);
+    Some(target)
+}
+
+/// Saves a PNG in the cache, or returns it as a data URL when it cannot be saved.
+fn store_png(dir: Option<&Path>, name: &str, png: &[u8]) -> String {
+    let saved = dir
+        .map(|dir| dir.join(name))
+        .filter(|path| fs::write(path, png).is_ok());
+    match saved {
+        Some(path) => path.display().to_string(),
+        None => data_url(png),
+    }
+}
+
+/// A texture from the game as a PNG no larger than `size` on its longest side.
+fn texture_png(texture: &[u8], size: u32) -> Result<Vec<u8>, String> {
+    dds::decode(texture)
+        .map(|(w, h, rgba)| dds::shrink(w, h, rgba, size))
+        .and_then(|(w, h, rgba)| dds::to_png(w, h, &rgba))
+}
+
 /// Passive skill icons by key. Each value is the path of the cached PNG (shown
 /// through the asset protocol) or, when nothing can be cached, a PNG data URL.
 /// Keys the game does not have are left out.
@@ -77,20 +125,8 @@ pub fn passive_icons(
     client_log: Option<&Path>,
     cache_dir: Option<PathBuf>,
 ) -> Result<BTreeMap<String, String>, String> {
-    let storage = install::find(client_log).ok_or(
-        "Path of Exile was not found on this computer. Choose its Client.txt in the dashboard to point to it.",
-    )?;
-    let bundles_dir = match storage {
-        install::Storage::Bundles(dir) => dir,
-        install::Storage::Ggpk => {
-            return Err("Icons can be read from the Steam or Epic version of Path of Exile;                         the standalone client is not supported yet."
-                .into())
-        }
-    };
-
-    let cache = cache_dir
-        .map(|dir| dir.join("game-icons"))
-        .and_then(|root| Some((version_dir(&root, &bundles_dir.join("_.index.bin"))?, root)));
+    let bundles_dir = game_bundles(client_log)?;
+    let cache = version_cache(cache_dir, &bundles_dir);
     let not_in_game: BTreeSet<String> = cache
         .as_ref()
         .and_then(|(dir, _)| fs::read_to_string(dir.join(NOT_IN_GAME)).ok())
@@ -123,11 +159,7 @@ pub fn passive_icons(
         .map(|key| format!("{PASSIVE_ICONS}{}.dds", key.to_lowercase()))
         .collect();
     let mut files = bundles::read_files(&bundles_dir, &paths)?;
-    let cache_dir = cache.as_ref().and_then(|(dir, root)| {
-        fs::create_dir_all(dir).ok()?;
-        remove_other_versions(root, dir);
-        Some(dir)
-    });
+    let cache_dir = open_cache(cache.as_ref(), "");
 
     let mut absent = not_in_game;
     for (key, path) in missing.into_iter().zip(paths) {
@@ -136,20 +168,10 @@ pub fn passive_icons(
             continue;
         };
         // One unreadable texture should not hide every other icon.
-        let Ok(png) = dds::decode(&texture)
-            .map(|(w, h, rgba)| dds::shrink(w, h, rgba, ICON_SIZE))
-            .and_then(|(w, h, rgba)| dds::to_png(w, h, &rgba))
-        else {
+        let Ok(png) = texture_png(&texture, ICON_SIZE) else {
             continue;
         };
-        let saved = cache_dir
-            .map(|dir| dir.join(file_name(key)))
-            .filter(|path| fs::write(path, &png).is_ok());
-        let value = match saved {
-            Some(path) => path.display().to_string(),
-            None => data_url(&png),
-        };
-        icons.insert(key.clone(), value);
+        icons.insert(key.clone(), store_png(cache_dir.as_deref(), &file_name(key), &png));
     }
     if let Some(dir) = cache_dir {
         let _ = fs::write(
@@ -161,6 +183,191 @@ pub fn passive_icons(
         );
     }
     Ok(icons)
+}
+
+/// Largest side kept for item art: the biggest items (2×4) are about 190 px tall in the game.
+const ITEM_ART_SIZE: u32 = 192;
+/// Cache folder of item art, inside the game version's folder. Numbered: a new
+/// way of drawing the art must not reuse older pictures.
+const ITEM_ART_DIR: &str = "item-art-2";
+/// Base name → art path, built once per game version from its data tables.
+const ITEM_ART_INDEX: &str = "index.json";
+
+/// Item base names as Path of Building gives them ("Divine Life Flask", "Maelström Staff").
+fn is_valid_base(base: &str) -> bool {
+    !base.is_empty()
+        && base.chars().count() <= 80
+        && base
+            .chars()
+            .all(|c| c.is_alphanumeric() || matches!(c, ' ' | '\'' | '-' | ',' | '.'))
+}
+
+/// Cache file of a piece of item art: its path under `Art/2DItems/`, flattened.
+fn art_file_name(art: &str) -> Option<String> {
+    let lower = art.to_lowercase();
+    let rest = lower.strip_prefix(item_art::ART_PREFIX)?.strip_suffix(".dds")?;
+    let safe = !rest.is_empty()
+        && !rest.contains("..")
+        && rest
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '/' | '-' | ' '));
+    safe.then(|| format!("{}.png", rest.replace('/', "~")))
+}
+
+/// The base name → art path index, from the cache or the game's data tables.
+fn art_index(bundles_dir: &Path, cache: Option<&Path>) -> Result<HashMap<String, String>, String> {
+    let cached = cache
+        .and_then(|dir| fs::read(dir.join(ITEM_ART_INDEX)).ok())
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok());
+    if let Some(index) = cached {
+        return Ok(index);
+    }
+    let paths: Vec<String> = item_art::BASE_ITEM_TYPES
+        .iter()
+        .chain(&item_art::ITEM_VISUAL_IDENTITY)
+        .map(|path| path.to_string())
+        .collect();
+    let files = bundles::read_files(bundles_dir, &paths)?;
+    let table = |names: [&str; 2]| names.iter().find_map(|name| files.get(*name));
+    let (Some(bases), Some(visuals)) = (table(item_art::BASE_ITEM_TYPES), table(item_art::ITEM_VISUAL_IDENTITY)) else {
+        return Err("The game's item data was not found; item art is unavailable.".into());
+    };
+    let index = item_art::art_by_base(bases, visuals)?;
+    if let Some(dir) = cache {
+        let _ = fs::write(dir.join(ITEM_ART_INDEX), serde_json::to_vec(&index).unwrap_or_default());
+    }
+    Ok(index)
+}
+
+/// Draws `top` over `bottom` (RGBA pixels of the same size).
+fn blend(bottom: &mut [u8], top: &[u8]) {
+    for (b, t) in bottom.as_chunks_mut::<4>().0.iter_mut().zip(top.as_chunks::<4>().0) {
+        let ta = f32::from(t[3]) / 255.0;
+        let ba = f32::from(b[3]) / 255.0;
+        let out = ta + ba * (1.0 - ta);
+        if out <= 0.0 {
+            continue;
+        }
+        for c in 0..3 {
+            let v = (f32::from(t[c]) * ta + f32::from(b[c]) * ba * (1.0 - ta)) / out;
+            b[c] = v.round() as u8;
+        }
+        b[3] = (out * 255.0).round() as u8;
+    }
+}
+
+/// A piece of item art as a PNG; flasks are put together from their layers.
+fn item_png(path: &str, texture: &[u8]) -> Result<Vec<u8>, String> {
+    let (width, height, rgba) = dds::decode(texture)?;
+    let is_flask = path.to_lowercase().starts_with("art/2ditems/flasks/");
+    let (width, height, rgba) = match is_flask.then(|| compose_flask(width, height, &rgba, liquid_colour(path))).flatten() {
+        Some(flask) => flask,
+        None => (width, height, rgba),
+    };
+    let (width, height, rgba) = dds::shrink(width, height, rgba, ITEM_ART_SIZE);
+    dds::to_png(width, height, &rgba)
+}
+
+/// Utility flasks share one green liquid that the game colours as it draws it.
+/// Each one is given the colour of the stone it is named after; life, mana and
+/// hybrid flasks (and Jade, which is green) keep the colour of their texture.
+fn liquid_colour(path: &str) -> Option<[f32; 3]> {
+    let stem = path.rsplit('/').next()?.to_lowercase();
+    let rgb: [u8; 3] = match stem.trim_end_matches(".dds") {
+        "granite" => [150, 128, 104],
+        "sprint" => [196, 214, 226],
+        "silver" => [206, 210, 222],
+        "amethyst" => [158, 82, 214],
+        "phaseflask01" => [232, 232, 240],
+        "aquamarine" => [96, 214, 222],
+        "stone" => [118, 116, 112],
+        "bismuth" => [212, 120, 214],
+        "antistunflask" => [222, 72, 84],
+        "diamond" => [236, 240, 255],
+        "goldflask" => [236, 190, 72],
+        "wardflask01" => [168, 150, 136],
+        "ruby" => [226, 42, 52],
+        "sapphire" => [52, 96, 232],
+        "stibnite" => [92, 96, 110],
+        "gold" => [232, 214, 70],
+        "topaz" => [238, 196, 54],
+        _ => return None,
+    };
+    Some(rgb.map(f32::from))
+}
+
+/// Flask art is three pictures side by side: the glass, its metal frame and
+/// the liquid. The game draws the liquid inside the glass, then the frame.
+fn compose_flask(width: u32, height: u32, rgba: &[u8], tint: Option<[f32; 3]>) -> Option<(u32, u32, Vec<u8>)> {
+    // Each layer is a 1×2 flask (78×156 px), with a little padding after the last.
+    let frame = height / 2;
+    if frame == 0 || frame * 3 > width || frame * 4 <= width {
+        return None;
+    }
+    let layer = |index: u32| -> Vec<u8> {
+        rgba.chunks_exact(width as usize * 4)
+            .flat_map(|row| &row[(index * frame * 4) as usize..((index + 1) * frame * 4) as usize])
+            .copied()
+            .collect()
+    };
+    let (glass, metal, mut liquid) = (layer(0), layer(1), layer(2));
+    // The liquid fills the glass (and only the glass); the metal goes on top.
+    for (l, g) in liquid.as_chunks_mut::<4>().0.iter_mut().zip(glass.as_chunks::<4>().0) {
+        l[3] = l[3].min(g[3]);
+        // The shared liquid is green; its brightness is kept and the colour replaced.
+        if let Some(tint) = tint {
+            let light = (0.3 * f32::from(l[0]) + 0.59 * f32::from(l[1]) + 0.11 * f32::from(l[2])) / 96.0;
+            for (channel, colour) in l[..3].iter_mut().zip(tint) {
+                *channel = (colour * light).clamp(0.0, 255.0) as u8;
+            }
+        }
+    }
+    let mut out = glass;
+    blend(&mut out, &liquid);
+    blend(&mut out, &metal);
+    Some((frame, height, out))
+}
+
+/// Item art by base name, for items without an official icon (magic flasks,
+/// guide items). Values are cached PNG paths (shown through the asset
+/// protocol) or PNG data URLs; bases the game has no art for are left out.
+pub fn item_art(
+    bases: &[String],
+    client_log: Option<&Path>,
+    cache_dir: Option<PathBuf>,
+) -> Result<BTreeMap<String, String>, String> {
+    let bundles_dir = game_bundles(client_log)?;
+    let cache = version_cache(cache_dir, &bundles_dir);
+    let dir = open_cache(cache.as_ref(), ITEM_ART_DIR);
+    let index = art_index(&bundles_dir, dir.as_deref())?;
+
+    let mut art = BTreeMap::new();
+    let mut missing = Vec::new();
+    for base in bases.iter().filter(|base| is_valid_base(base)) {
+        let Some((path, file)) = index.get(base).and_then(|path| Some((path, art_file_name(path)?))) else {
+            continue;
+        };
+        match dir.as_ref().map(|dir| dir.join(&file)).filter(|path| path.is_file()) {
+            Some(cached) => {
+                art.insert(base.clone(), cached.display().to_string());
+            }
+            None => missing.push((base, path.clone(), file)),
+        }
+    }
+    if missing.is_empty() {
+        return Ok(art);
+    }
+
+    let paths: Vec<String> = missing.iter().map(|(_, path, _)| path.clone()).collect();
+    let files = bundles::read_files(&bundles_dir, &paths)?;
+    for (base, path, file) in missing {
+        // Several bases can share one picture; an unreadable one hides only itself.
+        let Some(Ok(png)) = files.get(&path).map(|texture| item_png(&path, texture)) else {
+            continue;
+        };
+        art.insert(base.clone(), store_png(dir.as_deref(), &file, &png));
+    }
+    Ok(art)
 }
 
 #[cfg(test)]
@@ -239,5 +446,81 @@ mod tests {
     #[ignore = "needs Path of Exile installed"]
     fn reads_every_passive_icon_from_the_installed_game() {
         reads_every_icon("passives/passiveTree.json");
+    }
+
+    #[test]
+    fn accepts_only_item_base_names() {
+        assert!(is_valid_base("Divine Life Flask"));
+        assert!(is_valid_base("Maelström Staff"));
+        assert!(is_valid_base("Two-Toned Boots"));
+        assert!(!is_valid_base("../x"));
+        assert!(!is_valid_base("Art/2DItems/x"));
+        assert!(!is_valid_base(""));
+    }
+
+    #[test]
+    fn puts_flasks_together_from_their_layers() {
+        // 3 layers of 1×2 pixels: glass (top pixel only), metal (none), red liquid.
+        let px = |r, g, b, a| [r, g, b, a];
+        let rows = [
+            [px(255, 255, 255, 0), px(0, 0, 0, 0), px(255, 0, 0, 255)],
+            [px(0, 0, 0, 0), px(0, 0, 0, 0), px(255, 0, 0, 255)],
+        ];
+        let rgba: Vec<u8> = rows.iter().flatten().flatten().copied().collect();
+        let (w, h, out) = compose_flask(3, 2, &rgba, None).unwrap();
+        assert_eq!((w, h), (1, 2));
+        // The liquid shows only inside the glass: here the glass is clear, so nothing shows.
+        assert_eq!(out[3], 0);
+        assert_eq!(out[7], 0);
+        assert!(compose_flask(4, 2, &[0; 32], None).is_none(), "not three layers");
+        assert!(compose_flask(3, 6, &[0; 72], None).is_none(), "a single upright flask");
+    }
+
+    #[test]
+    fn names_item_art_cache_files() {
+        assert_eq!(
+            art_file_name("Art/2DItems/Flasks/DivineLifeFlask.dds").as_deref(),
+            Some("flasks~divinelifeflask.png")
+        );
+        assert_eq!(art_file_name("Art/Textures/Other.dds"), None);
+        assert_eq!(art_file_name("Art/2DItems/../../x.dds"), None);
+        assert_eq!(art_file_name("Art/2DItems/Flasks/a.png"), None);
+    }
+
+    /// Item art for magic flasks and armour bases, read from the installed game:
+    /// `cargo test --release game_files -- --ignored --nocapture`.
+    #[test]
+    #[ignore = "needs Path of Exile installed"]
+    fn reads_item_art_from_the_installed_game() {
+        let bases: Vec<String> = [
+            "Divine Life Flask",
+            "Quicksilver Flask",
+            "Granite Flask",
+            "Vaal Regalia",
+            "Titanium Spirit Shield",
+            "Two-Toned Boots",
+            "Sorcerer Gloves",
+            "Hubris Circlet",
+            "Not An Item",
+        ]
+        .map(String::from)
+        .into();
+
+        let cache = tempfile::tempdir().unwrap();
+        let started = std::time::Instant::now();
+        let art = item_art(&bases, None, Some(cache.path().to_path_buf())).unwrap();
+        println!("{} pictures in {:?}", art.len(), started.elapsed());
+        let started = std::time::Instant::now();
+        let cached = item_art(&bases, None, Some(cache.path().to_path_buf())).unwrap();
+        println!("from the cache in {:?}", started.elapsed());
+
+        let missing: Vec<&String> = bases.iter().filter(|base| !art.contains_key(*base)).collect();
+        assert_eq!(missing, vec!["Not An Item"], "every real base has art");
+        assert_eq!(art, cached);
+        assert!(art["Divine Life Flask"].contains("flasks~"));
+        for path in art.values() {
+            let png = fs::read(path).unwrap();
+            assert!(png.starts_with(b"\x89PNG"), "{path} is a PNG");
+        }
     }
 }

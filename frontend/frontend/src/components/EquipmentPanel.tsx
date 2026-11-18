@@ -98,7 +98,7 @@ function Slot({ slot, item, owned, selected, onSelect, style, className = "" }: 
       style={{ ...style, "--rarity": rarity.rgb } as CSSProperties}
     >
       {/* A fixed box inside the socket: tall art (staves, bows) scales down instead of spilling out. */}
-      <ItemIcon src={item.icon} className="absolute inset-[7%] h-[86%] w-[86%] object-contain" />
+      <ItemIcon src={item.icon} base={item.base} className="absolute inset-[7%] h-[86%] w-[86%] object-contain" />
       <OwnedMark owned={owned} />
     </button>
   );
