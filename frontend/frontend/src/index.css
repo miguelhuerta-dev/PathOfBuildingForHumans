@@ -406,3 +406,14 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgb(110 100 92 / 0.7) transparent;
 }
+
+/* The space left beside the 1320px outer frame, where the pillars stand. Below 1540px the
+   frame fills the window and there is no room for a pillar worth seeing. */
+.pillar-margin {
+  display: none;
+  width: calc((100vw - 1320px) / 2 - 8px);
+  padding-block: 8px;
+}
+@media (min-width: 1540px) {
+  .pillar-margin { display: block; }
+}

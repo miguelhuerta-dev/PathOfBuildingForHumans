@@ -76,12 +76,12 @@ function useIdleWhenUnfocused() {
 function ArchiveShell({ page, onNavigate, children }: ArchiveShellProps) {
   useIdleWhenUnfocused();
   return (
-    <div className="relative isolate min-h-screen overflow-hidden px-2 py-3 sm:px-4">
+    <div className="relative isolate min-h-screen overflow-hidden p-2">
       <AtlasBackground />
       <div className="film-grain pointer-events-none absolute inset-0 z-30" aria-hidden="true" />
       <AtlasScene />
 
-      <AtlasFrame variant="outer" className="relative z-10 mx-auto max-w-[1320px]">
+      <AtlasFrame variant="outer" className="relative z-10 mx-auto min-[1540px]:max-w-[1320px]">
         <TopNav page={page} onNavigate={onNavigate} />
 
         <div className="flex items-start justify-between pb-10 pt-5 md:min-h-[150px]">

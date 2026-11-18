@@ -16,16 +16,15 @@ function AtlasScene() {
   return (
     <>
       <div className="pointer-events-none absolute inset-0 z-0 hidden lg:block" aria-hidden="true">
-        <img
-          src={atlasArt.scenePillar}
-          alt=""
-          className="absolute -left-56 top-0 h-full w-auto max-w-none brightness-[0.7] xl:-left-52"
-        />
-        <img
-          src={atlasArt.scenePillar}
-          alt=""
-          className="absolute -right-56 top-0 h-full w-auto max-w-none -scale-x-100 brightness-[0.7] xl:-right-52"
-        />
+        {/* Each pillar fills the margin beside the outer frame, whole and scaled down to fit
+            it (never up, so it stays sharp); fixed to the window while the page scrolls. With
+            no margin (a narrow window) there is no pillar, and the frame fills the window. */}
+        <div className="pillar-margin fixed left-0 top-0 h-screen">
+          <img src={atlasArt.scenePillar} alt="" className="h-full w-full object-contain object-right brightness-[0.75]" />
+        </div>
+        <div className="pillar-margin fixed right-0 top-0 h-screen">
+          <img src={atlasArt.scenePillar} alt="" className="h-full w-full -scale-x-100 object-contain object-right brightness-[0.75]" />
+        </div>
         <CandleGlow className="-right-24 top-20 h-96 w-96" />
         <img src={atlasArt.sceneCandles} alt="" className="absolute -right-6 top-44 h-64" />
 
