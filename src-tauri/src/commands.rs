@@ -243,3 +243,13 @@ fn open_in_browser(url: &str) -> Result<(), String> {
 pub fn open_profile() -> Result<(), String> {
     open_in_browser(PROFILE_URL)
 }
+
+/// Where Path of Exile players make their characters public.
+const PRIVACY_URL: &str = "https://www.pathofexile.com/my-account/privacy";
+
+/// Opens pathofexile.com's privacy settings, for the tutorial's public profile
+/// step. Like the profile link, only this fixed address can be opened.
+#[tauri::command]
+pub fn open_privacy_settings() -> Result<(), String> {
+    open_in_browser(PRIVACY_URL)
+}

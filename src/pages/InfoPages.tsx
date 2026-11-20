@@ -3,7 +3,7 @@ import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import { QuillIcon } from "../components/icons";
 
-export function AboutPage() {
+export function AboutPage({ onTutorial }: { onTutorial: () => void }) {
   const t = useT();
   return (
     <AtlasFrame>
@@ -20,6 +20,13 @@ export function AboutPage() {
         <p className="text-parchment-dim">
           {t("This product isn't affiliated with or endorsed by Grinding Gear Games in any way. Path of Exile is a trademark of Grinding Gear Games. All artwork in this app is original.")}
         </p>
+        <button
+          type="button"
+          onClick={onTutorial}
+          className="self-start border border-gold-dim/60 px-4 py-2 font-display text-[13px] tracking-[0.18em] text-parchment-dim hover:text-gold"
+        >
+          {t("SEE THE TUTORIAL AGAIN")}
+        </button>
       </div>
     </AtlasFrame>
   );

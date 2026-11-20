@@ -35,6 +35,7 @@ pub fn run() {
             commands::passive_icons,
             commands::item_art,
             commands::open_profile,
+            commands::open_privacy_settings,
         ])
         .setup(|app| {
             // Unpack (on first launch) and load Path of Building now, so the first

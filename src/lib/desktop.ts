@@ -55,6 +55,8 @@ export const desktop = {
   },
   /** Opens the author's GitHub profile in the system browser. */
   openProfile: () => call<void>("open_profile"),
+  /** Opens pathofexile.com's privacy settings, where the profile is made public. */
+  openPrivacySettings: () => call<void>("open_privacy_settings"),
   onZoneEntered: (handler: (zone: string) => void): Promise<UnlistenFn> =>
     listen<string>("zone-entered", (event) => handler(event.payload)),
 };
