@@ -96,6 +96,9 @@ export interface AscendancyStep {
   labName: string;
 }
 
+/** The Act 2 bandit choice, as Path of Building names it ("None" = killed all three). */
+export type Bandit = "None" | "Oak" | "Kraityn" | "Alira";
+
 export interface BanditChoice {
   /** "None" (kill all three), "Oak", "Kraityn" or "Alira". */
   choice: string;

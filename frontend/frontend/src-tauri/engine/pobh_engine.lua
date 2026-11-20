@@ -15,7 +15,10 @@
 -- because PoB writes its own log lines to stdout while it loads.
 
 local requestPath = arg and arg[1]
-assert(requestPath, "usage: pobh_engine.lua <request.json>")
+assert(requestPath, "usage: pobh_engine.lua <request.json> | --serve")
+-- Serving: one request per line on stdin, answered one line each, until stdin closes.
+-- Path of Building loads once and stays loaded, instead of seconds per request.
+local serving = requestPath == "--serve"
 
 dofile("HeadlessWrapper.lua")
 
@@ -28,8 +31,6 @@ local function readFile(path)
 	return text
 end
 
-local request = assert(dkjson.decode(readFile(requestPath)), "request is not valid JSON")
-
 local STAT_KEYS = {
 	"Life", "LifeUnreserved", "EnergyShield", "Mana", "ManaUnreserved", "Ward",
 	"FireResist", "ColdResist", "LightningResist", "ChaosResist",
@@ -41,6 +42,10 @@ local STAT_KEYS = {
 	"FullDPS", "CombinedDPS", "TotalDPS", "TotalDot", "AverageHit", "Speed",
 	"HitChance", "CritChance", "CritMultiplier",
 	"EffectiveMovementSpeedMod", "LifeRegenRecovery", "LifeLeechGainRate",
+	-- How far each resistance is below its own maximum (75%, or more with Purity, passives...).
+	"MissingFireResist", "MissingColdResist", "MissingLightningResist", "MissingChaosResist",
+	"FireResistTotal", "ColdResistTotal", "LightningResistTotal", "ChaosResistTotal",
+	"ManaCost", "NetLifeRegen", "FreezeAvoidChance", "StunAvoidChance",
 }
 
 local function recalc()
@@ -84,6 +89,11 @@ end
 
 local function loadCharacter(character)
 	newBuild()
+	-- Public profiles leave out the bandit choice (only a logged-in import has it), so the
+	-- player tells the app which bandit they helped; it changes resistances and more.
+	if character.bandit and type(character.passives) == "table" then
+		character.passives.bandit_choice = character.bandit
+	end
 	build.importTab:ImportItemsAndSkills(character, true, true, false)
 	build.importTab:ImportPassiveTreeAndJewels(character, true)
 	runCallback("OnFrame")
@@ -652,6 +662,7 @@ local function comparePassives(guideNodes, characterNodes)
 	}
 end
 
+local function handle(request)
 local result
 if request.kind == "character" then
 	loadCharacter(request.character)
@@ -697,4 +708,27 @@ else
 end
 
 result.engine = { name = "Path of Building Community", version = launch and launch.versionNumber or nil }
-io.write("@@POBH_RESULT@@", dkjson.encode(result), "\n")
+return result
+end
+
+if serving then
+	io.write("@@POBH_READY@@\n")
+	io.stdout:flush()
+	for line in io.stdin:lines() do
+		if line:match("%S") then
+			local request = dkjson.decode(line)
+			local ok, result = pcall(function()
+				return handle(assert(type(request) == "table" and request, "request is not valid JSON"))
+			end)
+			if ok then
+				io.write("@@POBH_RESULT@@", dkjson.encode(result), "\n")
+			else
+				io.write("@@POBH_ERROR@@", (tostring(result):gsub("[\r\n]+", " ")), "\n")
+			end
+			io.stdout:flush()
+		end
+	end
+else
+	local request = assert(dkjson.decode(readFile(requestPath)), "request is not valid JSON")
+	io.write("@@POBH_RESULT@@", dkjson.encode(handle(request)), "\n")
+end

@@ -1,6 +1,6 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { CharacterSummary, EngineResult } from "../types/Engine";
+import type { Bandit, CharacterSummary, EngineResult } from "../types/Engine";
 
 /** True when running inside the desktop app rather than a browser tab. */
 export const isDesktopApp = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -22,9 +22,11 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
 
 export const desktop = {
   listCharacters: (account: string) => call<CharacterSummary[]>("list_characters", { account }),
-  loadCharacter: (account: string, character: string) =>
-    call<EngineResult>("load_character", { account, character }),
+  loadCharacter: (account: string, character: string, bandit?: Bandit) =>
+    call<EngineResult>("load_character", { account, character, bandit: bandit ?? null }),
   loadGuide: (input: string) => call<EngineResult>("load_guide", { input }),
+  /** Opens a guide without calculating it; the next character load compares both. */
+  prepareGuide: (input: string) => call<void>("prepare_guide", { input }),
   selectGuideStage: (stage: number | null) => call<EngineResult>("select_guide_stage", { stage }),
   clearGuide: () => call<void>("clear_guide"),
   detectClientLog: () => call<string | null>("detect_client_log"),

@@ -22,6 +22,7 @@ pub fn run() {
             commands::list_characters,
             commands::load_character,
             commands::load_guide,
+            commands::prepare_guide,
             commands::select_guide_stage,
             commands::clear_guide,
             commands::detect_client_log,
@@ -32,11 +33,9 @@ pub fn run() {
             commands::open_profile,
         ])
         .setup(|app| {
-            // The portable app unpacks its engine on first launch; start now so
-            // the first calculation does not wait for it.
-            std::thread::spawn(|| {
-                let _ = engine::engine_dir();
-            });
+            // Unpack (on first launch) and load Path of Building now, so the first
+            // calculation does not wait for it.
+            engine::prewarm();
             #[cfg(windows)]
             if let Some(window) = app.get_webview_window("main") {
                 window::style_window_border(&window);

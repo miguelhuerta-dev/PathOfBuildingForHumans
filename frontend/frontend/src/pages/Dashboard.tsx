@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { atlasArt } from "../assets/atlas";
 import { analyze } from "../analysis/analyze";
 import { formatNumber } from "../utils/format";
@@ -13,7 +13,7 @@ import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
 import type { Page } from "../components/TopNav";
 import type { Archive } from "../state/useArchive";
-import type { EngineBuild } from "../types/Engine";
+import type { Bandit, EngineBuild } from "../types/Engine";
 import type { Analysis } from "../analysis/analyze";
 import { AtlasStarIcon, ShieldIcon, SigilIcon, SkullIcon, SwordIcon } from "../components/icons";
 
@@ -82,7 +82,9 @@ function StatusBar({ archive }: { archive: Archive }) {
     <div role="status" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[16px] text-parchment-dim">
       <span>
         {archive.characterState === "loading"
-          ? "Consulting the archive…"
+          ? archive.result && archive.updatedAt
+            ? `Refreshing… showing your last session (${archive.updatedAt.toLocaleTimeString()})`
+            : "Consulting the archive…"
           : archive.updatedAt
             ? `Updated at ${archive.updatedAt.toLocaleTimeString()}`
             : "Not loaded yet"}
@@ -97,6 +99,22 @@ function StatusBar({ archive }: { archive: Archive }) {
         />
         Refresh when I change zone
       </label>
+      {archive.selected && (
+        <label className="flex items-center gap-2" title="Public profiles do not say which bandit you helped, and it changes your stats.">
+          Act 2 bandit
+          <select
+            value={archive.bandit ?? "None"}
+            onChange={(event) => archive.setBandit(event.target.value as Bandit)}
+            className="border border-gold-dim/60 bg-black/60 px-2 py-0.5 font-display text-[13px] tracking-[0.12em] text-parchment"
+          >
+            {BANDIT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <button
         type="button"
         onClick={archive.refresh}
@@ -106,6 +124,64 @@ function StatusBar({ archive }: { archive: Archive }) {
         REFRESH NOW
       </button>
     </div>
+  );
+}
+
+const BANDIT_OPTIONS: { value: Bandit; label: string }[] = [
+  { value: "None", label: "Killed all" },
+  { value: "Alira", label: "Helped Alira" },
+  { value: "Kraityn", label: "Helped Kraityn" },
+  { value: "Oak", label: "Helped Oak" },
+];
+
+/**
+ * Public profiles leave out the bandit choice, and Alira's +15% resistances or
+ * Oak's life regeneration change the numbers, so the archive asks once per character.
+ */
+function BanditPrompt({ archive }: { archive: Archive }) {
+  const level = archive.result?.character?.character.level ?? 0;
+  if (!archive.isDesktopApp || !archive.selected || archive.bandit || level < 13) return null;
+  return (
+    <div role="note" className="iron-card flex flex-wrap items-center justify-center gap-x-5 gap-y-3 px-5 py-4 text-center">
+      <p className="text-[17px] text-parchment-dim">
+        <span className="font-display tracking-[0.12em] text-gold">Which bandit did you help in Act 2?</span> Your public profile does
+        not say, and it changes your resistances and more.
+      </p>
+      <div className="flex flex-wrap justify-center gap-2">
+        {BANDIT_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => archive.setBandit(option.value)}
+            className="border border-gold-dim/60 px-3 py-1 font-display text-[13px] tracking-[0.16em] text-parchment transition hover:border-gold hover:text-gold"
+          >
+            {option.label.toUpperCase()}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** The worst threats first; the rest one click away, so the panel stays readable. */
+function ThreatList({ findings }: { findings: Analysis["findings"] }) {
+  const [showAll, setShowAll] = useState(false);
+  const shown = showAll ? findings : findings.slice(0, 4);
+  return (
+    <>
+      {shown.map((finding) => (
+        <IssueCard key={finding.id} {...finding} />
+      ))}
+      {findings.length > 4 && (
+        <button
+          type="button"
+          onClick={() => setShowAll((value) => !value)}
+          className="self-center border border-gold-dim/60 px-4 py-1 font-display text-[13px] tracking-[0.18em] text-parchment transition hover:border-gold hover:text-gold"
+        >
+          {showAll ? "SHOW FEWER" : `SHOW ALL ${findings.length} THREATS`}
+        </button>
+      )}
+    </>
   );
 }
 
@@ -122,6 +198,7 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
   return (
     <>
       <StatusBar archive={archive} />
+      <BanditPrompt archive={archive} />
 
       {archive.characterError && <ErrorNote className="text-center">{archive.characterError}</ErrorNote>}
 
@@ -145,9 +222,7 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
                 {analysis.findings.length === 0 && (
                   <p className="text-[18px] text-verdigris">No weaknesses found for {analysis.stageLabel.toLowerCase()}.</p>
                 )}
-                {analysis.findings.slice(0, 4).map((finding) => (
-                  <IssueCard key={finding.id} {...finding} />
-                ))}
+                <ThreatList findings={analysis.findings} />
               </div>
               <figure className="mt-auto pt-8 text-center">
                 <blockquote className="text-[19px] italic text-gold-dim">“A single weakness can undo an empire.”</blockquote>

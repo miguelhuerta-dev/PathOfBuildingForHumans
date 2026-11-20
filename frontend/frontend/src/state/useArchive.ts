@@ -3,7 +3,15 @@ import demoCharacter from "../data/demo/demoCharacter.json";
 import { desktop, isDesktopApp } from "../lib/desktop";
 import { readSetting, writeSetting } from "../lib/settings";
 import { clearLastGuide, forgetGuide, readLastGuide, readSavedGuides, rememberGuide, type SavedGuide } from "./savedGuides";
-import type { CharacterSummary, EngineResult } from "../types/Engine";
+import {
+  cacheResult,
+  readBandit,
+  readCachedResult,
+  readLastCharacter,
+  rememberBandit,
+  rememberLastCharacter,
+} from "./characterMemory";
+import type { Bandit, CharacterSummary, EngineResult } from "../types/Engine";
 
 const STORAGE = {
   account: "pobh.account",
@@ -28,13 +36,17 @@ export function useArchive() {
   const [listState, setListState] = useState<LoadState>("idle");
   const [listError, setListError] = useState<string | null>(null);
 
-  const [selected, setSelected] = useState<string | null>(() => readSetting(STORAGE.character));
+  const [selected, setSelected] = useState<string | null>(() => readLastCharacter(account) ?? readSetting(STORAGE.character));
+  // The last result of that character opens at once; the fresh one replaces it moments later.
+  const [opening] = useState(() => (isDesktopApp && selected ? readCachedResult(account, selected) : null));
   const [result, setResult] = useState<EngineResult | null>(() =>
-    isDesktopApp ? null : (demoCharacter as unknown as EngineResult),
+    isDesktopApp ? (opening?.result ?? null) : (demoCharacter as unknown as EngineResult),
   );
   const [characterState, setCharacterState] = useState<LoadState>("idle");
   const [characterError, setCharacterError] = useState<string | null>(null);
-  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(() => (opening ? new Date(opening.updatedAt) : null));
+  /** The bandit the character helped in Act 2, as the player told the app (null = not told yet). */
+  const [bandit, setBanditState] = useState<Bandit | null>(() => (account && selected ? readBandit(account, selected) : null));
 
   const [guideState, setGuideState] = useState<LoadState>("idle");
   const [guideError, setGuideError] = useState<string | null>(null);
@@ -49,34 +61,28 @@ export function useArchive() {
   // older request just stops showing as loading, the newer answer covers it.
   const latestRequest = useRef(0);
 
-  const loadCharacters = useCallback(async (accountName: string) => {
-    const trimmed = accountName.trim();
-    if (!trimmed) return;
-    setListState("loading");
-    setListError(null);
-    try {
-      const list = await desktop.listCharacters(trimmed);
-      setCharacters([...list].sort((a, b) => b.level - a.level));
-      setAccount(trimmed);
-      writeSetting(STORAGE.account, trimmed);
-      setListState("idle");
-    } catch (error) {
-      setListError((error as Error).message);
-      setListState("error");
-    }
-  }, []);
-
   const loadCharacter = useCallback(
-    async (name: string) => {
-      if (!account) return;
+    async (name: string, accountName: string = account) => {
+      if (!accountName) return;
+      if (name !== selected) {
+        // Another character: show its last result, if any, while it is calculated.
+        const cached = readCachedResult(accountName, name);
+        if (cached) {
+          setResult(cached.result);
+          setUpdatedAt(new Date(cached.updatedAt));
+        }
+      }
       setSelected(name);
       writeSetting(STORAGE.character, name);
+      rememberLastCharacter(accountName, name);
+      const knownBandit = readBandit(accountName, name);
+      setBanditState(knownBandit);
       setCharacterState("loading");
       setCharacterError(null);
       lastRefresh.current = Date.now();
       const request = ++latestRequest.current;
       try {
-        const next = await desktop.loadCharacter(account, name);
+        const next = await desktop.loadCharacter(accountName, name, knownBandit ?? undefined);
         if (request !== latestRequest.current) return setCharacterState("idle");
         setResult(next);
         setUpdatedAt(new Date());
@@ -87,12 +93,59 @@ export function useArchive() {
         setCharacterState("error");
       }
     },
-    [account],
+    [account, selected],
+  );
+
+  const loadCharacters = useCallback(
+    async (accountName: string) => {
+      const trimmed = accountName.trim();
+      if (!trimmed) return;
+      setListState("loading");
+      setListError(null);
+      try {
+        const list = await desktop.listCharacters(trimmed);
+        setCharacters([...list].sort((a, b) => b.level - a.level));
+        setAccount(trimmed);
+        writeSetting(STORAGE.account, trimmed);
+        setListState("idle");
+        if (trimmed.toLowerCase() !== account.toLowerCase()) {
+          // Another account: open the character last opened on it, if it still exists.
+          const last = readLastCharacter(trimmed);
+          if (last && list.some((character) => character.name === last)) void loadCharacter(last, trimmed);
+          else {
+            setSelected(null);
+            setResult(null);
+          }
+        }
+      } catch (error) {
+        setListError((error as Error).message);
+        setListState("error");
+      }
+    },
+    [account, loadCharacter],
   );
 
   const refresh = useCallback(() => {
     if (selected) void loadCharacter(selected);
   }, [loadCharacter, selected]);
+
+  /** Sets the bandit the selected character helped, and recalculates with it. */
+  const setBandit = useCallback(
+    (choice: Bandit) => {
+      if (!account || !selected) return;
+      rememberBandit(account, selected, choice);
+      setBanditState(choice);
+      void loadCharacter(selected);
+    },
+    [account, loadCharacter, selected],
+  );
+
+  // Keep the latest result of the selected character, to open on it next time.
+  useEffect(() => {
+    if (!isDesktopApp || !account || !selected || !updatedAt) return;
+    if (result?.character?.character?.name !== selected) return;
+    cacheResult(account, selected, result, updatedAt);
+  }, [account, result, selected, updatedAt]);
 
   const [savedGuides, setSavedGuides] = useState<SavedGuide[]>(readSavedGuides);
   const [guideInput, setGuideInput] = useState<string | null>(null);
@@ -165,11 +218,25 @@ export function useArchive() {
     restored.current = true;
     const lastGuide = readLastGuide();
     void (async () => {
-      if (account) {
+      if (account && selected) {
         void loadCharacters(account);
-        if (selected) await loadCharacter(selected);
+        // The guide is opened first without calculating, so one calculation
+        // brings the character already compared with it.
+        let guideReady = false;
+        if (lastGuide) {
+          try {
+            await desktop.prepareGuide(lastGuide);
+            setGuideInput(lastGuide);
+            guideReady = true;
+          } catch {
+            // Shown by loadGuide below.
+          }
+        }
+        await loadCharacter(selected);
+        if (lastGuide && !guideReady) await loadGuide(lastGuide);
+        return;
       }
-      // After the character, so the guide opens already compared with it.
+      if (account) void loadCharacters(account);
       if (lastGuide) await loadGuide(lastGuide);
     })();
     if (!clientLog) {
@@ -243,6 +310,8 @@ export function useArchive() {
     selected,
     loadCharacter,
     refresh,
+    bandit,
+    setBandit,
     result,
     characterState,
     characterError,

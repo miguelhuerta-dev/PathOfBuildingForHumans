@@ -54,19 +54,42 @@ pub fn raw_url(input: &str) -> Option<String> {
     }
 }
 
-/// Accepts a code or a share link and returns the build XML.
-pub async fn resolve(input: &str) -> Result<String, String> {
+/// Where a share link's code is kept, so a guide opened before needs no download.
+/// pobb.in and pastebin pastes never change, so the copy never goes stale.
+fn cached_code_path(cache_dir: &std::path::Path, url: &str) -> std::path::PathBuf {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    url.hash(&mut hasher);
+    cache_dir.join("guides").join(format!("{:016x}.txt", hasher.finish()))
+}
+
+/// Accepts a code or a share link and returns the build XML. Codes behind share
+/// links are kept in `cache_dir`, when given.
+pub async fn resolve(input: &str, cache_dir: Option<&std::path::Path>) -> Result<String, String> {
     let code = if let Some(url) = raw_url(input) {
-        crate::http::client()
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| format!("Could not download the guide: {e}"))?
-            .error_for_status()
-            .map_err(|e| format!("The guide link did not work: {e}"))?
-            .text()
-            .await
-            .map_err(|e| format!("Could not read the guide: {e}"))?
+        let cached = cache_dir.map(|dir| cached_code_path(dir, &url));
+        match cached.as_deref().and_then(|path| std::fs::read_to_string(path).ok()) {
+            Some(code) if decode_code(&code).is_ok() => code,
+            _ => {
+                let code = crate::http::client()
+                    .get(&url)
+                    .send()
+                    .await
+                    .map_err(|e| format!("Could not download the guide: {e}"))?
+                    .error_for_status()
+                    .map_err(|e| format!("The guide link did not work: {e}"))?
+                    .text()
+                    .await
+                    .map_err(|e| format!("Could not read the guide: {e}"))?;
+                if let Some(path) = cached.as_deref().filter(|_| decode_code(&code).is_ok()) {
+                    if let Some(parent) = path.parent() {
+                        let _ = std::fs::create_dir_all(parent);
+                    }
+                    let _ = std::fs::write(path, &code);
+                }
+                code
+            }
+        }
     } else if input.trim_start().starts_with("http") {
         return Err("Only pobb.in and pastebin links are supported. You can also paste the code directly.".into());
     } else {

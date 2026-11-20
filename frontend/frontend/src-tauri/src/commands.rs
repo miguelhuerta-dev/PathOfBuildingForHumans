@@ -38,6 +38,9 @@ async fn with_item_icons(app: &tauri::AppHandle, mut result: Value) -> Value {
     result
 }
 
+/// The Act 2 bandit choices as Path of Building names them ("None" = killed all three).
+const BANDITS: [&str; 4] = ["None", "Oak", "Kraityn", "Alira"];
+
 #[tauri::command]
 pub async fn list_characters(account: String, realm: Option<String>) -> Result<Value, String> {
     poe_api::list_characters(account.trim(), realm.as_deref().unwrap_or("pc")).await
@@ -52,8 +55,13 @@ pub async fn load_character(
     account: String,
     character: String,
     realm: Option<String>,
+    bandit: Option<String>,
 ) -> Result<Value, String> {
-    let raw = poe_api::fetch_character(account.trim(), character.trim(), realm.as_deref().unwrap_or("pc")).await?;
+    let mut raw = poe_api::fetch_character(account.trim(), character.trim(), realm.as_deref().unwrap_or("pc")).await?;
+    // Public profiles leave the bandit out; the player picks it in the app.
+    if let (Some(bandit), Some(fields)) = (bandit.filter(|b| BANDITS.contains(&b.as_str())), raw.as_object_mut()) {
+        fields.insert("bandit".into(), json!(bandit));
+    }
     *session.character.lock().unwrap() = Some(raw.clone());
 
     let guide = session.guide.lock().unwrap().clone();
@@ -94,9 +102,18 @@ async fn evaluate_guide(app: &tauri::AppHandle, session: &Session) -> Result<Val
 /// The stage is chosen from the character's level unless the player picks one.
 #[tauri::command]
 pub async fn load_guide(app: tauri::AppHandle, session: State<'_, Session>, input: String) -> Result<Value, String> {
-    let xml = guide::resolve(&input).await?;
+    let xml = guide::resolve(&input, app.path().app_cache_dir().ok().as_deref()).await?;
     *session.guide.lock().unwrap() = Some(LoadedGuide { xml, stage: None });
     evaluate_guide(&app, &session).await
+}
+
+/// Opens a guide without calculating it: on start the last guide is prepared
+/// first, so loading the last character calculates both in one go.
+#[tauri::command]
+pub async fn prepare_guide(app: tauri::AppHandle, session: State<'_, Session>, input: String) -> Result<(), String> {
+    let xml = guide::resolve(&input, app.path().app_cache_dir().ok().as_deref()).await?;
+    *session.guide.lock().unwrap() = Some(LoadedGuide { xml, stage: None });
+    Ok(())
 }
 
 /// Compares against another stage of the loaded guide (None = by level).
