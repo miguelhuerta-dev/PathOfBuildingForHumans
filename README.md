@@ -167,7 +167,6 @@ See [`CHANGELOG.md`](CHANGELOG.md), [`docs/roadmap.md`](docs/roadmap.md) and the
 Requirements: [Node.js](https://nodejs.org/) 22 or newer.
 
 ```bash
-cd frontend/frontend
 npm install
 npm run dev
 ```
@@ -204,14 +203,12 @@ The desktop app is built with [Tauri](https://tauri.app/). To run it locally you
 make and a C compiler):
 
 ```bash
-cd frontend/frontend
 scripts/setup-engine.sh
 ```
 
 On Windows (needs git and Visual Studio with the **Desktop development with C++** workload):
 
 ```powershell
-cd frontend/frontend
 ./scripts/setup-engine.ps1
 ```
 
@@ -225,7 +222,7 @@ npm run desktop:dev
 debug mode and opens the executable in Visual Studio (F5 to run under the native debugger).
 
 **Portable build (Windows):** `./scripts/build-portable.ps1` writes
-`frontend/frontend/portable/PathOfBuildingForHumans.exe`, one file with the engine packed inside. Timeless and
+`portable/PathOfBuildingForHumans.exe`, one file with the engine packed inside. Timeless and
 abyss jewel tables (about 170 MB) are downloaded the first time a build needs one.
 
 **Releases:** push a version tag such as `v0.4.0`. The **Desktop app (Windows portable)** workflow builds
@@ -236,19 +233,20 @@ and never touched by the workflow.
 ## Project structure
 
 ```
+src/                   React + TypeScript + Vite + Tailwind app
+  analysis/            Diagnostic rules (the Threat Register)
+  assets/atlas/        Original painted art, frames and textures (WebP)
+  components/          Atlas frames, armoury, guide panels, shared controls
+  data/                Diagnostic rules, glossary, passive and Atlas trees, gem sources
+  guide/               Guide helpers (which item each gem group goes in)
+  pages/               Character, Guide, Atlas, Glossary and About pages
+  state/               Account, character, guide library and game art state
+src-tauri/             Desktop app (Tauri, Rust): profiles, guides, Client.txt watcher, game files
+  engine/              Path of Building bridge and pinned engine versions
+scripts/               Engine setup, portable build, data updates, VS debugging
+tests/                 Frontend tests (node --test)
 docs/                  Vision, roadmap, competitor analysis, visual language, screenshots
 rfc/                   Design proposals (MVP, dashboard, visual identity)
-frontend/frontend/     React + TypeScript + Vite + Tailwind app
-  src/analysis/        Diagnostic rules engine
-  src/assets/atlas/    Original painted art, frames and textures (WebP)
-  src/components/      Atlas frames, armoury, guide panels, shared controls
-  src/data/            Diagnostic rules, glossary, passive and Atlas trees, gem sources
-  src/guide/           Guide helpers (which item each gem group goes in)
-  src/pages/           Character, Guide, Atlas, Glossary and About pages
-  src/state/           Account, character, guide library and game art state
-  src-tauri/           Desktop app (Tauri): profiles, guides, Client.txt watcher, game files
-  src-tauri/engine/    Path of Building bridge and pinned engine versions
-  scripts/             Engine setup, portable build, data updates, VS debugging
 .github/workflows/     Windows portable build
 ```
 
@@ -370,7 +368,6 @@ builds **registros archivados**. Materiales: hierro negro, pergamino oscuro, ace
 Necesitas [Node.js](https://nodejs.org/) 22 o superior:
 
 ```bash
-cd frontend/frontend
 npm install
 npm run dev
 ```

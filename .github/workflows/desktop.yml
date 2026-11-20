@@ -16,10 +16,6 @@ permissions:
 jobs:
   windows-portable:
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: frontend/frontend
-
     steps:
       - uses: actions/checkout@v5
 
@@ -27,13 +23,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: frontend/frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
 
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: frontend/frontend/src-tauri -> target
+          workspaces: src-tauri -> target
 
       - uses: ilammy/msvc-dev-cmd@v1
 
@@ -44,7 +40,7 @@ jobs:
 
       - name: Smoke-test the engine
         shell: pwsh
-        working-directory: frontend/frontend/src-tauri/engine/pob/src
+        working-directory: src-tauri/engine/pob/src
         run: |
           $env:LUA_PATH = "../runtime/lua/?.lua;../runtime/lua/?/init.lua;./?.lua"
           $env:LUA_CPATH = "../../?.dll"
@@ -68,7 +64,7 @@ jobs:
         shell: pwsh
         run: |
           # This version's section of CHANGELOG.md ("## v0.3.0" up to the next "## "), ready to paste in the release.
-          $changelog = [IO.File]::ReadAllText((Resolve-Path ../../CHANGELOG.md)) -replace "`r`n", "`n"
+          $changelog = [IO.File]::ReadAllText((Resolve-Path CHANGELOG.md)) -replace "`r`n", "`n"
           $section = [regex]::Match($changelog, "(?ms)^## $([regex]::Escape($env:GITHUB_REF_NAME))\s*\n(.*?)(?=^## |\z)")
           if (-not $section.Success) { throw "CHANGELOG.md has no section for $env:GITHUB_REF_NAME." }
           [IO.File]::WriteAllText((Join-Path (Resolve-Path portable) "release-notes-$env:GITHUB_REF_NAME.md"), $section.Groups[1].Value.Trim())
@@ -77,8 +73,8 @@ jobs:
         with:
           name: PathOfBuildingForHumans-${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}-windows
           path: |
-            frontend/frontend/portable/*.exe
-            frontend/frontend/portable/*.md
+            portable/*.exe
+            portable/*.md
           retention-days: 7
           if-no-files-found: error
 
