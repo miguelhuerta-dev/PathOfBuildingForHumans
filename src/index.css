@@ -593,6 +593,4 @@ html.window-maximized [data-window-frame] {
 html.window-maximized .archive-shell {
   padding: 0;
 }
-html.window-maximized .floating-nav {
-  max-width: none;
-}
+
