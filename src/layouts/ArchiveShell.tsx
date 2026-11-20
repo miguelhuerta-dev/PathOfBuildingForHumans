@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import AtlasBackground from "../components/AtlasBackground";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasScene from "../components/AtlasScene";
-import FloatingTitleBar from "../components/FloatingTitleBar";
+import FloatingNav from "../components/FloatingNav";
 import TopNav, { type Page } from "../components/TopNav";
 import { GitHubIcon } from "../components/icons";
 import { desktop, isDesktopApp } from "../lib/desktop";
@@ -81,7 +81,7 @@ function ArchiveShell({ page, onNavigate, children }: ArchiveShellProps) {
       <AtlasBackground />
       <div className="film-grain pointer-events-none absolute inset-0 z-30" aria-hidden="true" />
       <AtlasScene />
-      <FloatingTitleBar />
+      <FloatingNav page={page} onNavigate={onNavigate} />
 
       <AtlasFrame variant="outer" className="relative z-10 mx-auto min-[1540px]:max-w-[1320px]">
         <TopNav page={page} onNavigate={onNavigate} />

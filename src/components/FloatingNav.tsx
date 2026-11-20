@@ -1,20 +1,24 @@
 import { useEffect, useState } from "react";
 import { isDesktopApp } from "../lib/desktop";
-import WindowControls from "./WindowControls";
+import TopNav, { type Page } from "./TopNav";
 
-/** Scroll distance past which the main title bar is out of sight. */
+/** Scroll distance past which the main navigation bar is out of sight. */
 const SHOW_AFTER = 90;
 
+interface FloatingNavProps {
+  page: Page;
+  onNavigate: (page: Page) => void;
+}
+
 /**
- * A slim title bar pinned to the top of the window once the main one scrolls
- * away: the window can still be dragged, and minimise, maximise and close stay
- * in the corner, as in any desktop app.
+ * The same navigation bar, pinned to the top once the page scrolls past it:
+ * the pages, the window drag area and minimise, maximise and close stay at
+ * hand, in the corner as in any desktop app.
  */
-function FloatingTitleBar() {
+function FloatingNav({ page, onNavigate }: FloatingNavProps) {
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    if (!isDesktopApp) return;
     let frame = 0;
     const update = () => {
       cancelAnimationFrame(frame);
@@ -32,19 +36,13 @@ function FloatingTitleBar() {
 
   return (
     <div
-      data-tauri-drag-region
       aria-hidden={!shown}
       inert={!shown}
-      className={`floating-titlebar fixed inset-x-0 top-0 z-50 flex h-11 select-none items-center justify-between pl-5 pr-1 ${
-        shown ? "floating-titlebar--shown" : ""
-      }`}
+      className={`floating-nav fixed inset-x-0 top-0 z-50 mx-auto min-[1540px]:max-w-[1320px] ${shown ? "floating-nav--shown" : ""}`}
     >
-      <span data-tauri-drag-region className="title-text font-display text-[15px] font-semibold tracking-[0.06em]">
-        Path of Building for Humans
-      </span>
-      <WindowControls />
+      <TopNav page={page} onNavigate={onNavigate} floating />
     </div>
   );
 }
 
-export default FloatingTitleBar;
+export default FloatingNav;
