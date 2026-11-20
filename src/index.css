@@ -485,3 +485,40 @@ body {
   border-left-color: rgb(201 147 63);
   background: linear-gradient(90deg, rgb(48 34 18 / 0.75), rgb(8 6 6 / 0.6));
 }
+
+/* The window's own scroll bar lives inside the iron frame (ScrollRail); the native one is hidden. */
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+.scroll-rail {
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgb(4 3 3 / 0.85), rgb(22 18 17 / 0.85));
+  box-shadow: inset 0 0 0 1px rgb(58 42 38 / 0.9);
+}
+.scroll-rail__thumb {
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgb(150 32 24), rgb(96 18 14));
+  box-shadow:
+    inset 0 0 0 1px rgb(216 180 106 / 0.25),
+    0 0 6px rgb(160 30 20 / 0.45);
+  transition: background 150ms ease;
+}
+.scroll-rail__thumb:hover {
+  background: linear-gradient(90deg, rgb(190 44 32), rgb(120 22 16));
+}
+
+/* ---------- The cut-out window (desktop app) ----------
+   The window is transparent: only the iron frame, what it holds and the pillars
+   are painted, so the frame's own art draws the window's silhouette. */
+html.cutout-window,
+html.cutout-window body {
+  background: transparent;
+}
+/* The backdrop fills the inside of the outer frame, up to its iron border. */
+.frame-backdrop {
+  inset: 22px;
+  border-radius: 6px;
+}

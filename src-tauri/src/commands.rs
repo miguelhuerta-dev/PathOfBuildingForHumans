@@ -147,6 +147,21 @@ pub async fn unique_price(name: String, league: String) -> Result<Vec<prices::Pr
     prices::unique_price(name.trim(), league.trim()).await
 }
 
+/// Clips the window to the pieces the page paints: the frame and the pillars (see `window::shape_window`).
+#[tauri::command]
+pub fn shape_window(window: tauri::WebviewWindow, pieces: Vec<Vec<(i32, i32)>>) -> Result<(), String> {
+    if pieces.len() > 32 || pieces.iter().any(|piece| piece.len() > 4000) {
+        return Err("Too many points for the window outline.".into());
+    }
+    #[cfg(windows)]
+    return crate::window::shape_window(&window, &pieces);
+    #[cfg(not(windows))]
+    {
+        let _ = (window, pieces);
+        Ok(())
+    }
+}
+
 #[tauri::command]
 pub fn clear_guide(session: State<'_, Session>) {
     *session.guide.lock().unwrap() = None;

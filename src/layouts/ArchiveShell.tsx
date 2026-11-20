@@ -3,6 +3,8 @@ import AtlasBackground from "../components/AtlasBackground";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasScene from "../components/AtlasScene";
 import FloatingNav from "../components/FloatingNav";
+import WindowFrame from "../components/WindowFrame";
+import ScrollRail from "../components/ScrollRail";
 import TopNav, { type Page } from "../components/TopNav";
 import { GitHubIcon } from "../components/icons";
 import { desktop, isDesktopApp } from "../lib/desktop";
@@ -78,12 +80,22 @@ function ArchiveShell({ page, onNavigate, children }: ArchiveShellProps) {
   useIdleWhenUnfocused();
   return (
     <div className="relative isolate min-h-screen overflow-hidden p-2">
-      <AtlasBackground />
-      <div className="film-grain pointer-events-none absolute inset-0 z-30" aria-hidden="true" />
-      <AtlasScene />
+      {/* In the desktop app the window is a cut-out: the backdrop lives inside the frame only. */}
+      {!isDesktopApp && <AtlasBackground />}
+      {!isDesktopApp && <div className="film-grain pointer-events-none absolute inset-0 z-30" aria-hidden="true" />}
+      <AtlasScene cutout={isDesktopApp} />
       <FloatingNav page={page} onNavigate={onNavigate} />
+      <WindowFrame />
+      <ScrollRail />
 
-      <AtlasFrame variant="outer" className="relative z-10 mx-auto min-[1540px]:max-w-[1320px]">
+      <div data-window-frame className="relative z-10 mx-auto min-[1540px]:max-w-[1320px]">
+      {isDesktopApp && (
+        <div className="frame-backdrop pointer-events-none absolute z-0 overflow-hidden" aria-hidden="true">
+          <AtlasBackground />
+          <div className="film-grain absolute inset-0" />
+        </div>
+      )}
+      <AtlasFrame variant="outer" className="relative z-[1]">
         <TopNav page={page} onNavigate={onNavigate} />
 
         <div className="flex items-start justify-between pb-10 pt-5 md:min-h-[150px]">
@@ -109,6 +121,7 @@ function ArchiveShell({ page, onNavigate, children }: ArchiveShellProps) {
           <ProfileLink />
         </footer>
       </AtlasFrame>
+      </div>
     </div>
   );
 }

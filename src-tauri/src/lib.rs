@@ -26,6 +26,7 @@ pub fn run() {
             commands::prepare_guide,
             commands::forge_item,
             commands::unique_price,
+            commands::shape_window,
             commands::select_guide_stage,
             commands::clear_guide,
             commands::detect_client_log,

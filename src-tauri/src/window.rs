@@ -31,3 +31,38 @@ pub fn style_window_border(window: &tauri::WebviewWindow) {
         );
     }
 }
+
+/// Clips the window to the pieces the page paints (the iron frame, the pillars),
+/// each a polygon in physical pixels from the window's top-left corner. Outside
+/// them the window is gone: the desktop shows and clicks go through. No pieces:
+/// a plain rectangle again.
+pub fn shape_window(window: &tauri::WebviewWindow, pieces: &[Vec<(i32, i32)>]) -> Result<(), String> {
+    use windows::Win32::Foundation::{HWND, POINT};
+    use windows::Win32::Graphics::Gdi::{CombineRgn, CreatePolygonRgn, CreateRectRgn, DeleteObject, SetWindowRgn, ALTERNATE, RGN_OR};
+
+    let hwnd = window.hwnd().map_err(|e| format!("The window is not available: {e}"))?;
+    let hwnd = HWND(hwnd.0 as _);
+    let pieces: Vec<&Vec<(i32, i32)>> = pieces.iter().filter(|piece| piece.len() >= 3).collect();
+    // SAFETY: the window handle is alive for the call. Every region made here is
+    // either deleted or, once SetWindowRgn succeeds, owned and freed by the system.
+    unsafe {
+        if pieces.is_empty() {
+            SetWindowRgn(hwnd, None, true);
+            return Ok(());
+        }
+        let shape = CreateRectRgn(0, 0, 0, 0);
+        if shape.is_invalid() {
+            return Err("Could not shape the window.".into());
+        }
+        for piece in pieces {
+            let points: Vec<POINT> = piece.iter().map(|&(x, y)| POINT { x, y }).collect();
+            let region = CreatePolygonRgn(&points, ALTERNATE);
+            if !region.is_invalid() {
+                CombineRgn(Some(shape), Some(shape), Some(region), RGN_OR);
+                let _ = DeleteObject(region.into());
+            }
+        }
+        SetWindowRgn(hwnd, Some(shape), true);
+    }
+    Ok(())
+}
