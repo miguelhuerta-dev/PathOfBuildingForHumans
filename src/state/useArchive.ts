@@ -7,9 +7,12 @@ import {
   cacheResult,
   readBandit,
   readCachedResult,
+  readHistory,
   readLastCharacter,
+  recordSnapshot,
   rememberBandit,
   rememberLastCharacter,
+  type Snapshot,
 } from "./characterMemory";
 import type { Bandit, CharacterSummary, EngineResult } from "../types/Engine";
 
@@ -47,6 +50,8 @@ export function useArchive() {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(() => (opening ? new Date(opening.updatedAt) : null));
   /** The bandit the character helped in Act 2, as the player told the app (null = not told yet). */
   const [bandit, setBanditState] = useState<Bandit | null>(() => (account && selected ? readBandit(account, selected) : null));
+  /** The selected character's progress over time (DPS, EHP, level). */
+  const [history, setHistory] = useState<Snapshot[]>(() => (account && selected ? readHistory(account, selected) : []));
 
   const [guideState, setGuideState] = useState<LoadState>("idle");
   const [guideError, setGuideError] = useState<string | null>(null);
@@ -73,6 +78,7 @@ export function useArchive() {
         }
       }
       setSelected(name);
+      setHistory(readHistory(accountName, name));
       writeSetting(STORAGE.character, name);
       rememberLastCharacter(accountName, name);
       const knownBandit = readBandit(accountName, name);
@@ -84,8 +90,11 @@ export function useArchive() {
       try {
         const next = await desktop.loadCharacter(accountName, name, knownBandit ?? undefined);
         if (request !== latestRequest.current) return setCharacterState("idle");
+        const now = new Date();
         setResult(next);
-        setUpdatedAt(new Date());
+        setUpdatedAt(now);
+        // Each fresh calculation may add a moment to the character's progress chart.
+        setHistory(recordSnapshot(accountName, name, next, now));
         setCharacterState("idle");
       } catch (error) {
         if (request !== latestRequest.current) return setCharacterState("idle");
@@ -312,6 +321,7 @@ export function useArchive() {
     refresh,
     bandit,
     setBandit,
+    history,
     result,
     characterState,
     characterError,

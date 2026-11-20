@@ -9,6 +9,7 @@ import AnalysisCard from "../components/AnalysisCard";
 import ConnectPanel from "../components/ConnectPanel";
 import EquipmentPanel from "../components/EquipmentPanel";
 import BestPassivesPanel from "../components/BestPassivesPanel";
+import ProgressPanel from "../components/ProgressPanel";
 import { ScoreCard, StatCard } from "../components/StatCard";
 import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
@@ -258,6 +259,7 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
           </div>
 
           {archive.isDesktopApp && archive.selected && <BestPassivesPanel character={archive.selected} />}
+          {archive.isDesktopApp && <ProgressPanel history={archive.history} />}
         </>
       )}
 
