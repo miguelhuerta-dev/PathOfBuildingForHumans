@@ -11,12 +11,15 @@ const AboutPage = lazy(() => import("./pages/InfoPages").then((module) => ({ def
 import { useArchive } from "./state/useArchive";
 import { GameLocation } from "./state/useItemArt";
 import { CurrentLeague } from "./state/currentLeague";
+import { useLanguage } from "./i18n";
+import LanguagePicker from "./components/LanguagePicker";
 
 /** Atlas progress is kept per league; without a character it goes to Standard. */
 const DEFAULT_LEAGUE = "Standard";
 
 function App() {
   const archive = useArchive();
+  const { language } = useLanguage();
   const [page, setPage] = useState<Page>("character");
   const league =
     archive.result?.character?.character.league ??
@@ -28,13 +31,17 @@ function App() {
     <GameLocation.Provider value={archive.clientLog || null}>
       <CurrentLeague.Provider value={league}>
       <ArchiveShell page={page} onNavigate={setPage}>
-        {page === "character" && <Dashboard archive={archive} onNavigate={setPage} />}
+        {/* First launch: the language comes before anything else. */}
+        {language === null && <LanguagePicker />}
+        {language !== null && page === "character" && <Dashboard archive={archive} onNavigate={setPage} />}
+        {language !== null && (
         <Suspense fallback={<p className="text-center text-[17px] text-parchment-faint">Opening the archive…</p>}>
           {page === "guide" && <GuidePage archive={archive} />}
           {page === "atlas" && <AtlasPage league={league} clientLog={archive.clientLog || null} />}
           {page === "glossary" && <GlossaryPage />}
           {page === "about" && <AboutPage />}
         </Suspense>
+        )}
       </ArchiveShell>
       </CurrentLeague.Provider>
     </GameLocation.Provider>

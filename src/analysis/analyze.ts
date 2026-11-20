@@ -2,6 +2,7 @@ import rules from "../data/rules/poe1.json";
 import type { EngineBuild, Upgrade } from "../types/Engine";
 import { formatNumber } from "../utils/formatNumber";
 import { extraDamageTaken, signedPercent } from "./numbers";
+import { translator, type Translate } from "../i18n";
 
 export type Severity = "high" | "medium" | "low";
 
@@ -13,6 +14,8 @@ export interface Finding {
   impact: string;
   /** What to do about it. */
   remedy: string;
+  /** The remedy as a short command, for the dashboard's priority. */
+  action: string;
 }
 
 export interface Analysis {
@@ -40,7 +43,7 @@ const ELEMENTS = [
   { key: "LightningResist", missing: "MissingLightningResist", overCap: "LightningResistOverCap", name: "Lightning" },
 ] as const;
 
-function resistFindings(build: EngineBuild, stage: Stage): Finding[] {
+function resistFindings(build: EngineBuild, stage: Stage, t: Translate): Finding[] {
   const findings: Finding[] = [];
   const mapping = stage.elementalResist.warnBelow >= rules.resistCap;
 
@@ -54,15 +57,20 @@ function resistFindings(build: EngineBuild, stage: Stage): Finding[] {
     const target = mapping ? max : warnBelow;
     if (value < target) {
       const extra = extraDamageTaken(value, max);
+      const element = t(name.toLowerCase());
       findings.push({
         id: `resist-${name.toLowerCase()}`,
         severity: value < criticalBelow ? "high" : "medium",
-        title: `${name} Resistance ${value}%` + (max !== rules.resistCap ? ` of ${max}%` : ""),
+        title:
+          max !== rules.resistCap
+            ? t("{Element} Resistance {value}% of {max}%", { Element: t(name), value, max })
+            : t("{Element} Resistance {value}%", { Element: t(name), value }),
         impact:
           extra > 0
-            ? `You take ${extra}% more ${name.toLowerCase()} damage than you would at your ${max}% maximum.`
-            : `${name} hits land harder than they should.`,
-        remedy: `Add ${name.toLowerCase()} resistance on rings, belt or boots until you reach ${Math.max(target, 0)}%.`,
+            ? t("You take {extra}% more {element} damage than you would at your {max}% maximum.", { extra, element, max })
+            : t("{Element} hits land harder than they should.", { Element: t(name) }),
+        remedy: t("Add {element} resistance on rings, belt or boots until you reach {target}%.", { element, target: Math.max(target, 0) }),
+        action: t("Add {element} resistance", { element }),
       });
     }
   }
@@ -74,13 +82,17 @@ function resistFindings(build: EngineBuild, stage: Stage): Finding[] {
       return value !== undefined && (build.stats[missing] ?? 0) <= 0 && (build.stats[overCap] ?? 0) < rules.resistOverCap.warnBelow;
     });
     if (thin.length > 0) {
-      const names = thin.map((element) => element.name.toLowerCase());
+      const names = thin.map((element) => t(element.name.toLowerCase()));
       findings.push({
         id: "resist-overcap",
         severity: "low",
-        title: "Little resistance to spare",
-        impact: `Your ${names.join(", ")} resistance has under ${rules.resistOverCap.warnBelow}% over the cap: a curse or a map mod takes you below it.`,
-        remedy: "Aim for 20-30% over the cap on each element, or carry curse immunity.",
+        title: t("Little resistance to spare"),
+        impact: t("Your {elements} resistance has under {over}% over the cap: a curse or a map mod takes you below it.", {
+          elements: names.join(", "),
+          over: rules.resistOverCap.warnBelow,
+        }),
+        remedy: t("Aim for 20-30% over the cap on each element, or carry curse immunity."),
+        action: t("Overcap your resistances"),
       });
     }
   }
@@ -91,9 +103,10 @@ function resistFindings(build: EngineBuild, stage: Stage): Finding[] {
     findings.push({
       id: "resist-chaos",
       severity: chaos < stage.chaosResist.criticalBelow ? "high" : "medium",
-      title: `Chaos Resistance ${chaos}%`,
-      impact: "Chaos damage and poison bypass energy shield and hit you hard.",
-      remedy: "Look for chaos resistance on jewellery or an Amethyst Flask, and aim for at least 0%.",
+      title: t("{Element} Resistance {value}%", { Element: t("Chaos"), value: chaos }),
+      impact: t("Chaos damage and poison bypass energy shield and hit you hard."),
+      remedy: t("Look for chaos resistance on jewellery or an Amethyst Flask, and aim for at least 0%."),
+      action: t("Add chaos resistance"),
     });
   }
   return findings;
@@ -101,7 +114,7 @@ function resistFindings(build: EngineBuild, stage: Stage): Finding[] {
 
 const HIT_TYPES = ["Physical", "Fire", "Cold", "Lightning", "Chaos"] as const;
 
-function defenceFindings(build: EngineBuild, stage: Stage): Finding[] {
+function defenceFindings(build: EngineBuild, stage: Stage, t: Translate): Finding[] {
   const findings: Finding[] = [];
   const level = build.character.level ?? 1;
   const chaosImmune = build.keystones.some((k) => rules.chaosImmunityKeystones.includes(k));
@@ -117,18 +130,23 @@ function defenceFindings(build: EngineBuild, stage: Stage): Finding[] {
       const weakest = hits[0];
       const typical = hits[Math.floor(hits.length / 2)].value;
       if (weakest.value < typical * rules.maxHit.weakShare) {
-        const kind = weakest.type.toLowerCase();
+        const kind = t(weakest.type.toLowerCase());
         findings.push({
           id: "max-hit",
           severity: weakest.value < (typical * rules.maxHit.weakShare) / 2 ? "high" : "medium",
-          title: `Weak to ${kind} hits`,
-          impact: `The biggest ${kind} hit you survive is ${formatNumber(weakest.value)}, against about ${formatNumber(typical)} for other damage.`,
+          title: t("Weak to {kind} hits", { kind }),
+          impact: t("The biggest {kind} hit you survive is {weakest}, against about {typical} for other damage.", {
+            kind,
+            weakest: formatNumber(weakest.value),
+            typical: formatNumber(typical),
+          }),
           remedy:
             weakest.type === "Physical"
-              ? "Add armour, physical damage reduction or more life."
+              ? t("Add armour, physical damage reduction or more life.")
               : weakest.type === "Chaos"
-                ? "Add chaos resistance or more life; energy shield does not stop chaos damage."
-                : `Raise your ${kind} resistance and life before anything else.`,
+                ? t("Add chaos resistance or more life; energy shield does not stop chaos damage.")
+                : t("Raise your {kind} resistance and life before anything else.", { kind }),
+          action: t("Shore up against {kind} hits", { kind }),
         });
       }
     }
@@ -141,9 +159,10 @@ function defenceFindings(build: EngineBuild, stage: Stage): Finding[] {
     findings.push({
       id: "life-recovery",
       severity: "medium",
-      title: "No life recovery",
-      impact: "Without regeneration or leech, every hit stays with you until you drink a flask.",
-      remedy: "Get life regeneration on the tree or gear, life leech, or a Vitality aura.",
+      title: t("No life recovery"),
+      impact: t("Without regeneration or leech, every hit stays with you until you drink a flask."),
+      remedy: t("Get life regeneration on the tree or gear, life leech, or a Vitality aura."),
+      action: t("Add life recovery"),
     });
   }
 
@@ -154,9 +173,10 @@ function defenceFindings(build: EngineBuild, stage: Stage): Finding[] {
     findings.push({
       id: "freeze",
       severity: "low",
-      title: "You can be frozen",
-      impact: "Frozen, you cannot move or attack while you keep taking hits.",
-      remedy: 'Use a flask with the "of Heat" suffix, or get freeze immunity from the tree or gear.',
+      title: t("You can be frozen"),
+      impact: t("Frozen, you cannot move or attack while you keep taking hits."),
+      remedy: t('Use a flask with the "of Heat" suffix, or get freeze immunity from the tree or gear.'),
+      action: t("Get freeze immunity"),
     });
   }
 
@@ -165,9 +185,10 @@ function defenceFindings(build: EngineBuild, stage: Stage): Finding[] {
     findings.push({
       id: "ehp",
       severity: ehp < stage.ehp.criticalBelow ? "high" : "medium",
-      title: `Low effective HP (${formatNumber(ehp)})`,
-      impact: `Content at this stage can take ${formatNumber(stage.ehp.warnBelow)} or more in a single burst.`,
-      remedy: "Prioritise life, energy shield or armour on your next gear upgrades.",
+      title: t("Low effective HP ({ehp})", { ehp: formatNumber(ehp) }),
+      impact: t("Content at this stage can take {amount} or more in a single burst.", { amount: formatNumber(stage.ehp.warnBelow) }),
+      remedy: t("Prioritise life, energy shield or armour on your next gear upgrades."),
+      action: t("Prioritise life"),
     });
   }
 
@@ -176,15 +197,18 @@ function defenceFindings(build: EngineBuild, stage: Stage): Finding[] {
     findings.push({
       id: "suppression",
       severity: "low",
-      title: `Spell Suppression ${Math.round(suppression)}%`,
-      impact: `You invested in suppression but are ${Math.round(100 - suppression)}% short of the cap, so spells still land at full damage sometimes.`,
-      remedy: "Cap it at 100% with suppression on boots, gloves or the passive tree.",
+      title: t("Spell Suppression {value}%", { value: Math.round(suppression) }),
+      impact: t("You invested in suppression but are {short}% short of the cap, so spells still land at full damage sometimes.", {
+        short: Math.round(100 - suppression),
+      }),
+      remedy: t("Cap it at 100% with suppression on boots, gloves or the passive tree."),
+      action: t("Cap spell suppression"),
     });
   }
   return findings;
 }
 
-function offenceFindings(build: EngineBuild): Finding[] {
+function offenceFindings(build: EngineBuild, t: Translate): Finding[] {
   const findings: Finding[] = [];
   const cost = build.stats.ManaCost;
   const mana = build.stats.ManaUnreserved;
@@ -192,9 +216,10 @@ function offenceFindings(build: EngineBuild): Finding[] {
     findings.push({
       id: "mana-cost",
       severity: "high",
-      title: `Not enough mana for ${build.character.mainSkill ?? "your main skill"}`,
-      impact: `It costs ${formatNumber(cost)} mana and you have ${formatNumber(mana)} free after reservations.`,
-      remedy: "Reserve less, add mana, or link Inspiration or a cost-reducing support.",
+      title: t("Not enough mana for {skill}", { skill: build.character.mainSkill ?? t("your main skill") }),
+      impact: t("It costs {cost} mana and you have {mana} free after reservations.", { cost: formatNumber(cost), mana: formatNumber(mana) }),
+      remedy: t("Reserve less, add mana, or link Inspiration or a cost-reducing support."),
+      action: t("Fix your mana"),
     });
   }
 
@@ -203,9 +228,10 @@ function offenceFindings(build: EngineBuild): Finding[] {
     findings.push({
       id: "hit-chance",
       severity: hit < rules.hitChance.criticalBelow ? "high" : "medium",
-      title: `Chance to Hit ${Math.round(hit)}%`,
-      impact: `About ${Math.round(100 - hit)}% of your attacks miss.`,
-      remedy: "Add accuracy with Precision, accuracy on gear or the passive tree.",
+      title: t("Chance to Hit {value}%", { value: Math.round(hit) }),
+      impact: t("About {miss}% of your attacks miss.", { miss: Math.round(100 - hit) }),
+      remedy: t("Add accuracy with Precision, accuracy on gear or the passive tree."),
+      action: t("Add accuracy"),
     });
   }
 
@@ -215,9 +241,10 @@ function offenceFindings(build: EngineBuild): Finding[] {
     findings.push({
       id: "movement",
       severity: "low",
-      title: `Movement speed ${signedPercent((speed - 1) * 100)}`,
-      impact: "Slow movement makes mapping feel sluggish and dodging harder.",
-      remedy: "Get 25-30% movement speed on boots and use a Quicksilver Flask.",
+      title: t("Movement speed {value}", { value: signedPercent((speed - 1) * 100) }),
+      impact: t("Slow movement makes mapping feel sluggish and dodging harder."),
+      remedy: t("Get 25-30% movement speed on boots and use a Quicksilver Flask."),
+      action: t("Get movement speed"),
     });
   }
   return findings;
@@ -227,11 +254,12 @@ const SEVERITY_ORDER: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
 const SEVERITY_COST: Record<Severity, number> = { high: 2, medium: 1, low: 0.3 };
 
 /** `guideLoaded`: a guide is open, so "no upgrades" means nothing better at this stage, not "no guide". */
-export function analyze(build: EngineBuild, upgrades: Upgrade[] = [], guideLoaded = false): Analysis {
+export function analyze(build: EngineBuild, upgrades: Upgrade[] = [], guideLoaded = false, t: Translate = translator("en")): Analysis {
   const level = build.character.level ?? 1;
   const stage = stageFor(level);
+  const stageLabel = t(stage.label);
 
-  const findings = [...resistFindings(build, stage), ...defenceFindings(build, stage), ...offenceFindings(build)].sort(
+  const findings = [...resistFindings(build, stage, t), ...defenceFindings(build, stage, t), ...offenceFindings(build, t)].sort(
     (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity],
   );
 
@@ -251,11 +279,18 @@ export function analyze(build: EngineBuild, upgrades: Upgrade[] = [], guideLoade
   const who = [build.character.ascendancy && build.character.ascendancy !== "None" ? build.character.ascendancy : build.character.class]
     .filter(Boolean)
     .join("");
-  const skill = build.character.mainSkill ? ` using ${build.character.mainSkill}` : "";
-  const defenceWord = findings.some((f) => f.severity === "high") ? "has gaps that will get you killed" : findings.length ? "holds up with a few soft spots" : "is solid";
+  const defence = findings.some((f) => f.severity === "high")
+    ? t("the defence has gaps that will get you killed")
+    : findings.length
+      ? t("the defence holds up with a few soft spots")
+      : t("the defence is solid");
+  const opening = build.character.mainSkill
+    ? t("A level {level} {who} using {skill}.", { level, who, skill: build.character.mainSkill })
+    : t("A level {level} {who}.", { level, who });
+  const weakness = top ? top.title.replace(/\s[-\d.,%()]+.*$/, "") || top.title : "";
   const verdict =
-    `A level ${level} ${who}${skill}. For ${stage.label.toLowerCase()}, damage is ${damage} and the defence ${defenceWord}.` +
-    (top ? ` Main weakness: ${top.title.replace(/\s[-\d.,%()]+.*$/, "") || top.title}.` : " No critical weaknesses found.");
+    `${opening} ${t("For {stage}, damage is {damage} and {defence}.", { stage: stageLabel.toLowerCase(), damage: t(damage), defence })} ` +
+    (top ? t("Main weakness: {weakness}.", { weakness }) : t("No critical weaknesses found."));
 
   const describeGain = (u: Upgrade) => {
     const parts = [];
@@ -265,21 +300,21 @@ export function analyze(build: EngineBuild, upgrades: Upgrade[] = [], guideLoade
   };
 
   return {
-    stageLabel: stage.label,
+    stageLabel,
     findings,
     score,
     health,
-    priority: top ? top.remedy.split(",")[0].split(" until")[0] : "Keep upgrading",
+    priority: top ? top.action : t("Keep upgrading"),
     verdict,
     damage,
-    primaryWeakness: top ? top.title : "None found",
-    estimatedGain: bestUpgrade ? describeGain(bestUpgrade) || "Small" : guideLoaded ? "Gear on track" : "Load a guide",
+    primaryWeakness: top ? top.title : t("None found"),
+    estimatedGain: bestUpgrade ? describeGain(bestUpgrade) || t("Small") : guideLoaded ? t("Gear on track") : t("Load a guide"),
     recommendedAction: bestUpgrade
-      ? `Replace ${bestUpgrade.slot}`
+      ? t("Replace {slot}", { slot: t(bestUpgrade.slot) })
       : top
-        ? top.remedy.split(",")[0]
+        ? top.action
         : guideLoaded
-          ? "Follow your guide's next stage"
-          : "Load a guide",
+          ? t("Follow your guide's next stage")
+          : t("Load a guide"),
   };
 }

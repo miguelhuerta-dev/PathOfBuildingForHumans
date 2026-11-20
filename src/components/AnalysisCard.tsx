@@ -2,6 +2,7 @@ import type { Analysis } from "../analysis/analyze";
 import AtlasFrame from "./AtlasFrame";
 import AtlasSectionHeader from "./AtlasSectionHeader";
 import { QuillIcon } from "./icons";
+import { useT } from "../i18n";
 
 interface AnalysisCardProps {
   analysis: Analysis;
@@ -17,6 +18,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone: stri
 }
 
 function AnalysisCard({ analysis }: AnalysisCardProps) {
+  const t = useT();
   const healthTone =
     analysis.health === "Excellent" || analysis.health === "Good" ? "text-verdigris" : "text-ember";
 
@@ -34,10 +36,10 @@ function AnalysisCard({ analysis }: AnalysisCardProps) {
         />
 
         <div className="grid grid-cols-2 gap-x-8 gap-y-5">
-          <Stat label={`Ready for ${analysis.stageLabel}`} value={analysis.health} tone={healthTone} />
-          <Stat label="Primary Weakness" value={analysis.primaryWeakness} tone="text-ember" />
-          <Stat label="Estimated Gain" value={analysis.estimatedGain} tone="text-gold" />
-          <Stat label="Recommended Action" value={analysis.recommendedAction} tone="text-arcane" />
+          <Stat label={t("Ready for {stage}", { stage: analysis.stageLabel })} value={t(analysis.health)} tone={healthTone} />
+          <Stat label={t("Primary Weakness")} value={analysis.primaryWeakness} tone="text-ember" />
+          <Stat label={t("Estimated Gain")} value={analysis.estimatedGain} tone="text-gold" />
+          <Stat label={t("Recommended Action")} value={analysis.recommendedAction} tone="text-arcane" />
         </div>
       </div>
     </AtlasFrame>
