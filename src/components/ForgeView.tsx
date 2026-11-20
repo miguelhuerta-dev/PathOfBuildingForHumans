@@ -1,3 +1,4 @@
+import { translateError } from "../i18n/errors";
 import { useContext, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { desktop } from "../lib/desktop";
@@ -356,7 +357,7 @@ function ForgeView({ item, slot, onClose }: { item: EngineItem; slot?: string; o
               {slot ? t("Heating the forge and testing every modifier on your character…") : t("Heating the forge…")}
             </p>
           )}
-          {current?.error && <p className="py-10 text-center text-[17px] text-ember">{current.error}</p>}
+          {current?.error && <p className="py-10 text-center text-[17px] text-ember">{translateError(current.error, t)}</p>}
           {forge && (forge.unique ? <UniqueBody forge={forge} /> : <CraftedBody forge={forge} />)}
         </AtlasFrame>
       </div>

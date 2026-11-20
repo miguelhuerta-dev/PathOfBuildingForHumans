@@ -91,7 +91,7 @@ function LinkForm({ atlas }: { atlas: AtlasProgressState }) {
         </div>
       </form>
 
-      {atlas.linkError && <ErrorNote className="mt-3">{t(atlas.linkError)}</ErrorNote>}
+      {atlas.linkError && <ErrorNote className="mt-3">{atlas.linkError}</ErrorNote>}
       <p className="mt-4 text-[15px] text-parchment-faint">
         {t("Path of Exile does not share your Atlas tree publicly, so mark the passives you have by clicking them on the map. Your marks are kept per league.")}
       </p>
@@ -186,7 +186,7 @@ export default function AtlasPage({ league, clientLog }: AtlasPageProps) {
           {t("{league} league · drag to move, scroll to zoom, click a passive to mark it as taken.", { league })}
           {atlas.graph && <span className="text-parchment-faint"> {t("Atlas tree {version}.", { version: atlas.graph.tree.version })}</span>}
         </p>
-        {atlas.loadError && <ErrorNote>{t(atlas.loadError)}</ErrorNote>}
+        {atlas.loadError && <ErrorNote>{atlas.loadError}</ErrorNote>}
         {atlas.graph ? (
           <>
             <ConstellationMap

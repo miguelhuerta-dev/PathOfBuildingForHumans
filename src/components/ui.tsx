@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { useT } from "../i18n";
+import { translateError } from "../i18n/errors";
 
 /** Shared archive controls. Every page uses these instead of styling its own. */
 
@@ -67,10 +69,12 @@ export function MetalMeter({ label, value, max, className = "" }: MetalMeterProp
 }
 
 /** Error message read out by screen readers. */
+/** An error in red; a plain message is shown in the chosen language. */
 export function ErrorNote({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const t = useT();
   return (
     <p role="alert" className={`text-[17px] text-[#ef7563] ${className}`}>
-      {children}
+      {typeof children === "string" ? translateError(children, t) : children}
     </p>
   );
 }

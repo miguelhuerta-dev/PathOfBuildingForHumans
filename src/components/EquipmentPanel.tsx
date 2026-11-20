@@ -96,7 +96,7 @@ function Slot({ slot, item, owned, selected, onSelect, style, className = "" }: 
       title={`${slotLabel(slot, t)}: ${item.name}`}
       aria-pressed={selected}
       onClick={() => onSelect(slot)}
-      className={`iron-slot iron-slot--filled ${selected ? "border-[rgb(var(--rarity)/0.85)]" : ""} ${className}`}
+      className={`iron-slot iron-slot--filled ${selected ? "iron-slot--selected" : ""} ${className}`}
       style={{ ...style, "--rarity": rarity.rgb } as CSSProperties}
     >
       {/* A fixed box inside the socket: tall art (staves, bows) scales down instead of spilling out. */}
@@ -118,7 +118,7 @@ function ItemDetails({ item, measure }: { item?: EngineItem; measure?: boolean }
     <article key={item.slot} className="iron-tooltip fade-in min-h-full" style={{ "--rarity": rarity.rgb } as CSSProperties}>
       <header className="iron-tooltip__head px-5 py-3 text-center">
         <p className="font-display text-[12px] tracking-[0.2em] text-parchment-faint">{slotLabel(item.slot, t).toUpperCase()}</p>
-        <h3 className={`font-display text-[20px] leading-tight ${rarity.tone}`}>{item.name}</h3>
+        <h3 className={`iron-tooltip__name font-display text-[21px] leading-tight ${rarity.tone}`}>{item.name}</h3>
         {item.base && item.base !== item.name && <p className={`text-[16px] ${rarity.tone} opacity-80`}>{item.base}</p>}
         {item.influences && item.influences.length > 0 && (
           <p className="mt-1 font-display text-[11px] tracking-[0.18em] text-gold-dim">{item.influences.join(" · ").toUpperCase()}</p>
@@ -295,9 +295,8 @@ function EquipmentPanel({ items, measure, title = "Equipped Artifacts", intro, o
         </div>
 
         <div>
-          {/* Fixed height: a longer item must not push the ledger, or the row under the
-              pointer changes and the read-out flickers between items. */}
-          <div aria-live="polite" className="iron-scroll h-[19rem] overflow-y-auto">
+          {/* Items open on click, so the read-out may grow with the item; a very long one scrolls. */}
+          <div aria-live="polite" className="iron-scroll max-h-[34rem] min-h-[19rem] overflow-y-auto overflow-x-hidden">
             <ItemDetails item={current} measure={measure} />
           </div>
           <GearLedger

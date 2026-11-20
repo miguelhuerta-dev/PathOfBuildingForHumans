@@ -1,3 +1,4 @@
+import { translateError } from "../i18n/errors";
 import { useState } from "react";
 import { desktop } from "../lib/desktop";
 import type { BestPassives } from "../types/Engine";
@@ -41,7 +42,7 @@ function BestPassivesPanel({ character }: { character: string }) {
           {current?.loading ? t("TRYING EVERY PATH…") : t("FIND MY BEST NEXT POINTS")}
         </button>
       )}
-      {current?.error && <p className="mt-3 text-[15px] text-ember">{current.error}</p>}
+      {current?.error && <p className="mt-3 text-[15px] text-ember">{translateError(current.error, t)}</p>}
 
       {current?.result && (
         <>
