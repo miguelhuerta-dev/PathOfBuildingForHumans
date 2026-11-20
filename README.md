@@ -250,6 +250,13 @@ rfc/                   Design proposals (MVP, dashboard, visual identity)
 .github/workflows/     Windows portable build
 ```
 
+## Licence and code signing
+
+Published under the [MIT licence](LICENSE). Windows releases are signed through SignPath:
+free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by
+[SignPath Foundation](https://signpath.org/). See the [code signing policy](CODE_SIGNING_POLICY.md),
+which also says what the app connects to and when.
+
 ## Disclaimer
 
 Path of Building for Humans is a fan-made project by [miguelhuerta-dev](https://github.com/miguelhuerta-dev). It
@@ -387,6 +394,13 @@ Y abre http://localhost:5173. Pruebas: `npm test` (frontend) y `cargo test` en `
 - **Build portable:** `./scripts/build-portable.ps1` genera un solo `.exe` con el motor dentro.
 - **Versiones:** al subir un tag como `v0.4.0`, GitHub Actions compila el `.exe` y sus notas como artifact de
   7 días y borra los artifacts anteriores. La Release se publica a mano.
+
+### Licencia y firma de código
+
+Publicado bajo la [licencia MIT](LICENSE). Las versiones para Windows se firman con SignPath:
+firma de código gratuita de [SignPath.io](https://about.signpath.io/), certificado de
+[SignPath Foundation](https://signpath.org/). Consulta la [política de firma](CODE_SIGNING_POLICY.md),
+que también explica a qué se conecta la app y cuándo.
 
 ### Aviso
 
