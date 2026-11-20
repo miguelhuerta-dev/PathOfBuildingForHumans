@@ -1101,12 +1101,15 @@ end
 -- and ranked by what it adds per point spent (damage and survival).
 
 local OPTIMIZER_REACH = 7
-local OPTIMIZER_TRIES = 80
+local OPTIMIZER_TRIES = 250
 
 local function bestPassives(limit)
 	local spec = build.spec
 	spec:BuildAllDependsAndPaths()
-	local base = recalc()
+	recalc()
+	-- Path of Building's own quick calculator (the one behind its node power view):
+	-- it adds nodes to a copy of the build without touching the tree or rebuilding it.
+	local calcFunc, base = build.calcsTab:GetMiscCalculator()
 	local baseDps, baseEhp = dps(base), ehp(base)
 	local function pct(new, old)
 		if old > 0 then return (new - old) / old * 100 end
@@ -1128,15 +1131,12 @@ local function bestPassives(limit)
 	local results = {}
 	for index = 1, math.min(#candidates, OPTIMIZER_TRIES) do
 		local node = candidates[index]
-		local path = {}
-		for _, step in ipairs(node.path) do path[#path + 1] = step end
-		spec:AllocNode(node)
-		local out = recalc()
-		-- Undo: the path was all unallocated, so freeing it restores the tree as it was.
-		for _, step in ipairs(path) do
-			step.alloc = false
-			spec.allocNodes[step.id] = nil
+		local path, added = {}, {}
+		for _, step in ipairs(node.path) do
+			path[#path + 1] = step
+			added[step] = true
 		end
+		local out = calcFunc({ addNodes = added }, true)
 		local dpsChange, ehpChange = pct(dps(out), baseDps), pct(ehp(out), baseEhp)
 		local points = #path
 		local score = (dpsChange + ehpChange * 1.2) / math.max(1, points)
@@ -1155,8 +1155,6 @@ local function bestPassives(limit)
 			}
 		end
 	end
-	spec:BuildAllDependsAndPaths()
-	recalc()
 	table.sort(results, function(a, b) return a.perPoint > b.perPoint end)
 	local best = {}
 	for index = 1, math.min(#results, limit or 10) do best[index] = results[index] end

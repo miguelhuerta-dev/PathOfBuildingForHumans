@@ -5,6 +5,11 @@ name: Desktop app (Windows portable)
 # (with the version's release notes, for a tag); the release itself is published
 # by hand from that file. After a successful build, artifacts of earlier runs
 # are deleted so they do not fill the account's Actions storage.
+#
+# Code signing (SignPath Foundation, see CODE_SIGNING_POLICY.md) runs once the
+# repository has the variable SIGNPATH_ORGANIZATION_ID and the secret
+# SIGNPATH_API_TOKEN; until then the app is published unsigned, as before.
+# Tags are signed with the "release-signing" policy, other runs with "test-signing".
 on:
   workflow_dispatch:
   push:
@@ -59,15 +64,58 @@ jobs:
           $name = if ($env:GITHUB_REF_TYPE -eq "tag") { "PathOfBuildingForHumans-$env:GITHUB_REF_NAME-windows.exe" } else { "PathOfBuildingForHumans-windows.exe" }
           ./scripts/build-portable.ps1 -OutFile "portable/$name"
 
+      # The unsigned app, handed to SignPath; it is kept with the run only as signing input.
+      - name: Upload the app for signing
+        id: unsigned
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-app
+          path: portable/*.exe
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Sign the app
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'PathOfBuildingForHumans' }}
+          signing-policy-slug: ${{ github.ref_type == 'tag' && 'release-signing' || 'test-signing' }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          # A release waits for the approver, so give them time.
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: portable/signed
+
+      - name: Use the signed app
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        shell: pwsh
+        run: |
+          $signed = Get-ChildItem portable/signed -Filter *.exe -Recurse
+          if (-not $signed) { throw "SignPath returned no signed app." }
+          foreach ($file in $signed) { Move-Item $file.FullName (Join-Path portable $file.Name) -Force }
+          Remove-Item portable/signed -Recurse -Force
+          $status = (Get-AuthenticodeSignature (Get-ChildItem portable -Filter *.exe | Select-Object -First 1).FullName).Status
+          Write-Output "Signature: $status"
+
       - name: Release notes
         if: github.ref_type == 'tag'
         shell: pwsh
+        env:
+          SIGNED: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
         run: |
           # This version's section of CHANGELOG.md ("## v0.3.0" up to the next "## "), ready to paste in the release.
           $changelog = [IO.File]::ReadAllText((Resolve-Path CHANGELOG.md)) -replace "`r`n", "`n"
           $section = [regex]::Match($changelog, "(?ms)^## $([regex]::Escape($env:GITHUB_REF_NAME))\s*\n(.*?)(?=^## |\z)")
           if (-not $section.Success) { throw "CHANGELOG.md has no section for $env:GITHUB_REF_NAME." }
-          [IO.File]::WriteAllText((Join-Path (Resolve-Path portable) "release-notes-$env:GITHUB_REF_NAME.md"), $section.Groups[1].Value.Trim())
+          $notes = $section.Groups[1].Value.Trim()
+          # SignPath Foundation asks every signed release to say who signed it.
+          if ($env:SIGNED -eq "true") {
+            $notes += "`n`nFree code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/)."
+          }
+          [IO.File]::WriteAllText((Join-Path (Resolve-Path portable) "release-notes-$env:GITHUB_REF_NAME.md"), $notes)
 
       - uses: actions/upload-artifact@v4
         with:
