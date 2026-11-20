@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Medallion from "./Medallion";
 import WindowControls from "./WindowControls";
 import { AtlasStarIcon } from "./icons";
+import { useLanguage, useT } from "../i18n";
 
 export type Page = "character" | "guide" | "atlas" | "glossary" | "about";
 
@@ -23,6 +24,7 @@ const linkClass =
 
 /** Collapsed navigation for narrow windows, styled as a framed parchment list. */
 function NavMenu({ page, onNavigate }: NavProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +53,7 @@ function NavMenu({ page, onNavigate }: NavProps) {
         onClick={() => setOpen((value) => !value)}
         className={`${linkClass} flex items-center gap-2 border border-gold-dim/50 px-4 py-1.5`}
       >
-        MENU
+        {t("MENU")}
         <svg viewBox="0 0 24 24" className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
           <path d="M6 9l6 6 6-6" />
         </svg>
@@ -76,7 +78,7 @@ function NavMenu({ page, onNavigate }: NavProps) {
                     setOpen(false);
                   }}
                 >
-                  {link.label.toUpperCase()}
+                  {t(link.label).toUpperCase()}
                 </button>
               </li>
             ))}
@@ -91,7 +93,30 @@ function NavMenu({ page, onNavigate }: NavProps) {
  * Top bar. In the desktop app it is also the window title bar:
  * empty areas drag the window and double-click maximizes.
  */
+/** EN | ES, always at hand: the language can be changed at any time. */
+function LanguageSwitch() {
+  const { language, setLanguage, t } = useLanguage();
+  return (
+    <div role="group" aria-label={t("Language")} className="flex items-center font-display text-[12px] tracking-[0.16em]">
+      {(["en", "es"] as const).map((option, index) => (
+        <span key={option} className="flex items-center">
+          {index > 0 && <span className="px-1 text-parchment-faint" aria-hidden="true">|</span>}
+          <button
+            type="button"
+            aria-pressed={language === option}
+            onClick={() => setLanguage(option)}
+            className={`px-0.5 transition-colors ${language === option ? "text-gold" : "text-parchment-faint hover:text-parchment"}`}
+          >
+            {option.toUpperCase()}
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function TopNav({ page, onNavigate, floating = false }: NavProps & { floating?: boolean }) {
+  const t = useT();
   return (
     <header
       data-tauri-drag-region
@@ -119,11 +144,12 @@ function TopNav({ page, onNavigate, floating = false }: NavProps & { floating?: 
                 onClick={() => onNavigate(link.page)}
                 className={`${linkClass} border-b-2 pb-0.5 ${page === link.page ? "border-[#8a2219] text-gold" : "border-transparent"}`}
               >
-                {link.label.toUpperCase()}
+                {t(link.label).toUpperCase()}
               </button>
             ))}
           </nav>
           <NavMenu page={page} onNavigate={onNavigate} />
+          <LanguageSwitch />
           <Medallion size={44}>
             <AtlasStarIcon className="h-5 w-5" />
           </Medallion>

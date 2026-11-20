@@ -1,3 +1,4 @@
+import { useT } from "../../i18n";
 import { atlasArt } from "../../assets/atlas";
 import { usePassiveIcons } from "../../state/usePassiveIcons";
 import type { AscendancyStep, EngineBuild } from "../../types/Engine";
@@ -38,6 +39,7 @@ function AscensionPanel({
   owned?: ReadonlySet<number>;
   clientLog: string | null;
 }) {
+  const t = useT();
   const plan = guide.ascendancyPlan ?? [];
   const keys = plan.flatMap((step) => iconKey(step.icon) ?? []);
   const { icons } = usePassiveIcons(keys, clientLog);
@@ -53,7 +55,7 @@ function AscensionPanel({
     <AtlasFrame>
       <AtlasSectionHeader title="Ascension Path" icon={<AtlasStarIcon className="h-7 w-7" />} />
       <p className="mb-5 text-[16px] text-parchment-dim">
-        {guide.character.ascendancy ?? "Ascendancy"} passives in the order the guide takes them, Labyrinth by Labyrinth.
+        {t("{ascendancy} passives in the order the guide takes them, Labyrinth by Labyrinth.", { ascendancy: guide.character.ascendancy ?? t("Ascendancy") })}
       </p>
 
       <div className="relative">
@@ -69,7 +71,7 @@ function AscensionPanel({
             const minor = steps.filter((step) => !step.notable);
             return (
               <li key={steps[0].labName} className="flex flex-col items-center text-center">
-                <span className="font-display text-[12px] tracking-[0.2em] text-parchment-faint">STEP {index + 1}</span>
+                <span className="font-display text-[12px] tracking-[0.2em] text-parchment-faint">{t("STEP {n}", { n: index + 1 })}</span>
                 <span className="mt-1 grid min-h-20 place-items-center gap-1">
                   <span className="flex flex-wrap justify-center gap-2">
                     {notables.map((step) => (
@@ -77,8 +79,8 @@ function AscensionPanel({
                     ))}
                   </span>
                 </span>
-                <span className="mt-2 font-display text-[15px] tracking-[0.08em] text-gold">{steps[0].labName}</span>
-                <span className="text-[13px] text-parchment-faint">{LAB_LEVEL[steps[0].lab - 1]}</span>
+                <span className="mt-2 font-display text-[15px] tracking-[0.08em] text-gold">{t(steps[0].labName)}</span>
+                <span className="text-[13px] text-parchment-faint">{t(LAB_LEVEL[steps[0].lab - 1])}</span>
                 {notables.map((step) => (
                   <span key={step.id} className="mt-2 block">
                     <span className={`block text-[16px] ${owned?.has(step.id) ? "text-gold" : "text-parchment"}`}>{step.name}</span>
@@ -90,7 +92,7 @@ function AscensionPanel({
                   </span>
                 ))}
                 {minor.length > 0 && (
-                  <span className="mt-3 flex flex-wrap justify-center gap-1.5" aria-label="Minor passives on the way">
+                  <span className="mt-3 flex flex-wrap justify-center gap-1.5" aria-label={t("Minor passives on the way")}>
                     {minor.map((step) => (
                       <PassiveMedal key={step.id} step={step} icon={iconOf(step)} owned={owned?.has(step.id)} />
                     ))}

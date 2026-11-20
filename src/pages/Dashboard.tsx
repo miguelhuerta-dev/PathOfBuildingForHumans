@@ -8,6 +8,8 @@ import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import AnalysisCard from "../components/AnalysisCard";
 import ConnectPanel from "../components/ConnectPanel";
 import EquipmentPanel from "../components/EquipmentPanel";
+import BestPassivesPanel from "../components/BestPassivesPanel";
+import ProgressPanel from "../components/ProgressPanel";
 import { ScoreCard, StatCard } from "../components/StatCard";
 import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
@@ -16,8 +18,10 @@ import type { Archive } from "../state/useArchive";
 import type { Bandit, EngineBuild } from "../types/Engine";
 import type { Analysis } from "../analysis/analyze";
 import { AtlasStarIcon, ShieldIcon, SigilIcon, SkullIcon, SwordIcon } from "../components/icons";
+import { useT } from "../i18n";
 
 function BuildHeader({ build, analysis }: { build: EngineBuild; analysis: Analysis }) {
+  const t = useT();
   const { character } = build;
   const title = character.ascendancy && character.ascendancy !== "None" ? character.ascendancy : character.class;
 
@@ -35,14 +39,14 @@ function BuildHeader({ build, analysis }: { build: EngineBuild; analysis: Analys
 
         <div className="min-w-0">
           <h1 className="title-text truncate font-display text-[clamp(32px,4vw,54px)] font-semibold leading-tight">
-            {character.name ?? "Unknown Exile"}
+            {character.name ?? t("Unknown Exile")}
           </h1>
           <p className="mt-1 font-display text-[17px] tracking-[0.16em] text-gold-dim">
-            {(title ?? "").toUpperCase()} • LEVEL {character.level}
+            {(title ?? "").toUpperCase()} • {t("LEVEL")} {character.level}
             {character.league ? ` • ${character.league.toUpperCase()}` : ""}
           </p>
           {character.mainSkill && (
-            <p className="mt-3 text-[18px] italic leading-snug text-gold-dim">Main skill: {character.mainSkill}</p>
+            <p className="mt-3 text-[18px] italic leading-snug text-gold-dim">{t("Main skill: {skill}", { skill: character.mainSkill })}</p>
           )}
         </div>
 
@@ -53,16 +57,16 @@ function BuildHeader({ build, analysis }: { build: EngineBuild; analysis: Analys
         </div>
 
         <dl className="min-w-60 pr-2">
-          <dt className="font-display text-[14px] tracking-[0.18em] text-parchment-dim">BUILD HEALTH</dt>
+          <dt className="font-display text-[14px] tracking-[0.18em] text-parchment-dim">{t("BUILD HEALTH")}</dt>
           <dd
             className={`engraved font-display text-[28px] font-semibold ${
               analysis.health === "Excellent" || analysis.health === "Good" ? "text-verdigris" : "text-ember"
             }`}
           >
-            {analysis.health.toUpperCase()}
+            {t(analysis.health).toUpperCase()}
           </dd>
           <div className="my-3 h-px bg-gradient-to-r from-gold-dim/60 to-transparent" aria-hidden="true" />
-          <dt className="font-display text-[14px] tracking-[0.18em] text-parchment-dim">PRIORITY</dt>
+          <dt className="font-display text-[14px] tracking-[0.18em] text-parchment-dim">{t("PRIORITY")}</dt>
           <dd className="text-[20px] font-medium text-ember">{analysis.priority}</dd>
         </dl>
       </div>
@@ -71,25 +75,26 @@ function BuildHeader({ build, analysis }: { build: EngineBuild; analysis: Analys
 }
 
 function StatusBar({ archive }: { archive: Archive }) {
+  const t = useT();
   if (!archive.isDesktopApp) {
     return (
       <p role="status" className="text-center text-[16px] text-parchment-dim">
-        Demo character. Open the desktop app to connect your own exile.
+        {t("Demo character. Open the desktop app to connect your own exile.")}
       </p>
     );
   }
   return (
-    <div role="status" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[16px] text-parchment-dim">
+    <div role="status" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[16px] text-parchment-dim md:pl-56">
       <span>
         {archive.characterState === "loading"
           ? archive.result && archive.updatedAt
-            ? `Refreshing… showing your last session (${archive.updatedAt.toLocaleTimeString()})`
-            : "Consulting the archive…"
+            ? t("Refreshing… showing your last session ({time})", { time: archive.updatedAt.toLocaleTimeString() })
+            : t("Consulting the archive…")
           : archive.updatedAt
-            ? `Updated at ${archive.updatedAt.toLocaleTimeString()}`
-            : "Not loaded yet"}
+            ? t("Updated at {time}", { time: archive.updatedAt.toLocaleTimeString() })
+            : t("Not loaded yet")}
       </span>
-      {archive.lastZone && <span>Last zone: {archive.lastZone}</span>}
+      {archive.lastZone && <span>{t("Last zone: {zone}", { zone: archive.lastZone })}</span>}
       <label className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -97,11 +102,11 @@ function StatusBar({ archive }: { archive: Archive }) {
           onChange={(event) => archive.setAutoRefresh(event.target.checked)}
           className="h-4 w-4 accent-[#d9b36c]"
         />
-        Refresh when I change zone
+        {t("Refresh when I change zone")}
       </label>
       {archive.selected && (
-        <label className="flex items-center gap-2" title="Public profiles do not say which bandit you helped, and it changes your stats.">
-          Act 2 bandit
+        <label className="flex items-center gap-2" title={t("Public profiles do not say which bandit you helped, and it changes your stats.")}>
+          {t("Act 2 bandit")}
           <select
             value={archive.bandit ?? "None"}
             onChange={(event) => archive.setBandit(event.target.value as Bandit)}
@@ -109,7 +114,7 @@ function StatusBar({ archive }: { archive: Archive }) {
           >
             {BANDIT_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {t(option.label)}
               </option>
             ))}
           </select>
@@ -121,7 +126,7 @@ function StatusBar({ archive }: { archive: Archive }) {
         disabled={archive.characterState === "loading" || !archive.selected}
         className="border border-gold-dim/60 px-4 py-1 font-display text-[13px] tracking-[0.18em] text-parchment hover:text-gold disabled:opacity-50"
       >
-        REFRESH NOW
+        {t("REFRESH NOW")}
       </button>
     </div>
   );
@@ -139,13 +144,14 @@ const BANDIT_OPTIONS: { value: Bandit; label: string }[] = [
  * Oak's life regeneration change the numbers, so the archive asks once per character.
  */
 function BanditPrompt({ archive }: { archive: Archive }) {
+  const t = useT();
   const level = archive.result?.character?.character.level ?? 0;
   if (!archive.isDesktopApp || !archive.selected || archive.bandit || level < 13) return null;
   return (
     <div role="note" className="iron-card flex flex-wrap items-center justify-center gap-x-5 gap-y-3 px-5 py-4 text-center">
       <p className="text-[17px] text-parchment-dim">
-        <span className="font-display tracking-[0.12em] text-gold">Which bandit did you help in Act 2?</span> Your public profile does
-        not say, and it changes your resistances and more.
+        <span className="font-display tracking-[0.12em] text-gold">{t("Which bandit did you help in Act 2?")}</span>{" "}
+        {t("Your public profile does not say, and it changes your resistances and more.")}
       </p>
       <div className="flex flex-wrap justify-center gap-2">
         {BANDIT_OPTIONS.map((option) => (
@@ -155,7 +161,7 @@ function BanditPrompt({ archive }: { archive: Archive }) {
             onClick={() => archive.setBandit(option.value)}
             className="border border-gold-dim/60 px-3 py-1 font-display text-[13px] tracking-[0.16em] text-parchment transition hover:border-gold hover:text-gold"
           >
-            {option.label.toUpperCase()}
+            {t(option.label).toUpperCase()}
           </button>
         ))}
       </div>
@@ -165,6 +171,7 @@ function BanditPrompt({ archive }: { archive: Archive }) {
 
 /** The worst threats first; the rest one click away, so the panel stays readable. */
 function ThreatList({ findings }: { findings: Analysis["findings"] }) {
+  const t = useT();
   const [showAll, setShowAll] = useState(false);
   const shown = showAll ? findings : findings.slice(0, 4);
   return (
@@ -178,7 +185,7 @@ function ThreatList({ findings }: { findings: Analysis["findings"] }) {
           onClick={() => setShowAll((value) => !value)}
           className="self-center border border-gold-dim/60 px-4 py-1 font-display text-[13px] tracking-[0.18em] text-parchment transition hover:border-gold hover:text-gold"
         >
-          {showAll ? "SHOW FEWER" : `SHOW ALL ${findings.length} THREATS`}
+          {showAll ? t("SHOW FEWER") : t("SHOW ALL {count} THREATS", { count: findings.length })}
         </button>
       )}
     </>
@@ -191,10 +198,11 @@ interface DashboardProps {
 }
 
 function Dashboard({ archive, onNavigate }: DashboardProps) {
+  const t = useT();
   const build = archive.result?.character;
   const upgrades = archive.result?.upgrades;
   const guideLoaded = Boolean(archive.result?.guide);
-  const analysis = useMemo(() => (build ? analyze(build, upgrades, guideLoaded) : null), [build, upgrades, guideLoaded]);
+  const analysis = useMemo(() => (build ? analyze(build, upgrades, guideLoaded, t) : null), [build, upgrades, guideLoaded, t]);
 
   return (
     <>
@@ -208,27 +216,27 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
           <BuildHeader build={build} analysis={analysis} />
           <AnalysisCard analysis={analysis} />
 
-          <section aria-label="Key stats" className="grid gap-4 md:grid-cols-[1.75fr_1fr_1fr]">
+          <section aria-label={t("Key stats")} className="grid gap-4 md:grid-cols-[1.75fr_1fr_1fr]">
             <ScoreCard score={analysis.score} />
             <StatCard title="DPS" value={formatNumber(build.stats.DPS)} icon={<SwordIcon className="h-4 w-4" />} />
             <StatCard title="EHP" value={formatNumber(build.stats.TotalEHP ?? 0)} icon={<ShieldIcon className="h-4 w-4" />} />
           </section>
 
-          <EquipmentPanel items={build.items} />
+          <EquipmentPanel items={build.items} measure />
 
           <div className="mt-4 grid items-stretch gap-x-5 gap-y-10 lg:grid-cols-[1.12fr_1fr]">
             <AtlasFrame className="flex flex-col" contentClassName="flex flex-1 flex-col">
               <AtlasSectionHeader title="Threat Register" tone="blood" icon={<SkullIcon className="h-7 w-7" />} />
               <div className="flex flex-col gap-3">
                 {analysis.findings.length === 0 && (
-                  <p className="text-[18px] text-verdigris">No weaknesses found for {analysis.stageLabel.toLowerCase()}.</p>
+                  <p className="text-[18px] text-verdigris">{t("No weaknesses found for {stage}.", { stage: analysis.stageLabel.toLowerCase() })}</p>
                 )}
                 <ThreatList findings={analysis.findings} />
               </div>
               <figure className="mt-auto pt-8 text-center">
-                <blockquote className="text-[19px] italic text-gold-dim">“A single weakness can undo an empire.”</blockquote>
+                <blockquote className="text-[19px] italic text-gold-dim">{t("“A single weakness can undo an empire.”")}</blockquote>
                 <figcaption className="mt-1 font-display text-[12px] tracking-[0.24em] text-parchment-faint">
-                  — THE ATLAS ARCHIVIST
+                  {t("— THE ATLAS ARCHIVIST")}
                 </figcaption>
               </figure>
             </AtlasFrame>
@@ -241,21 +249,23 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
                 <div className="flex flex-col items-center gap-4 py-10 text-center">
                   <p className="max-w-sm text-[19px] text-parchment-dim">
                     {guideLoaded
-                      ? "Nothing in your guide beats your gear at this stage. Pick a later stage to plan your next upgrades."
-                      : "Load the guide you are following and the archive will tell you which item to chase next."}
+                      ? t("Nothing in your guide beats your gear at this stage. Pick a later stage to plan your next upgrades.")
+                      : t("Load the guide you are following and the archive will tell you which item to chase next.")}
                   </p>
                   <button
                     type="button"
                     onClick={() => onNavigate("guide")}
                     className="ui-button h-14 w-full max-w-sm font-display text-[15px] tracking-[0.2em] text-parchment transition hover:brightness-125"
                   >
-                    {guideLoaded ? "OPEN THE GUIDE" : "LOAD A GUIDE"}
+                    {guideLoaded ? t("OPEN THE GUIDE") : t("LOAD A GUIDE")}
                   </button>
                 </div>
               )}
             </AtlasFrame>
           </div>
 
+          {archive.isDesktopApp && archive.selected && <BestPassivesPanel character={archive.selected} />}
+          {archive.isDesktopApp && <ProgressPanel history={archive.history} />}
         </>
       )}
 

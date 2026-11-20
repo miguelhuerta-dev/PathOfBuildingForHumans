@@ -1,3 +1,4 @@
+import { useT } from "../i18n";
 import { useMemo, useState } from "react";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
@@ -17,6 +18,7 @@ const secondaryButton =
   "border border-gold-dim/60 px-4 py-1.5 font-display text-[13px] tracking-[0.18em] text-parchment-dim hover:text-gold";
 
 function LinkForm({ atlas }: { atlas: AtlasProgressState }) {
+  const t = useT();
   const [guideLink, setGuideLink] = useState("");
   const [ownLink, setOwnLink] = useState("");
 
@@ -31,7 +33,7 @@ function LinkForm({ atlas }: { atlas: AtlasProgressState }) {
         }}
       >
         <label className="flex flex-col gap-1">
-          <span className="font-display text-[13px] tracking-[0.18em] text-parchment-dim">GUIDE ATLAS TREE LINK</span>
+          <span className="font-display text-[13px] tracking-[0.18em] text-parchment-dim">{t("GUIDE ATLAS TREE LINK")}</span>
           <textarea
             value={guideLink}
             onChange={(event) => setGuideLink(event.target.value)}
@@ -47,11 +49,11 @@ function LinkForm({ atlas }: { atlas: AtlasProgressState }) {
             disabled={!guideLink.trim()}
             className="ui-button h-12 min-w-48 font-display text-[14px] tracking-[0.2em] text-parchment transition hover:brightness-125 disabled:opacity-50"
           >
-            FOLLOW THIS ATLAS
+            {t("FOLLOW THIS ATLAS")}
           </button>
           {atlas.guide.size > 0 && (
             <button type="button" onClick={() => atlas.clear("guide")} className={secondaryButton}>
-              REMOVE GUIDE ATLAS
+              {t("REMOVE GUIDE ATLAS")}
             </button>
           )}
         </div>
@@ -66,24 +68,24 @@ function LinkForm({ atlas }: { atlas: AtlasProgressState }) {
       >
         <label className="flex flex-col gap-1">
           <span className="font-display text-[13px] tracking-[0.18em] text-parchment-dim">
-            YOUR ATLAS TREE LINK (OPTIONAL)
+            {t("YOUR ATLAS TREE LINK (OPTIONAL)")}
           </span>
           <textarea
             value={ownLink}
             onChange={(event) => setOwnLink(event.target.value)}
             rows={2}
             spellCheck={false}
-            placeholder="Replaces the passives you marked"
+            placeholder={t("Replaces the passives you marked")}
             className={fieldClass}
           />
         </label>
         <div className="flex flex-wrap gap-3">
           <button type="submit" disabled={!ownLink.trim()} className={`${secondaryButton} disabled:opacity-50`}>
-            LOAD MY ATLAS
+            {t("LOAD MY ATLAS")}
           </button>
           {atlas.owned.size > 0 && (
             <button type="button" onClick={() => atlas.clear("owned")} className={secondaryButton}>
-              CLEAR MY PASSIVES
+              {t("CLEAR MY PASSIVES")}
             </button>
           )}
         </div>
@@ -91,8 +93,7 @@ function LinkForm({ atlas }: { atlas: AtlasProgressState }) {
 
       {atlas.linkError && <ErrorNote className="mt-3">{atlas.linkError}</ErrorNote>}
       <p className="mt-4 text-[15px] text-parchment-faint">
-        Path of Exile does not share your Atlas tree publicly, so mark the passives you have by clicking them on the
-        map. Your marks are kept per league.
+        {t("Path of Exile does not share your Atlas tree publicly, so mark the passives you have by clicking them on the map. Your marks are kept per league.")}
       </p>
     </AtlasFrame>
   );
@@ -103,28 +104,29 @@ function ProgressPanel({ progress, onFocus, onToggle }: {
   onFocus: (id: number) => void;
   onToggle: (id: number) => void;
 }) {
+  const t = useT();
   return (
     <AtlasFrame>
       <AtlasSectionHeader title="Atlas Progress" icon={<SigilIcon className="h-7 w-7" />} />
       {progress.total === 0 ? (
         <p className="text-[17px] text-parchment-dim">
-          Load your guide's Atlas tree to see what is left to take. You have marked {progress.spent} passives.
+          {t("Load your guide's Atlas tree to see what is left to take. You have marked {count} passives.", { count: progress.spent })}
         </p>
       ) : (
         <>
           <p className="text-[17px] text-parchment">
             <span className="gold-text font-display text-[26px]">{progress.done}</span>
-            <span className="text-parchment-dim"> of {progress.total} guide passives taken</span>
+            <span className="text-parchment-dim"> {t("of {total} guide passives taken", { total: progress.total })}</span>
           </p>
-          <MetalMeter label="Guide Atlas passives taken" value={progress.done} max={progress.total} className="mt-2" />
-          <p className="mt-2 text-[15px] text-parchment-faint">{progress.spent} passives marked in total.</p>
+          <MetalMeter label={t("Guide Atlas passives taken")} value={progress.done} max={progress.total} className="mt-2" />
+          <p className="mt-2 text-[15px] text-parchment-faint">{t("{count} passives marked in total.", { count: progress.spent })}</p>
 
           {progress.next.length > 0 ? (
             <div className="mt-6">
               <NextSteps steps={progress.next} limit={NEXT_LIMIT} onFocus={onFocus} onTake={onToggle} />
             </div>
           ) : (
-            <p className="mt-4 text-[17px] text-verdigris">Every passive of the guide's Atlas is taken.</p>
+            <p className="mt-4 text-[17px] text-verdigris">{t("Every passive of the guide's Atlas is taken.")}</p>
           )}
         </>
       )}
@@ -133,6 +135,7 @@ function ProgressPanel({ progress, onFocus, onToggle }: {
 }
 
 function RegionPanel({ progress }: { progress: TreeProgress }) {
+  const t = useT();
   if (progress.regions.length === 0) return null;
   return (
     <AtlasFrame>
@@ -146,7 +149,7 @@ function RegionPanel({ progress }: { progress: TreeProgress }) {
                 {region.owned} / {region.total}
               </span>
             </div>
-            <MetalMeter label={`${region.name} passives taken`} value={region.owned} max={region.total} className="mt-1" />
+            <MetalMeter label={t("{region} passives taken", { region: region.name })} value={region.owned} max={region.total} className="mt-1" />
           </li>
         ))}
       </ul>
@@ -164,6 +167,7 @@ interface AtlasPageProps {
 
 /** The Atlas passive tree: the guide's plan, what the player has taken and what comes next. */
 export default function AtlasPage({ league, clientLog }: AtlasPageProps) {
+  const t = useT();
   const atlas = useAtlasProgress(league);
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const root = atlas.graph?.tree.root;
@@ -179,8 +183,8 @@ export default function AtlasPage({ league, clientLog }: AtlasPageProps) {
       <AtlasFrame>
         <AtlasSectionHeader title="The Atlas" icon={<AtlasStarIcon className="h-7 w-7" />} />
         <p className="mb-4 text-[17px] text-parchment-dim">
-          {league} league · drag to move, scroll to zoom, click a passive to mark it as taken.
-          {atlas.graph && <span className="text-parchment-faint"> Atlas tree {atlas.graph.tree.version}.</span>}
+          {t("{league} league · drag to move, scroll to zoom, click a passive to mark it as taken.", { league })}
+          {atlas.graph && <span className="text-parchment-faint"> {t("Atlas tree {version}.", { version: atlas.graph.tree.version })}</span>}
         </p>
         {atlas.loadError && <ErrorNote>{atlas.loadError}</ErrorNote>}
         {atlas.graph ? (
@@ -188,7 +192,7 @@ export default function AtlasPage({ league, clientLog }: AtlasPageProps) {
             <ConstellationMap
               graph={atlas.graph}
               starts={starts}
-              label="Atlas passive tree. Click a passive to mark it as taken."
+              label={t("Atlas passive tree. Click a passive to mark it as taken.")}
               guide={atlas.guide}
               owned={atlas.owned}
               onToggle={atlas.toggleOwned}
@@ -196,10 +200,10 @@ export default function AtlasPage({ league, clientLog }: AtlasPageProps) {
               icons={passiveIcons.icons}
             />
             <MapLegend icons={Object.keys(passiveIcons.icons).length > 0} />
-            {passiveIcons.note && <p className="mt-2 text-[14px] text-parchment-faint">{passiveIcons.note}</p>}
+            {passiveIcons.note && <p className="mt-2 text-[14px] text-parchment-faint">{t(passiveIcons.note)}</p>}
           </>
         ) : (
-          !atlas.loadError && <p className="text-[17px] text-parchment-faint">Unrolling the star charts…</p>
+          !atlas.loadError && <p className="text-[17px] text-parchment-faint">{t("Unrolling the star charts…")}</p>
         )}
       </AtlasFrame>
 

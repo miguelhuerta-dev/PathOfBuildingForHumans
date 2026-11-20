@@ -45,6 +45,9 @@ export interface ForgePoolGroup {
   chance: number;
   influence?: string;
   owned?: boolean;
+  /** Measured on the character: % change of its DPS and EHP with this modifier added (best tier, mid roll). */
+  dps?: number;
+  ehp?: number;
 }
 
 export interface ForgeResult {
@@ -64,6 +67,8 @@ export interface ForgeResult {
   pool?: { prefix: ForgePoolGroup[]; suffix: ForgePoolGroup[] };
   essences?: { name: string; text: string; affix?: "prefix" | "suffix" }[];
   bench?: { text: string; affix: "prefix" | "suffix" }[];
+  /** The pool's modifiers were measured on the character. */
+  measured?: boolean;
 }
 
 export interface EngineGem {
@@ -235,4 +240,26 @@ export interface MarketPrice {
   listings?: number | null;
   variant?: string | null;
   links?: number | null;
+}
+
+/** A passive worth taking next, measured on the character with the path to it. */
+export interface PassiveSuggestion {
+  id: number;
+  name: string;
+  type: "Notable" | "Keystone";
+  /** Points it costs, path included. */
+  points: number;
+  path: number[];
+  /** % change of DPS and EHP with it. */
+  dps: number;
+  ehp: number;
+  /** Gain per point spent (DPS % + EHP % × 1.2, over the points). */
+  perPoint: number;
+}
+
+export interface BestPassives {
+  passives: PassiveSuggestion[];
+  /** How many candidates were tried, within `reach` points. */
+  tried: number;
+  reach: number;
 }

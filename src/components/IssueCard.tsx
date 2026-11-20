@@ -1,6 +1,7 @@
 import type { Severity } from "../analysis/analyze";
 import AtlasFrame from "./AtlasFrame";
 import { SkullIcon, WarningIcon } from "./icons";
+import { useT } from "../i18n";
 
 const severityStyles = {
   high: {
@@ -31,6 +32,7 @@ interface IssueCardProps {
 }
 
 function IssueCard({ title, impact, remedy, severity }: IssueCardProps) {
+  const t = useT();
   const style = severityStyles[severity];
 
   return (
@@ -43,11 +45,11 @@ function IssueCard({ title, impact, remedy, severity }: IssueCardProps) {
         </div>
 
         <div className="flex-1 px-5 py-3">
-          <p className={`font-display text-[13px] tracking-[0.22em] ${style.labelColor}`}>{style.label}</p>
+          <p className={`font-display text-[13px] tracking-[0.22em] ${style.labelColor}`}>{t(style.label)}</p>
           <h3 className="title-text font-display text-[23px] font-semibold leading-tight">{title}</h3>
           <p className="mt-1 text-[17px] text-parchment/85">{impact}</p>
           <p className="mt-1 text-[16px] text-verdigris">
-            <span className="text-parchment-faint">Remedy: </span>
+            <span className="text-parchment-faint">{t("Remedy:")} </span>
             {remedy}
           </p>
         </div>

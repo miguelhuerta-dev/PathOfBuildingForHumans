@@ -8,6 +8,7 @@ import ScrollRail from "../components/ScrollRail";
 import TopNav, { type Page } from "../components/TopNav";
 import { GitHubIcon } from "../components/icons";
 import { desktop, isDesktopApp } from "../lib/desktop";
+import { useT } from "../i18n";
 
 const PROFILE_URL = "https://github.com/miguelhuerta-dev";
 
@@ -77,6 +78,7 @@ function useIdleWhenUnfocused() {
 
 /** The archive around every page: background, desk scene, outer frame and title bar. */
 function ArchiveShell({ page, onNavigate, children }: ArchiveShellProps) {
+  const t = useT();
   useIdleWhenUnfocused();
   return (
     <div className="archive-shell relative isolate min-h-screen overflow-hidden p-2">
@@ -99,8 +101,8 @@ function ArchiveShell({ page, onNavigate, children }: ArchiveShellProps) {
         <TopNav page={page} onNavigate={onNavigate} />
 
         <div className="flex items-start justify-between pb-10 pt-5 md:min-h-[150px]">
-          <Motto align="left" lines={["EXILES", "STUDY", "ADAPT", "CONQUER"]} />
-          <Motto align="right" lines={["KNOWLEDGE", "BUILDS", "SURVIVAL"]} />
+          <Motto align="left" lines={[t("EXILES"), t("STUDY"), t("ADAPT"), t("CONQUER")]} />
+          <Motto align="right" lines={[t("KNOWLEDGE"), t("BUILDS"), t("SURVIVAL")]} />
         </div>
 
         {/* Keyed by page so each page's panels rise in when it opens. */}
@@ -110,13 +112,12 @@ function ArchiveShell({ page, onNavigate, children }: ArchiveShellProps) {
 
         <footer className="pb-4 pt-14 text-center md:pb-24">
           <p className="font-display text-[14px] leading-relaxed tracking-[0.24em] text-parchment-faint">
-            SAME BUILDS.
+            {t("SAME BUILDS.")}
             <br />
-            A DEEPER UNDERSTANDING.
+            {t("A DEEPER UNDERSTANDING.")}
           </p>
           <p className="mx-auto mt-4 max-w-md text-[14px] text-parchment-faint">
-            This product isn't affiliated with or endorsed by Grinding Gear Games in any way. Calculations by
-            Path of Building Community.
+            {t("This product isn't affiliated with or endorsed by Grinding Gear Games in any way. Calculations by Path of Building Community.")}
           </p>
           <ProfileLink />
         </footer>

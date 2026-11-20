@@ -872,7 +872,39 @@ local function influenceOf(mod)
 	end
 end
 
-local function forge(raw)
+-- A modifier line with each range at its middle: "+(30-35)% to Fire Resistance" -> "+32% ...".
+local function midValue(line)
+	return (line:gsub("%((%-?[%d%.]+)%-(%-?[%d%.]+)%)", function(low, high)
+		local a, b = tonumber(low), tonumber(high)
+		local mid = (a + b) / 2
+		if low:find("%.") or high:find("%.") then
+			return string.format("%.1f", mid)
+		end
+		return tostring(math.floor(mid))
+	end))
+end
+
+-- DPS and EHP of the loaded character with `raw` worn in `slot` instead of its own item.
+local function tryItemIn(slot, raw)
+	local ok, candidate = pcall(function() return new("Item", raw) end)
+	if not ok or not candidate or not candidate.base then return nil end
+	build.itemsTab:AddItem(candidate, true)
+	local previous = slot.selItemId
+	slot:SetSelItemId(candidate.id)
+	local out = recalc()
+	local result = { dps = dps(out), ehp = ehp(out) }
+	slot:SetSelItemId(previous)
+	build.itemsTab.items[candidate.id] = nil
+	for index, id in ipairs(build.itemsTab.itemOrderList) do
+		if id == candidate.id then
+			table.remove(build.itemsTab.itemOrderList, index)
+			break
+		end
+	end
+	return result
+end
+
+local function forge(raw, slotName)
 	local item = new("Item", raw)
 	assert(item.base, "The archive does not know this item's base type.")
 	local name = item.title or item.name
@@ -974,9 +1006,47 @@ local function forge(raw)
 			chance = totals[group.affix] > 0 and math.floor(group.weight / totals[group.affix] * 1000 + 0.5) / 10 or 0,
 			influence = group.influence,
 			owned = group.owned or nil,
+			_group = group,
 		}
 	end
+	-- With the character loaded and the item in one of its slots: how much each
+	-- modifier the item does not have would change the character's DPS and EHP,
+	-- at the best tier its item level allows, with mid rolls.
+	local slot
+	if slotName and build then
+		for _, entry in ipairs(gearSlots()) do
+			if entry.name == slotName then slot = entry.slot end
+		end
+	end
+	if slot then
+		local base = recalc()
+		local baseDps, baseEhp = dps(base), ehp(base)
+		local itemRaw = item:BuildRaw()
+		local function pct(new, old)
+			if old > 0 then return math.floor((new - old) / old * 1000 + 0.5) / 10 end
+			return 0
+		end
+		for _, affix in ipairs({ "prefix", "suffix" }) do
+			for index, entry in ipairs(pool[affix]) do
+				local group = entry._group
+				if not entry.owned and group then
+					local lines = {}
+					for _, line in ipairs(group.tiers[1].mod) do
+						if type(line) == "string" then lines[#lines + 1] = midValue(line) end
+					end
+					local measured = tryItemIn(slot, itemRaw .. "\n" .. table.concat(lines, "\n"))
+					if measured then
+						entry.dps = pct(measured.dps, baseDps)
+						entry.ehp = pct(measured.ehp, baseEhp)
+					end
+				end
+			end
+		end
+		recalc()
+		info.measured = true
+	end
 	for _, list in pairs(pool) do
+		for _, entry in ipairs(list) do entry._group = nil end
 		table.sort(list, function(a, b)
 			if (a.owned or false) ~= (b.owned or false) then return a.owned or false end
 			return a.chance > b.chance
@@ -1025,6 +1095,74 @@ local function forge(raw)
 	return info
 end
 
+-- ---------------------------------------------------------------------------
+-- The tree optimizer: the character's best next passives. Every notable and
+-- keystone a few points away is tried with the path to it, on the character,
+-- and ranked by what it adds per point spent (damage and survival).
+
+local OPTIMIZER_REACH = 7
+local OPTIMIZER_TRIES = 80
+
+local function bestPassives(limit)
+	local spec = build.spec
+	spec:BuildAllDependsAndPaths()
+	local base = recalc()
+	local baseDps, baseEhp = dps(base), ehp(base)
+	local function pct(new, old)
+		if old > 0 then return (new - old) / old * 100 end
+		return 0
+	end
+
+	local candidates = {}
+	for _, node in pairs(spec.nodes or {}) do
+		if not node.alloc and node.path and node.pathDist and node.pathDist >= 1 and node.pathDist <= OPTIMIZER_REACH
+			and (node.type == "Notable" or node.type == "Keystone") and not node.ascendancyName then
+			candidates[#candidates + 1] = node
+		end
+	end
+	table.sort(candidates, function(a, b)
+		if a.pathDist ~= b.pathDist then return a.pathDist < b.pathDist end
+		return (a.id or 0) < (b.id or 0)
+	end)
+
+	local results = {}
+	for index = 1, math.min(#candidates, OPTIMIZER_TRIES) do
+		local node = candidates[index]
+		local path = {}
+		for _, step in ipairs(node.path) do path[#path + 1] = step end
+		spec:AllocNode(node)
+		local out = recalc()
+		-- Undo: the path was all unallocated, so freeing it restores the tree as it was.
+		for _, step in ipairs(path) do
+			step.alloc = false
+			spec.allocNodes[step.id] = nil
+		end
+		local dpsChange, ehpChange = pct(dps(out), baseDps), pct(ehp(out), baseEhp)
+		local points = #path
+		local score = (dpsChange + ehpChange * 1.2) / math.max(1, points)
+		if score > 0.05 then
+			local ids = {}
+			for _, step in ipairs(path) do ids[#ids + 1] = step.id end
+			results[#results + 1] = {
+				id = node.id,
+				name = node.dn or node.name,
+				type = node.type,
+				points = points,
+				path = ids,
+				dps = math.floor(dpsChange * 10 + 0.5) / 10,
+				ehp = math.floor(ehpChange * 10 + 0.5) / 10,
+				perPoint = math.floor(score * 100 + 0.5) / 100,
+			}
+		end
+	end
+	spec:BuildAllDependsAndPaths()
+	recalc()
+	table.sort(results, function(a, b) return a.perPoint > b.perPoint end)
+	local best = {}
+	for index = 1, math.min(#results, limit or 10) do best[index] = results[index] end
+	return { passives = best, tried = math.min(#candidates, OPTIMIZER_TRIES), reach = OPTIMIZER_REACH }
+end
+
 local function handle(request)
 local result
 if request.kind == "character" then
@@ -1040,8 +1178,13 @@ elseif request.kind == "build" then
 	passives.guideNodes, passives.guideMasteries = treeSnapshot(guideNodes)
 	passives.characterNodes, passives.characterMasteries = {}, setmetatable({}, { __jsontype = "object" })
 	result.passives = passives
+elseif request.kind == "best_passives" then
+	loadCharacter(assert(request.character, "Connect a character first."))
+	result = bestPassives(request.limit or 10)
 elseif request.kind == "forge" then
-	result = forge(assert(request.raw, "No item to open in the Forge."))
+	-- With the character, the Forge also measures each modifier on it.
+	if request.character and request.slot then loadCharacter(request.character) end
+	result = forge(assert(request.raw, "No item to open in the Forge."), request.character and request.slot or nil)
 elseif request.kind == "compare" then
 	local level = request.character and request.character.level
 	local characterTree = request.character and request.character.passives

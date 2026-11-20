@@ -3,6 +3,7 @@ import AtlasFrame from "./AtlasFrame";
 import Medallion from "./Medallion";
 import { AtlasStarIcon } from "./icons";
 import { MetalMeter } from "./ui";
+import { useT } from "../i18n";
 
 function ArcaneRings() {
   return (
@@ -48,6 +49,7 @@ interface ScoreCardProps {
 }
 
 export function ScoreCard({ score, max = 10 }: ScoreCardProps) {
+  const t = useT();
   const percent = Math.max(0, Math.min(100, (score / max) * 100)); // gauge arc
   const radius = 58;
   const circumference = 2 * Math.PI * radius;
@@ -82,13 +84,13 @@ export function ScoreCard({ score, max = 10 }: ScoreCardProps) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="font-display text-[15px] tracking-[0.2em] text-parchment-dim">ATLAS RATING</p>
+          <p className="font-display text-[15px] tracking-[0.2em] text-parchment-dim">{t("ATLAS RATING")}</p>
           <p className="font-display leading-none">
             <span className="title-text text-[68px] font-semibold">{score.toFixed(1)}</span>
             <span className="ml-2 text-[26px] text-parchment-dim">/ {max}</span>
           </p>
 
-          <MetalMeter label="Atlas rating" value={score} max={max} className="mt-3" />
+          <MetalMeter label={t("Atlas rating")} value={score} max={max} className="mt-3" />
         </div>
       </div>
     </AtlasFrame>

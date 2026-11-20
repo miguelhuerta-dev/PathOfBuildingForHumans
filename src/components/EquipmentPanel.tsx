@@ -7,6 +7,7 @@ import AtlasSectionHeader from "./AtlasSectionHeader";
 import ItemIcon from "./ItemIcon";
 import { ItemMods, ModLegend } from "./ItemMods";
 import ForgeView from "./ForgeView";
+import { useT, type Translate } from "../i18n";
 import { SkullIcon } from "./icons";
 
 /**
@@ -37,10 +38,10 @@ const FLASKS = ["Flask 1", "Flask 2", "Flask 3", "Flask 4", "Flask 5"];
 const isJewel = (slot: string) => slot.startsWith("Jewel") || slot.includes("Abyssal Socket");
 
 /** Slot name for people: tree sockets are known by an internal node id, which means nothing to a player. */
-function slotLabel(slot: string): string {
-  if (slot.startsWith("Jewel")) return "Jewel";
-  if (slot.includes("Abyssal Socket")) return `${slot.split(" Abyssal")[0]} abyss jewel`;
-  return slot;
+function slotLabel(slot: string, t: Translate): string {
+  if (slot.startsWith("Jewel")) return t("Jewel");
+  if (slot.includes("Abyssal Socket")) return t("{part} abyss jewel", { part: t(slot.split(" Abyssal")[0]) });
+  return t(slot);
 }
 
 /** A chain of black iron links, the divider between the doll and the belt pouches. */
@@ -78,11 +79,12 @@ function OwnedMark({ owned }: { owned?: boolean }) {
 }
 
 function Slot({ slot, item, owned, selected, onSelect, style, className = "" }: SlotProps) {
+  const t = useT();
   if (!item) {
     return (
       <div className={`iron-slot iron-slot--empty ${className}`} style={style} aria-hidden="true">
         <span className="px-1 text-center font-display text-[10px] tracking-[0.12em] text-parchment-faint">
-          {slot.toUpperCase()}
+          {t(slot).toUpperCase()}
         </span>
       </div>
     );
@@ -91,10 +93,10 @@ function Slot({ slot, item, owned, selected, onSelect, style, className = "" }: 
   return (
     <button
       type="button"
-      title={`${slotLabel(slot)}: ${item.name}`}
+      title={`${slotLabel(slot, t)}: ${item.name}`}
       aria-pressed={selected}
       onClick={() => onSelect(slot)}
-      className={`iron-slot iron-slot--filled ${selected ? "border-[rgb(var(--rarity)/0.85)]" : ""} ${className}`}
+      className={`iron-slot iron-slot--filled ${selected ? "iron-slot--selected" : ""} ${className}`}
       style={{ ...style, "--rarity": rarity.rgb } as CSSProperties}
     >
       {/* A fixed box inside the socket: tall art (staves, bows) scales down instead of spilling out. */}
@@ -105,17 +107,18 @@ function Slot({ slot, item, owned, selected, onSelect, style, className = "" }: 
 }
 
 /** The selected item read out like the game's tooltip. */
-function ItemDetails({ item }: { item?: EngineItem }) {
+function ItemDetails({ item, measure }: { item?: EngineItem; measure?: boolean }) {
+  const t = useT();
   const [forging, setForging] = useState(false);
   if (!item) {
-    return <p className="text-[17px] text-parchment-faint">Click an item to read its properties.</p>;
+    return <p className="text-[17px] text-parchment-faint">{t("Click an item to read its properties.")}</p>;
   }
   const rarity = rarityStyle(item.rarity);
   return (
     <article key={item.slot} className="iron-tooltip fade-in min-h-full" style={{ "--rarity": rarity.rgb } as CSSProperties}>
       <header className="iron-tooltip__head px-5 py-3 text-center">
-        <p className="font-display text-[12px] tracking-[0.2em] text-parchment-faint">{slotLabel(item.slot).toUpperCase()}</p>
-        <h3 className={`font-display text-[20px] leading-tight ${rarity.tone}`}>{item.name}</h3>
+        <p className="font-display text-[12px] tracking-[0.2em] text-parchment-faint">{slotLabel(item.slot, t).toUpperCase()}</p>
+        <h3 className={`iron-tooltip__name font-display text-[21px] leading-tight ${rarity.tone}`}>{item.name}</h3>
         {item.base && item.base !== item.name && <p className={`text-[16px] ${rarity.tone} opacity-80`}>{item.base}</p>}
         {item.influences && item.influences.length > 0 && (
           <p className="mt-1 font-display text-[11px] tracking-[0.18em] text-gold-dim">{item.influences.join(" · ").toUpperCase()}</p>
@@ -127,17 +130,17 @@ function ItemDetails({ item }: { item?: EngineItem }) {
             className="mt-2 inline-flex flex-col items-center border border-gold-dim/60 px-3 py-1 font-display text-[11px] tracking-[0.18em] text-parchment-dim transition hover:border-gold hover:text-gold"
           >
             {item.rarity === "UNIQUE" || item.rarity === "RELIC" ? (
-              "HOW TO GET IT"
+              t("HOW TO GET IT")
             ) : (
               <>
-                OPEN IN THE FORGE
+                {t("OPEN IN THE FORGE")}
                 {/* For players who do not know the Forge yet: what it is for. */}
-                <span className="text-[9px] tracking-[0.22em] text-gold-dim">HOW TO CRAFT</span>
+                <span className="text-[9px] tracking-[0.22em] text-gold-dim">{t("HOW TO CRAFT")}</span>
               </>
             )}
           </button>
         )}
-        {forging && <ForgeView item={item} onClose={() => setForging(false)} />}
+        {forging && <ForgeView item={item} slot={measure ? item.slot : undefined} onClose={() => setForging(false)} />}
       </header>
       <div className="flex gap-4 px-5 py-4 text-[15px] leading-snug">
         <div className="min-w-0 flex-1">
@@ -161,6 +164,7 @@ function GearLedger({
   onSelect: (slot: string) => void;
   owned?: (item: EngineItem) => boolean;
 }) {
+  const t = useT();
   return (
     <ul className="mt-5 grid gap-x-6 sm:grid-cols-2">
       {items.map((item) => (
@@ -173,12 +177,12 @@ function GearLedger({
             }`}
           >
             <span className="w-28 shrink-0 font-display text-[11px] tracking-[0.14em] text-parchment-faint">
-              {slotLabel(item.slot).toUpperCase()}
+              {slotLabel(item.slot, t).toUpperCase()}
             </span>
             <span className={`min-w-0 flex-1 truncate text-[16px] ${rarityStyle(item.rarity).tone}`}>{item.name}</span>
             {owned && (
               <span className={`shrink-0 text-[12px] ${owned(item) ? "text-gold" : "text-ember"}`}>
-                {owned(item) ? "✓" : "SEEK"}
+                {owned(item) ? "✓" : t("SEEK")}
               </span>
             )}
           </button>
@@ -197,6 +201,8 @@ const slotRank = (slot: string) => {
 /** The character's worn gear, flasks and socketed jewels, with official icons when available. */
 interface EquipmentPanelProps {
   items: EngineItem[];
+  /** The character's own gear: the Forge measures each modifier on the character. */
+  measure?: boolean;
   title?: string;
   /** A line under the title. */
   intro?: string;
@@ -206,7 +212,8 @@ interface EquipmentPanelProps {
   emptyNote?: string;
 }
 
-function EquipmentPanel({ items, title = "Equipped Artifacts", intro, owned, emptyNote }: EquipmentPanelProps) {
+function EquipmentPanel({ items, measure, title = "Equipped Artifacts", intro, owned, emptyNote }: EquipmentPanelProps) {
+  const t = useT();
   const bySlot = new Map(items.map((item) => [item.slot, item]));
   const jewels = items.filter((item) => isJewel(item.slot));
   const firstFilled = [...CORE_SLOTS, ...FLASKS].find((slot) => bySlot.has(slot)) ?? jewels[0]?.slot;
@@ -268,7 +275,7 @@ function EquipmentPanel({ items, title = "Equipped Artifacts", intro, owned, emp
           {jewels.length > 0 && (
             <>
               <h3 className="mt-5 text-center font-display text-[12px] tracking-[0.2em] text-parchment-faint">
-                SOCKETED JEWELS
+                {t("SOCKETED JEWELS")}
               </h3>
               <div className="mt-2 flex max-w-[calc(var(--cell)*8+42px)] flex-wrap justify-center gap-1.5">
                 {jewels.map((item) => (
@@ -288,10 +295,9 @@ function EquipmentPanel({ items, title = "Equipped Artifacts", intro, owned, emp
         </div>
 
         <div>
-          {/* Fixed height: a longer item must not push the ledger, or the row under the
-              pointer changes and the read-out flickers between items. */}
-          <div aria-live="polite" className="iron-scroll h-[19rem] overflow-y-auto">
-            <ItemDetails item={current} />
+          {/* Items open on click, so the read-out may grow with the item; a very long one scrolls. */}
+          <div aria-live="polite" className="iron-scroll max-h-[34rem] min-h-[19rem] overflow-y-auto overflow-x-hidden">
+            <ItemDetails item={current} measure={measure} />
           </div>
           <GearLedger
             items={[...items].sort((a, b) => slotRank(a.slot) - slotRank(b.slot))}

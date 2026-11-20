@@ -132,12 +132,15 @@ pub async fn select_guide_stage(
 
 /// Opens an item in the Forge: its base, the tier of each modifier, its free
 /// affixes and what else can roll on it; for a unique, its league and source.
+/// With `slot` (the character's own item), what each modifier would add to the character.
 #[tauri::command]
-pub async fn forge_item(raw: String) -> Result<Value, String> {
+pub async fn forge_item(session: State<'_, Session>, raw: String, slot: Option<String>) -> Result<Value, String> {
     if raw.trim().is_empty() || raw.len() > 20_000 {
         return Err("This item can not be opened in the Forge.".into());
     }
-    run_engine(json!({ "kind": "forge", "raw": raw })).await
+    // For the character's own items, with the character: each modifier is measured on it.
+    let character = slot.as_ref().and_then(|_| session.character.lock().unwrap().clone());
+    run_engine(json!({ "kind": "forge", "raw": raw, "slot": slot, "character": character })).await
 }
 
 /// What a unique sells for in a league, from poe.ninja (cheapest listing first).
@@ -145,6 +148,19 @@ pub async fn forge_item(raw: String) -> Result<Value, String> {
 pub async fn unique_price(name: String, league: String) -> Result<Vec<prices::Price>, String> {
     let league = if league.trim().is_empty() { "Standard".to_string() } else { league };
     prices::unique_price(name.trim(), league.trim()).await
+}
+
+/// The character's best next passives: notables and keystones a few points
+/// away, each tried on the character with its path and ranked by gain per point.
+#[tauri::command]
+pub async fn best_passives(session: State<'_, Session>) -> Result<Value, String> {
+    let character = session
+        .character
+        .lock()
+        .unwrap()
+        .clone()
+        .ok_or_else(|| "Connect a character first.".to_string())?;
+    run_engine(json!({ "kind": "best_passives", "character": character, "limit": 10 })).await
 }
 
 #[tauri::command]
@@ -226,4 +242,14 @@ fn open_in_browser(url: &str) -> Result<(), String> {
 #[tauri::command]
 pub fn open_profile() -> Result<(), String> {
     open_in_browser(PROFILE_URL)
+}
+
+/// Where Path of Exile players make their characters public.
+const PRIVACY_URL: &str = "https://www.pathofexile.com/my-account/privacy";
+
+/// Opens pathofexile.com's privacy settings, for the tutorial's public profile
+/// step. Like the profile link, only this fixed address can be opened.
+#[tauri::command]
+pub fn open_privacy_settings() -> Result<(), String> {
+    open_in_browser(PRIVACY_URL)
 }

@@ -1,3 +1,4 @@
+import { useT, type Translate } from "../../i18n";
 import type { CSSProperties } from "react";
 import { chooseSlots, type SlotChoice } from "../../guide/gemSlots";
 import { useGemSources, type GemDetails } from "../../state/useGemSources";
@@ -27,16 +28,17 @@ function isRealGroup(group: EngineSkillGroup): boolean {
   return group.gems.length > 0 && /[a-z]/i.test(group.label ?? "a");
 }
 
-function sourceText(details: GemDetails | null): string {
+function sourceText(details: GemDetails | null, t: Translate): string {
   if (!details) return "";
   const source = details.source;
-  if (!source) return "Not handed out in the campaign: a drop or a trade.";
+  if (!source) return t("Not handed out in the campaign: a drop or a trade.");
   return source.kind === "quest"
-    ? `Act ${source.act} · reward for ${source.quest} (${source.npc})`
-    : `Act ${source.act} · sold by ${source.npc} after ${source.quest}`;
+    ? t("Act {act} · reward for {quest} ({npc})", { act: source.act, quest: source.quest, npc: source.npc })
+    : t("Act {act} · sold by {npc} after {quest}", { act: source.act, quest: source.quest, npc: source.npc });
 }
 
 function GemSocket({ gem, details, owned }: { gem: EngineGem; details: GemDetails | null; owned?: boolean }) {
+  const t = useT();
   const rim = (details && ATTRIBUTE_RIM[details.attribute]) || NEUTRAL_RIM;
   const missing = owned === false;
   return (
@@ -51,7 +53,7 @@ function GemSocket({ gem, details, owned }: { gem: EngineGem; details: GemDetail
         <span className="h-3 w-3 rounded-full bg-[rgb(var(--rim))]" aria-hidden="true" />
       )}
       {owned && (
-        <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-bold text-ink" aria-label="You have it">
+        <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-gold text-[10px] font-bold text-ink" aria-label={t("You have it")}>
           ✓
         </span>
       )}
@@ -103,10 +105,16 @@ function SocketItem({
   /** The slot was worked out from the links: any item of that kind will do, the art only shows the kind. */
   suggested?: boolean;
 }) {
+  const t = useT();
   const rarity = rarityStyle(suggested ? undefined : item?.rarity);
-  const links = `${rims.length}-link`;
-  const label = slot ? (suggested ? `${slot} · ${links}` : slot) : `Any item · ${links}`;
-  const title = suggested ? `Any ${slot?.replace(/ d$/, "").toLowerCase()} with ${rims.length} linked sockets` : item ? `${slot}: ${item.name}` : label;
+  const links = t("{count}-link", { count: rims.length });
+  const slotName = slot ? t(slot) : undefined;
+  const label = slotName ? (suggested ? `${slotName} · ${links}` : slotName) : t("Any item · {links}", { links });
+  const title = suggested
+    ? t("Any {slot} with {count} linked sockets", { slot: slotName?.toLowerCase(), count: rims.length })
+    : item
+      ? `${slotName}: ${item.name}`
+      : label;
   return (
     <span className="flex w-20 shrink-0 flex-col items-center gap-1" title={title}>
       <span
@@ -149,14 +157,15 @@ function GroupCard({
   ownedGems?: Set<string>;
   details: (name: string) => GemDetails | null;
 }) {
+  const t = useT();
   const owns = (gem: EngineGem) => (ownedGems ? ownedGems.has(gem.name) : undefined);
   const missing = ownedGems ? group.gems.filter((gem) => !ownedGems.has(gem.name)) : [];
   return (
     <li className={`iron-card flex gap-4 px-4 py-3 ${group.main ? "iron-card--main" : ""}`}>
       <div className="min-w-0 flex-1">
       <p className="font-display text-[12px] tracking-[0.18em] text-parchment-faint">
-        {(choice.slot ? (choice.source === "links" ? `${choice.slot} (suggested)` : choice.slot) : "Socketed").toUpperCase()}
-        {group.main && <span className="text-gold"> · MAIN SKILL</span>}
+        {(choice.slot ? (choice.source === "links" ? t("{slot} (suggested)", { slot: t(choice.slot) }) : t(choice.slot)) : t("Socketed")).toUpperCase()}
+        {group.main && <span className="text-gold"> · {t("MAIN SKILL")}</span>}
       </p>
       {group.label && <p className="mt-0.5 truncate text-[17px] text-parchment">{group.label}</p>}
       {item && choice.source !== "links" && <p className={`truncate text-[14px] ${rarityStyle(item.rarity).tone}`}>{item.name}</p>}
@@ -178,15 +187,15 @@ function GroupCard({
             <li key={`${gem.name}-${index}`} className="flex flex-wrap gap-x-2">
               <span className={isMissing ? "text-ember" : "text-parchment"}>{gem.name}</span>
               {gem.level !== undefined && gem.level > 1 && (
-                <span className="text-parchment-faint">lvl {gem.level}</span>
+                <span className="text-parchment-faint">{t("lvl {level}", { level: gem.level })}</span>
               )}
-              {isMissing && <span className="text-parchment-dim">— {sourceText(details(gem.name))}</span>}
+              {isMissing && <span className="text-parchment-dim">— {sourceText(details(gem.name), t)}</span>}
             </li>
           );
         })}
       </ul>
       {ownedGems && missing.length === 0 && (
-        <p className="mt-2 font-display text-[12px] tracking-[0.16em] text-verdigris">ALL GEMS OWNED</p>
+        <p className="mt-2 font-display text-[12px] tracking-[0.16em] text-verdigris">{t("ALL GEMS OWNED")}</p>
       )}
       </div>
       {/* Its own column on the right, so the gems sit right under the title. */}
@@ -206,6 +215,7 @@ function GroupCard({
 
 /** Gem links of the guide at the chosen stage; with a character, what is missing and where to find it. */
 function GemLinksPanel({ guide, you }: { guide: EngineBuild; you?: EngineBuild }) {
+  const t = useT();
   const details = useGemSources(you?.character.class ?? guide.character.class);
   const groups = guide.skills.filter(isRealGroup);
   if (groups.length === 0) return null;
@@ -217,8 +227,8 @@ function GemLinksPanel({ guide, you }: { guide: EngineBuild; you?: EngineBuild }
       <AtlasSectionHeader title="Gem Links" icon={<SigilIcon className="h-7 w-7" />} />
       <p className="mb-4 text-[16px] text-parchment-dim">
         {ownedGems
-          ? "Gems you already have carry a gold mark; for the rest, where your class gets them in the campaign."
-          : "The links this stage asks for. Connect your character to see which ones you still need."}
+          ? t("Gems you already have carry a gold mark; for the rest, where your class gets them in the campaign.")
+          : t("The links this stage asks for. Connect your character to see which ones you still need.")}
       </p>
       <ul className="grid gap-4 md:grid-cols-2">
         {groups.map((group, index) => (

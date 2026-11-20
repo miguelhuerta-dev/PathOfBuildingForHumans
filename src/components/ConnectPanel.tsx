@@ -1,3 +1,4 @@
+import { useT } from "../i18n";
 import { useState } from "react";
 import { atlasArt } from "../assets/atlas";
 import type { Archive } from "../state/useArchive";
@@ -12,6 +13,7 @@ interface ConnectPanelProps {
 
 /** Account form and character picker, styled after the in-game character select. */
 function ConnectPanel({ archive }: ConnectPanelProps) {
+  const t = useT();
   const [accountInput, setAccountInput] = useState(archive.account);
   const [leagueFilter, setLeagueFilter] = useState("All");
 
@@ -30,7 +32,7 @@ function ConnectPanel({ archive }: ConnectPanelProps) {
         }}
       >
         <label className="flex min-w-64 flex-1 flex-col gap-1">
-          <span className="font-display text-[13px] tracking-[0.18em] text-parchment-dim">ACCOUNT NAME</span>
+          <span className="font-display text-[13px] tracking-[0.18em] text-parchment-dim">{t("ACCOUNT NAME")}</span>
           <input
             value={accountInput}
             onChange={(event) => setAccountInput(event.target.value)}
@@ -45,13 +47,12 @@ function ConnectPanel({ archive }: ConnectPanelProps) {
           disabled={archive.listState === "loading" || !accountInput.trim()}
           className="ui-button h-12 min-w-48 font-display text-[14px] tracking-[0.2em] text-parchment transition hover:brightness-125 disabled:opacity-50"
         >
-          {archive.listState === "loading" ? "SEARCHING…" : "FIND CHARACTERS"}
+          {archive.listState === "loading" ? t("SEARCHING…") : t("FIND CHARACTERS")}
         </button>
       </form>
 
       <p className="mt-2 text-[15px] text-parchment-faint">
-        Your profile's Characters tab must be public on pathofexile.com. Include the #1234 at the end of the
-        account name.
+        {t("Your profile's Characters tab must be public on pathofexile.com. Include the #1234 at the end of the account name.")}
       </p>
 
       {archive.listError && <ErrorNote className="mt-3">{archive.listError}</ErrorNote>}
@@ -60,7 +61,7 @@ function ConnectPanel({ archive }: ConnectPanelProps) {
         <>
           <div className="mt-6">
             <ChipGroup
-              label="Filter by league"
+              label={t("Filter by league")}
               options={leagues.map((league) => ({ value: league, label: league.toUpperCase() }))}
               selected={leagueFilter}
               onSelect={setLeagueFilter}
@@ -90,9 +91,9 @@ function ConnectPanel({ archive }: ConnectPanelProps) {
                         {character.name}
                       </span>
                       <span className="text-[15px] text-parchment">
-                        Level {character.level} {character.class}
+                        {t("Level {level} {class}", { level: character.level, class: character.class })}
                       </span>
-                      <span className="text-[14px] text-[#9fb6d8]">{character.league} League</span>
+                      <span className="text-[14px] text-[#9fb6d8]">{t("{league} League", { league: character.league })}</span>
                     </span>
                   </button>
                 </li>

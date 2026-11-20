@@ -1,3 +1,4 @@
+import { useT } from "../i18n";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { atlasArt } from "../assets/atlas";
 import type { TreeGraph } from "../tree/progress";
@@ -315,6 +316,7 @@ function ConstellationMap({
   icons = NO_ICONS,
   picks,
 }: ConstellationMapProps) {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const home = useMemo(() => fitView(graph), [graph]);
@@ -509,8 +511,8 @@ function ConstellationMap({
           <button
             key={control.label}
             type="button"
-            aria-label={control.label}
-            title={control.label}
+            aria-label={t(control.label)}
+            title={t(control.label)}
             onClick={control.action}
             className="nav-plate h-9 w-9 border border-gold-dim/60 font-display text-[18px] text-parchment hover:text-gold"
           >
@@ -536,13 +538,13 @@ function ConstellationMap({
             <dl className="mt-1 flex flex-col gap-1 text-[14px] leading-snug">
               {guidePick && (
                 <div>
-                  <dt className="font-display text-[12px] tracking-[0.16em] text-verdigris">GUIDE PICKS</dt>
+                  <dt className="font-display text-[12px] tracking-[0.16em] text-verdigris">{t("GUIDE PICKS")}</dt>
                   <dd className="text-parchment">{guidePick}</dd>
                 </div>
               )}
               {ownPick && (
                 <div>
-                  <dt className="font-display text-[12px] tracking-[0.16em] text-gold">YOU PICKED</dt>
+                  <dt className="font-display text-[12px] tracking-[0.16em] text-gold">{t("YOU PICKED")}</dt>
                   <dd className="text-parchment">{ownPick}</dd>
                 </div>
               )}
@@ -558,7 +560,7 @@ function ConstellationMap({
           )}
           {hoverState && hoverState !== "idle" && hover.node.kind !== "root" && (
             <p className="mt-2 font-display text-[12px] tracking-[0.16em] text-verdigris">
-              {hoverState === "target" ? "IN THE GUIDE · NOT TAKEN" : hoverState === "extra" ? "TAKEN · NOT IN THE GUIDE" : "TAKEN"}
+              {t(hoverState === "target" ? "IN THE GUIDE · NOT TAKEN" : hoverState === "extra" ? "TAKEN · NOT IN THE GUIDE" : "TAKEN")}
             </p>
           )}
         </div>
@@ -569,6 +571,7 @@ function ConstellationMap({
 
 /** Colour key for the node states, shown under a map. */
 export function MapLegend({ icons = false }: { icons?: boolean }) {
+  const t = useT();
   // With the game's icons a passive's state shows as its ring; without them, as its fill.
   const items = icons
     ? [
@@ -588,7 +591,7 @@ export function MapLegend({ icons = false }: { icons?: boolean }) {
       {items.map((item) => (
         <li key={item.label} className="flex items-center gap-2">
           <span aria-hidden="true" className={`inline-block h-4 w-4 rounded-full ${item.swatch}`} />
-          {item.label}
+          {t(item.label)}
         </li>
       ))}
     </ul>

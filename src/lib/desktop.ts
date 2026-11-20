@@ -1,6 +1,6 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { Bandit, CharacterSummary, EngineResult, ForgeResult, MarketPrice } from "../types/Engine";
+import type { Bandit, CharacterSummary, EngineResult, ForgeResult, MarketPrice, BestPassives } from "../types/Engine";
 
 /** True when running inside the desktop app rather than a browser tab. */
 export const isDesktopApp = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -28,7 +28,9 @@ export const desktop = {
   /** Opens a guide without calculating it; the next character load compares both. */
   prepareGuide: (input: string) => call<void>("prepare_guide", { input }),
   /** An item's base, tiers, free affixes and what can roll on it; a unique's league and source. */
-  forgeItem: (raw: string) => call<ForgeResult>("forge_item", { raw }),
+  /** The character's best next passives, tried on it and ranked by gain per point. */
+  bestPassives: () => call<BestPassives>("best_passives"),
+  forgeItem: (raw: string, slot?: string) => call<ForgeResult>("forge_item", { raw, slot: slot ?? null }),
   /** What a unique sells for in a league, from poe.ninja: cheapest listing first. */
   uniquePrice: (name: string, league: string) => call<MarketPrice[]>("unique_price", { name, league }),
   selectGuideStage: (stage: number | null) => call<EngineResult>("select_guide_stage", { stage }),
@@ -53,6 +55,8 @@ export const desktop = {
   },
   /** Opens the author's GitHub profile in the system browser. */
   openProfile: () => call<void>("open_profile"),
+  /** Opens pathofexile.com's privacy settings, where the profile is made public. */
+  openPrivacySettings: () => call<void>("open_privacy_settings"),
   onZoneEntered: (handler: (zone: string) => void): Promise<UnlistenFn> =>
     listen<string>("zone-entered", (event) => handler(event.payload)),
 };

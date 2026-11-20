@@ -1,3 +1,4 @@
+import { useT } from "../../i18n";
 import type { ReactNode } from "react";
 import { atlasArt } from "../../assets/atlas";
 import type { BanditChoice, EngineBuild, PantheonGod } from "../../types/Engine";
@@ -38,11 +39,12 @@ function ScenePanel({ image, children }: { image: string; children: ReactNode })
 }
 
 function BanditCard({ bandit }: { bandit: BanditChoice }) {
+  const t = useT();
   return (
     <ScenePanel image={atlasArt.sceneBandits}>
       <AtlasSectionHeader title="The Bandits" tone="blood" icon={<SkullIcon className="h-7 w-7" />} />
-      <p className="text-[15px] text-parchment-dim">Act 2, the bandit lords of the Western Forest.</p>
-      <ul className="mt-4 grid grid-cols-4 gap-2" aria-label="Bandit choices">
+      <p className="text-[15px] text-parchment-dim">{t("Act 2, the bandit lords of the Western Forest.")}</p>
+      <ul className="mt-4 grid grid-cols-4 gap-2" aria-label={t("Bandit choices")}>
         {BANDIT_OPTIONS.map((option) => {
           const chosen = option.choice === bandit.choice;
           return (
@@ -53,23 +55,24 @@ function BanditCard({ bandit }: { bandit: BanditChoice }) {
               }`}
               aria-current={chosen ? "true" : undefined}
             >
-              {option.label.toUpperCase()}
+              {t(option.label).toUpperCase()}
             </li>
           );
         })}
       </ul>
-      <p className="mt-5 font-display text-[24px] text-parchment">{bandit.label}</p>
+      <p className="mt-5 font-display text-[24px] text-parchment">{t(bandit.label)}</p>
       <p className="text-[18px] text-gold">{bandit.reward}</p>
-      <p className="mt-2 text-[16px] leading-relaxed text-parchment-dim">{BANDIT_REASON[bandit.choice]}</p>
+      <p className="mt-2 text-[16px] leading-relaxed text-parchment-dim">{t(BANDIT_REASON[bandit.choice])}</p>
     </ScenePanel>
   );
 }
 
 function GodCard({ god, kind }: { god: PantheonGod; kind: string }) {
+  const t = useT();
   const [base, ...upgrades] = god.souls;
   return (
     <div className="iron-card px-4 py-3">
-      <p className="font-display text-[12px] tracking-[0.2em] text-parchment-faint">{kind}</p>
+      <p className="font-display text-[12px] tracking-[0.2em] text-parchment-faint">{t(kind)}</p>
       <p className="font-display text-[21px] text-parchment">{god.name}</p>
       {base && (
         <ul className="mt-1 text-[15px] leading-snug text-gold">
@@ -83,7 +86,7 @@ function GodCard({ god, kind }: { god: PantheonGod; kind: string }) {
           {upgrades.map((soul) => (
             <li key={soul.name} className="text-[14px] leading-snug">
               <span className="block font-display text-[12px] tracking-[0.12em] text-[#c9645a]">
-                CAPTURE {soul.name.toUpperCase()}
+                {t("CAPTURE")} {soul.name.toUpperCase()}
               </span>
               {soul.lines.map((line) => (
                 <span key={line} className="block text-parchment-dim">
@@ -99,11 +102,12 @@ function GodCard({ god, kind }: { god: PantheonGod; kind: string }) {
 }
 
 function PantheonCard({ major, minor }: { major?: PantheonGod; minor?: PantheonGod }) {
+  const t = useT();
   return (
     <ScenePanel image={atlasArt.scenePantheon}>
       <AtlasSectionHeader title="The Pantheon" icon={<ShieldIcon className="h-6 w-6" />} />
       <p className="text-[15px] text-parchment-dim">
-        Unlocked in Acts 6 to 9; captured map bosses' souls (with a Divine Vessel) upgrade each god.
+        {t("Unlocked in Acts 6 to 9; captured map bosses' souls (with a Divine Vessel) upgrade each god.")}
       </p>
       <div className="mt-4 grid gap-3">
         {major && <GodCard god={major} kind="MAJOR GOD" />}

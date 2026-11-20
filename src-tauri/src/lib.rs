@@ -25,6 +25,7 @@ pub fn run() {
             commands::load_guide,
             commands::prepare_guide,
             commands::forge_item,
+            commands::best_passives,
             commands::unique_price,
             commands::select_guide_stage,
             commands::clear_guide,
@@ -34,6 +35,7 @@ pub fn run() {
             commands::passive_icons,
             commands::item_art,
             commands::open_profile,
+            commands::open_privacy_settings,
         ])
         .setup(|app| {
             // Unpack (on first launch) and load Path of Building now, so the first

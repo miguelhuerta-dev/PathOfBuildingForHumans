@@ -1,3 +1,4 @@
+import { useT } from "../i18n";
 import { atlasArt } from "../assets/atlas";
 import type { Upgrade } from "../types/Engine";
 import { changeTone, formatSignedPercent } from "../utils/format";
@@ -15,6 +16,7 @@ interface UpgradeCardProps {
 
 /** The guide's item for one slot, with the measured effect of equipping it. */
 function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
+  const t = useT();
   const style = rarityStyle(upgrade.item.rarity);
   const isRing = upgrade.slot.startsWith("Ring");
   const mods = [...upgrade.item.implicits, ...upgrade.item.explicits].slice(0, 6);
@@ -22,7 +24,7 @@ function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
   return (
     <AtlasFrame variant="card" className="text-center">
       <p className="font-display text-[13px] tracking-[0.3em] text-parchment-dim">
-        {style.label} · {upgrade.slot.toUpperCase()}
+        {t(style.label)} · {t(upgrade.slot).toUpperCase()}
       </p>
       <h3 className={`engraved font-display text-[26px] font-semibold tracking-[0.04em] ${style.tone}`}>
         {upgrade.item.name.toUpperCase()}
@@ -75,7 +77,7 @@ function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
       <p className="mt-3 flex items-center justify-center gap-2 text-[16px] text-parchment-faint">
         {upgrade.current && <ItemIcon src={upgrade.currentIcon} className="h-10 w-10" />}
         <span>
-          Replaces {upgrade.current ? <span className="text-parchment-dim">{upgrade.current}</span> : "an empty slot"}
+          {t("Replaces")} {upgrade.current ? <span className="text-parchment-dim">{upgrade.current}</span> : t("an empty slot")}
         </span>
       </p>
 
@@ -85,7 +87,7 @@ function UpgradeCard({ upgrade, onViewDetails }: UpgradeCardProps) {
           onClick={onViewDetails}
           className="ui-button mx-auto mt-5 block h-14 w-full max-w-sm font-display text-[15px] tracking-[0.2em] text-parchment transition hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
         >
-          VIEW IN GUIDE
+          {t("VIEW IN GUIDE")}
         </button>
       )}
     </AtlasFrame>

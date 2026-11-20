@@ -1,3 +1,4 @@
+import { useT } from "../i18n";
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { isDesktopApp } from "../lib/desktop";
@@ -25,6 +26,7 @@ function WindowControls() {
     return () => unlisten?.();
   }, []);
 
+  const t = useT();
   if (!isDesktopApp) return null;
 
   const appWindow = getCurrentWindow();
@@ -33,7 +35,7 @@ function WindowControls() {
     <div className="ml-2 flex items-center border-l border-gold-dim/45 pl-3">
       <button
         type="button"
-        aria-label="Minimize"
+        aria-label={t("Minimize")}
         className={`${buttonBase} hover:bg-white/5 hover:text-gold`}
         onClick={() => appWindow.minimize()}
       >
@@ -44,7 +46,7 @@ function WindowControls() {
 
       <button
         type="button"
-        aria-label={maximized ? "Restore" : "Maximize"}
+        aria-label={maximized ? t("Restore") : t("Maximize")}
         className={`${buttonBase} hover:bg-white/5 hover:text-gold`}
         onClick={() => appWindow.toggleMaximize()}
       >
@@ -62,7 +64,7 @@ function WindowControls() {
 
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t("Close")}
         className={`${buttonBase} hover:bg-[linear-gradient(180deg,#8e2a22,#4a0c07)] hover:text-[#f6d8c8]`}
         onClick={() => appWindow.close()}
       >
