@@ -5,6 +5,7 @@ import { rarityStyle } from "../utils/rarity";
 import AtlasFrame from "./AtlasFrame";
 import AtlasSectionHeader from "./AtlasSectionHeader";
 import ItemIcon from "./ItemIcon";
+import { ItemMods, ModLegend } from "./ItemMods";
 import { SkullIcon } from "./icons";
 
 /**
@@ -91,8 +92,6 @@ function Slot({ slot, item, owned, selected, onSelect, style, className = "" }: 
       type="button"
       title={`${slotLabel(slot)}: ${item.name}`}
       aria-pressed={selected}
-      onMouseEnter={() => onSelect(slot)}
-      onFocus={() => onSelect(slot)}
       onClick={() => onSelect(slot)}
       className={`iron-slot iron-slot--filled ${selected ? "border-[rgb(var(--rarity)/0.85)]" : ""} ${className}`}
       style={{ ...style, "--rarity": rarity.rgb } as CSSProperties}
@@ -107,7 +106,7 @@ function Slot({ slot, item, owned, selected, onSelect, style, className = "" }: 
 /** The selected item read out like the game's tooltip. */
 function ItemDetails({ item }: { item?: EngineItem }) {
   if (!item) {
-    return <p className="text-[17px] text-parchment-faint">Point at an item to read its properties.</p>;
+    return <p className="text-[17px] text-parchment-faint">Click an item to read its properties.</p>;
   }
   const rarity = rarityStyle(item.rarity);
   return (
@@ -116,27 +115,15 @@ function ItemDetails({ item }: { item?: EngineItem }) {
         <p className="font-display text-[12px] tracking-[0.2em] text-parchment-faint">{slotLabel(item.slot).toUpperCase()}</p>
         <h3 className={`font-display text-[20px] leading-tight ${rarity.tone}`}>{item.name}</h3>
         {item.base && item.base !== item.name && <p className={`text-[16px] ${rarity.tone} opacity-80`}>{item.base}</p>}
+        {item.influences && item.influences.length > 0 && (
+          <p className="mt-1 font-display text-[11px] tracking-[0.18em] text-gold-dim">{item.influences.join(" · ").toUpperCase()}</p>
+        )}
       </header>
-      <div className="flex flex-col gap-3 px-5 py-4 text-center text-[15px] leading-snug">
-        {item.implicits.length > 0 && (
-          <ul className="text-[#9fb6d8]">
-            {item.implicits.map((line, index) => (
-              <li key={`i${index}`}>{line}</li>
-            ))}
-          </ul>
-        )}
-        {item.implicits.length > 0 && item.explicits.length > 0 && (
-          <div className="mx-auto h-px w-2/3 bg-gradient-to-r from-transparent via-[#6b1d16] to-transparent" aria-hidden="true" />
-        )}
-        {item.explicits.length > 0 ? (
-          <ul className="text-[#a9b8e8]">
-            {item.explicits.map((line, index) => (
-              <li key={`e${index}`}>{line}</li>
-            ))}
-          </ul>
-        ) : (
-          item.implicits.length === 0 && <p className="text-parchment-faint">No modifiers.</p>
-        )}
+      <div className="flex gap-4 px-5 py-4 text-[15px] leading-snug">
+        <div className="min-w-0 flex-1">
+          <ItemMods item={item} />
+        </div>
+        {item.mods && item.mods.length > 0 && <ModLegend mods={item.mods} />}
       </div>
     </article>
   );
@@ -160,8 +147,6 @@ function GearLedger({
         <li key={item.slot}>
           <button
             type="button"
-            onMouseEnter={() => onSelect(item.slot)}
-            onFocus={() => onSelect(item.slot)}
             onClick={() => onSelect(item.slot)}
             className={`flex w-full items-baseline gap-3 border-b border-[#2a201c] py-1.5 text-left transition hover:border-[#6b1d16] ${
               selected === item.slot ? "border-[#7a2219]" : ""

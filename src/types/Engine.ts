@@ -9,6 +9,27 @@ export interface EngineItem {
   icon?: string;
   implicits: string[];
   explicits: string[];
+  /** Every line with its kind, in the order the game shows them. */
+  mods?: ItemMod[];
+  corrupted?: boolean;
+  /** Shaper, Elder, Crusader, Redeemer, Hunter, Warlord. */
+  influences?: string[];
+}
+
+export type ItemModKind = "enchant" | "implicit" | "eldritch" | "corrupted" | "explicit" | "crafted" | "unique" | "scourge" | "crucible";
+
+/** Where a modifier comes from, when it is not an ordinary roll. */
+export type ItemModSource = "influence" | "essence" | "fossil" | "veiled" | "synthesis" | "eldritch" | "corruption" | "bench";
+
+export interface ItemMod {
+  text: string;
+  kind: ItemModKind;
+  /** Rolls as a prefix or a suffix (rares and magic items). */
+  affix?: "prefix" | "suffix";
+  source?: ItemModSource;
+  /** e.g. the influence ("Shaper") or eldritch power ("Searing Exarch"). */
+  detail?: string;
+  fractured?: boolean;
 }
 
 export interface EngineGem {

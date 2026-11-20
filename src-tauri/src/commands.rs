@@ -183,25 +183,30 @@ pub async fn item_art(
 /// The author's GitHub profile, linked from the footer.
 const PROFILE_URL: &str = "https://github.com/miguelhuerta-dev";
 
-/// Opens the author's GitHub profile in the system browser. Only this fixed
-/// address can be opened, so the page cannot use it to launch anything else.
-#[tauri::command]
-pub fn open_profile() -> Result<(), String> {
+/// Opens an address the app built itself in the system browser.
+fn open_in_browser(url: &str) -> Result<(), String> {
     let mut command = if cfg!(windows) {
         let mut command = std::process::Command::new("rundll32");
-        command.args(["url.dll,FileProtocolHandler", PROFILE_URL]);
+        command.args(["url.dll,FileProtocolHandler", url]);
         command
     } else if cfg!(target_os = "macos") {
         let mut command = std::process::Command::new("open");
-        command.arg(PROFILE_URL);
+        command.arg(url);
         command
     } else {
         let mut command = std::process::Command::new("xdg-open");
-        command.arg(PROFILE_URL);
+        command.arg(url);
         command
     };
     command
         .spawn()
         .map(|_| ())
         .map_err(|e| format!("Could not open the browser: {e}"))
+}
+
+/// Opens the author's GitHub profile in the system browser. Only this fixed
+/// address can be opened, so the page cannot use it to launch anything else.
+#[tauri::command]
+pub fn open_profile() -> Result<(), String> {
+    open_in_browser(PROFILE_URL)
 }

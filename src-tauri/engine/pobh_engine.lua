@@ -364,6 +364,152 @@ local function modLines(list)
 	return lines
 end
 
+-- Where each modifier comes from, read from Path of Building's own mod tables
+-- (so it follows every league): a line's text, numbers replaced by "#", maps to
+-- whether it rolls as a prefix or a suffix and how it is obtained.
+local INFLUENCE_TAGS = {
+	shaper = "Shaper", elder = "Elder", crusader = "Crusader",
+	basilisk = "Hunter", eyrie = "Redeemer", adjudicator = "Warlord",
+}
+
+local function modTemplate(text)
+	return (text:gsub("%(%-?[%d%.]+%-%-?[%d%.]+%)", "#"):gsub("%d+%.?%d*", "#"))
+end
+
+local modIndex
+local affixTypesFor
+local function modSources()
+	if modIndex then return modIndex end
+	modIndex = {}
+	local function add(mods, source, modId, mod)
+		if type(mod) ~= "table" then return end
+		local influence
+		for _, key in ipairs(mod.weightKey or {}) do
+			local tag = key:match("_(%a+)$")
+			if INFLUENCE_TAGS[tag] then influence = INFLUENCE_TAGS[tag] break end
+		end
+		local from = influence and "influence" or (type(modId) == "string" and modId:match("Essence") and "essence") or source
+		for _, line in ipairs(mod) do
+			if type(line) == "string" then
+				local key = modTemplate(line)
+				local entry = modIndex[key] or {}
+				modIndex[key] = entry
+				-- Prefix or suffix comes from the ordinary affixes first; other tables
+				-- (bench, veiled, fossils...) only answer for lines that never roll normally.
+				local types = (from == "explicit" or from == "influence" or from == "essence") and "rolled" or "other"
+				entry[types] = entry[types] or {}
+				if mod.type == "Prefix" then entry[types].prefix = true end
+				if mod.type == "Suffix" then entry[types].suffix = true end
+				-- The ordinary affixes, to tell prefix from suffix by what the item's base can roll.
+				if types == "rolled" and (mod.type == "Prefix" or mod.type == "Suffix") then
+					entry.candidates = entry.candidates or {}
+					entry.candidates[#entry.candidates + 1] = mod
+				end
+				-- An ordinary roll wins: a line that also rolls normally needs no special source.
+				if from == "explicit" then entry.ordinary = true end
+				entry.sources = entry.sources or {}
+				entry.sources[from] = influence or true
+			end
+		end
+	end
+	local tables = {
+		{ data.itemMods.Explicit, "explicit" }, { data.itemMods.Delve, "fossil" },
+		{ data.itemMods.Synthesis, "synthesis" }, { data.itemMods.Eldritch, "eldritch" },
+		{ data.itemMods.Corrupted, "corruption" }, { data.veiledMods, "veiled" }, { data.masterMods, "bench" },
+	}
+	for _, entry in ipairs(tables) do
+		for modId, mod in pairs(entry[1] or {}) do
+			add(entry[1], entry[2], modId, mod)
+		end
+	end
+	return modIndex
+end
+
+-- Whether a mod can roll on a base: the first of its weight keys the base has decides,
+-- as in the game ("default" matches every base).
+local function canRollOn(mod, tags)
+	for index, key in ipairs(mod.weightKey or {}) do
+		if key == "default" or tags[key] then
+			return (mod.weightVal and mod.weightVal[index] or 0) > 0
+		end
+	end
+	return false
+end
+
+-- Prefix or suffix among the ordinary affixes that can roll on this item's base.
+affixTypesFor = function(candidates, item)
+	local tags = item.base and item.base.tags or {}
+	local types = {}
+	for _, mod in ipairs(candidates or {}) do
+		if canRollOn(mod, tags) then
+			if mod.type == "Prefix" then types.prefix = true end
+			if mod.type == "Suffix" then types.suffix = true end
+		end
+	end
+	return types
+end
+
+-- The special source of a line, when it does not also roll as an ordinary affix.
+local function specialSource(entry)
+	if not entry or entry.ordinary then return nil end
+	for _, source in ipairs({ "influence", "essence", "fossil", "veiled", "synthesis", "eldritch", "corruption", "bench" }) do
+		local value = entry.sources and entry.sources[source]
+		if value then return source, type(value) == "string" and value or nil end
+	end
+end
+
+-- Every line of an item, tagged with its kind, so the read-out can colour it like the game does.
+local function describeMods(item)
+	local mods = {}
+	local unique = item.rarity == "UNIQUE" or item.rarity == "RELIC"
+	local index = modSources()
+	local function push(list, kind)
+		for _, mod in ipairs(list or {}) do
+			if mod.line and mod.line ~= "" then
+				local entry = { text = mod.line, kind = kind }
+				local found = index[modTemplate(mod.line)]
+				if kind == "implicit" then
+					if mod.exarch then entry.kind, entry.source, entry.detail = "eldritch", "eldritch", "Searing Exarch"
+					elseif mod.eater then entry.kind, entry.source, entry.detail = "eldritch", "eldritch", "Eater of Worlds"
+					elseif mod.synthesis then entry.source = "synthesis"
+					elseif item.corrupted and found and found.sources and found.sources.corruption then entry.kind, entry.source = "corrupted", "corruption"
+					end
+				elseif kind == "explicit" then
+					if mod.crafted then entry.kind, entry.source = "crafted", "bench"
+					elseif mod.scourge then entry.kind = "scourge"
+					elseif mod.crucible then entry.kind = "crucible"
+					elseif unique then entry.kind = "unique"
+					end
+					if mod.fractured then entry.fractured = true end
+					if found and entry.kind ~= "unique" and entry.kind ~= "crucible" and entry.kind ~= "scourge" then
+						local types = found.rolled or found.other or {}
+						if types.prefix and types.suffix then types = affixTypesFor(found.candidates, item) end
+						if types.prefix and not types.suffix then entry.affix = "prefix"
+						elseif types.suffix and not types.prefix then entry.affix = "suffix" end
+						if not entry.source then entry.source, entry.detail = specialSource(found) end
+					end
+				end
+				mods[#mods + 1] = entry
+			end
+		end
+	end
+	push(item.enchantModLines, "enchant")
+	push(item.scourgeModLines, "scourge")
+	push(item.implicitModLines, "implicit")
+	push(item.explicitModLines, "explicit")
+	push(item.crucibleModLines, "crucible")
+	return mods
+end
+
+local function itemInfluences(item)
+	local list = {}
+	for key, name in pairs({ shaper = "Shaper", elder = "Elder", crusader = "Crusader", redeemer = "Redeemer", hunter = "Hunter", warlord = "Warlord" }) do
+		if item[key] then list[#list + 1] = name end
+	end
+	table.sort(list)
+	return list
+end
+
 local function describeItem(item)
 	local name = item.title or item.name
 	-- Guide authors often leave rares unnamed; show the base type instead.
@@ -376,6 +522,9 @@ local function describeItem(item)
 		rarity = item.rarity,
 		implicits = modLines(item.implicitModLines),
 		explicits = modLines(item.explicitModLines),
+		mods = describeMods(item),
+		corrupted = item.corrupted or nil,
+		influences = itemInfluences(item),
 	}
 end
 
