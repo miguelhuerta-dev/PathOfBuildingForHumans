@@ -124,9 +124,17 @@ function ItemDetails({ item }: { item?: EngineItem }) {
           <button
             type="button"
             onClick={() => setForging(true)}
-            className="mt-2 border border-gold-dim/60 px-3 py-1 font-display text-[11px] tracking-[0.18em] text-parchment-dim transition hover:border-gold hover:text-gold"
+            className="mt-2 inline-flex flex-col items-center border border-gold-dim/60 px-3 py-1 font-display text-[11px] tracking-[0.18em] text-parchment-dim transition hover:border-gold hover:text-gold"
           >
-            {item.rarity === "UNIQUE" || item.rarity === "RELIC" ? "HOW TO GET IT" : "OPEN IN THE FORGE"}
+            {item.rarity === "UNIQUE" || item.rarity === "RELIC" ? (
+              "HOW TO GET IT"
+            ) : (
+              <>
+                OPEN IN THE FORGE
+                {/* For players who do not know the Forge yet: what it is for. */}
+                <span className="text-[9px] tracking-[0.22em] text-gold-dim">HOW TO CRAFT</span>
+              </>
+            )}
           </button>
         )}
         {forging && <ForgeView item={item} onClose={() => setForging(false)} />}
