@@ -1,6 +1,7 @@
 import rules from "../data/rules/poe1.json";
 import type { EngineBuild, Upgrade } from "../types/Engine";
 import { formatNumber } from "../utils/formatNumber";
+import { extraDamageTaken, signedPercent } from "./numbers";
 
 export type Severity = "high" | "medium" | "low";
 
@@ -34,29 +35,52 @@ function stageFor(level: number): Stage {
 }
 
 const ELEMENTS = [
-  { key: "FireResist", name: "Fire" },
-  { key: "ColdResist", name: "Cold" },
-  { key: "LightningResist", name: "Lightning" },
+  { key: "FireResist", missing: "MissingFireResist", overCap: "FireResistOverCap", name: "Fire" },
+  { key: "ColdResist", missing: "MissingColdResist", overCap: "ColdResistOverCap", name: "Cold" },
+  { key: "LightningResist", missing: "MissingLightningResist", overCap: "LightningResistOverCap", name: "Lightning" },
 ] as const;
 
 function resistFindings(build: EngineBuild, stage: Stage): Finding[] {
   const findings: Finding[] = [];
-  const cap = rules.resistCap;
+  const mapping = stage.elementalResist.warnBelow >= rules.resistCap;
 
-  for (const { key, name } of ELEMENTS) {
+  for (const { key, missing, name } of ELEMENTS) {
     const value = build.stats[key];
     if (value === undefined) continue;
+    // The character's own maximum: 75%, or more with Purity auras, passives or items.
+    const max = value + Math.max(0, build.stats[missing] ?? rules.resistCap - value);
     const { warnBelow, criticalBelow } = stage.elementalResist;
-    if (value < warnBelow) {
+    // In maps the target is the character's own cap; in the campaign, the stage's floor.
+    const target = mapping ? max : warnBelow;
+    if (value < target) {
+      const extra = extraDamageTaken(value, max);
       findings.push({
         id: `resist-${name.toLowerCase()}`,
         severity: value < criticalBelow ? "high" : "medium",
-        title: `${name} Resistance ${value}%`,
+        title: `${name} Resistance ${value}%` + (max !== rules.resistCap ? ` of ${max}%` : ""),
         impact:
-          value < cap
-            ? `You take ${cap - value}% more ${name.toLowerCase()} damage than a capped character.`
+          extra > 0
+            ? `You take ${extra}% more ${name.toLowerCase()} damage than you would at your ${max}% maximum.`
             : `${name} hits land harder than they should.`,
-        remedy: `Add ${name.toLowerCase()} resistance on rings, belt or boots until you reach ${Math.min(cap, Math.max(warnBelow, 0))}%.`,
+        remedy: `Add ${name.toLowerCase()} resistance on rings, belt or boots until you reach ${Math.max(target, 0)}%.`,
+      });
+    }
+  }
+
+  // Capped, but with nothing to spare: Elemental Weakness or a "-max resistance" map drops it below.
+  if (mapping && stage.id === "red-maps") {
+    const thin = ELEMENTS.filter(({ key, missing, overCap }) => {
+      const value = build.stats[key];
+      return value !== undefined && (build.stats[missing] ?? 0) <= 0 && (build.stats[overCap] ?? 0) < rules.resistOverCap.warnBelow;
+    });
+    if (thin.length > 0) {
+      const names = thin.map((element) => element.name.toLowerCase());
+      findings.push({
+        id: "resist-overcap",
+        severity: "low",
+        title: "Little resistance to spare",
+        impact: `Your ${names.join(", ")} resistance has under ${rules.resistOverCap.warnBelow}% over the cap: a curse or a map mod takes you below it.`,
+        remedy: "Aim for 20-30% over the cap on each element, or carry curse immunity.",
       });
     }
   }
@@ -75,8 +99,67 @@ function resistFindings(build: EngineBuild, stage: Stage): Finding[] {
   return findings;
 }
 
+const HIT_TYPES = ["Physical", "Fire", "Cold", "Lightning", "Chaos"] as const;
+
 function defenceFindings(build: EngineBuild, stage: Stage): Finding[] {
   const findings: Finding[] = [];
+  const level = build.character.level ?? 1;
+  const chaosImmune = build.keystones.some((k) => rules.chaosImmunityKeystones.includes(k));
+  const itemNames = build.items.map((item) => `${item.name} ${item.base ?? ""}`).join(" ");
+
+  // The hit type that would kill you first, when it lags far behind the others.
+  if (level >= rules.maxHit.fromLevel) {
+    const hits = HIT_TYPES.filter((type) => !(type === "Chaos" && chaosImmune))
+      .map((type) => ({ type, value: build.stats[`${type}MaximumHitTaken`] }))
+      .filter((hit): hit is { type: (typeof HIT_TYPES)[number]; value: number } => typeof hit.value === "number" && hit.value > 0)
+      .sort((a, b) => a.value - b.value);
+    if (hits.length >= 3) {
+      const weakest = hits[0];
+      const typical = hits[Math.floor(hits.length / 2)].value;
+      if (weakest.value < typical * rules.maxHit.weakShare) {
+        const kind = weakest.type.toLowerCase();
+        findings.push({
+          id: "max-hit",
+          severity: weakest.value < (typical * rules.maxHit.weakShare) / 2 ? "high" : "medium",
+          title: `Weak to ${kind} hits`,
+          impact: `The biggest ${kind} hit you survive is ${formatNumber(weakest.value)}, against about ${formatNumber(typical)} for other damage.`,
+          remedy:
+            weakest.type === "Physical"
+              ? "Add armour, physical damage reduction or more life."
+              : weakest.type === "Chaos"
+                ? "Add chaos resistance or more life; energy shield does not stop chaos damage."
+                : `Raise your ${kind} resistance and life before anything else.`,
+        });
+      }
+    }
+  }
+
+  // Recovery: nothing but flasks keeps you alive through a long fight.
+  const regen = build.stats.NetLifeRegen ?? build.stats.LifeRegenRecovery;
+  const leech = build.stats.LifeLeechGainRate;
+  if (level >= rules.lifeRecovery.fromLevel && !chaosImmune && regen !== undefined && regen <= 0 && !(leech && leech > 0)) {
+    findings.push({
+      id: "life-recovery",
+      severity: "medium",
+      title: "No life recovery",
+      impact: "Without regeneration or leech, every hit stays with you until you drink a flask.",
+      remedy: "Get life regeneration on the tree or gear, life leech, or a Vitality aura.",
+    });
+  }
+
+  // Freeze stops you dead in maps; a flask "of Heat" is the usual answer.
+  const freeze = build.stats.FreezeAvoidChance;
+  const inMaps = stage.id === "early-maps" || stage.id === "red-maps";
+  if (inMaps && freeze !== undefined && freeze < 100 && !/heat|freeze/i.test(itemNames)) {
+    findings.push({
+      id: "freeze",
+      severity: "low",
+      title: "You can be frozen",
+      impact: "Frozen, you cannot move or attack while you keep taking hits.",
+      remedy: 'Use a flask with the "of Heat" suffix, or get freeze immunity from the tree or gear.',
+    });
+  }
+
   const ehp = build.stats.TotalEHP;
   if (ehp !== undefined && ehp < stage.ehp.warnBelow) {
     findings.push({
@@ -103,6 +186,18 @@ function defenceFindings(build: EngineBuild, stage: Stage): Finding[] {
 
 function offenceFindings(build: EngineBuild): Finding[] {
   const findings: Finding[] = [];
+  const cost = build.stats.ManaCost;
+  const mana = build.stats.ManaUnreserved;
+  if (cost !== undefined && mana !== undefined && cost > 0 && cost > mana) {
+    findings.push({
+      id: "mana-cost",
+      severity: "high",
+      title: `Not enough mana for ${build.character.mainSkill ?? "your main skill"}`,
+      impact: `It costs ${formatNumber(cost)} mana and you have ${formatNumber(mana)} free after reservations.`,
+      remedy: "Reserve less, add mana, or link Inspiration or a cost-reducing support.",
+    });
+  }
+
   const hit = build.stats.HitChance;
   if (hit !== undefined && hit < rules.hitChance.warnBelow) {
     findings.push({
@@ -120,7 +215,7 @@ function offenceFindings(build: EngineBuild): Finding[] {
     findings.push({
       id: "movement",
       severity: "low",
-      title: `Movement speed +${Math.round((speed - 1) * 100)}%`,
+      title: `Movement speed ${signedPercent((speed - 1) * 100)}`,
       impact: "Slow movement makes mapping feel sluggish and dodging harder.",
       remedy: "Get 25-30% movement speed on boots and use a Quicksilver Flask.",
     });

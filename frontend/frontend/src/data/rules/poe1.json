@@ -42,6 +42,9 @@
     }
   ],
   "hitChance": { "warnBelow": 90, "criticalBelow": 80 },
+  "resistOverCap": { "warnBelow": 10 },
+  "maxHit": { "fromLevel": 60, "weakShare": 0.6 },
+  "lifeRecovery": { "fromLevel": 68 },
   "spellSuppression": { "investedFrom": 40 },
   "movementSpeed": { "lowBelow": 1.2, "fromLevel": 68 },
   "chaosImmunityKeystones": ["Chaos Inoculation"]
