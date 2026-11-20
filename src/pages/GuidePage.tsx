@@ -1,3 +1,4 @@
+import { useT } from "../i18n";
 import { useState } from "react";
 import AtlasFrame from "../components/AtlasFrame";
 import AtlasSectionHeader from "../components/AtlasSectionHeader";
@@ -23,11 +24,12 @@ function Signed({ value }: { value: number }) {
 
 /** Guides opened before, as a shelf of iron plates: open one to switch, or forget it. */
 function GuideLibrary({ archive }: { archive: Archive }) {
+  const t = useT();
   if (archive.savedGuides.length === 0) return null;
   const busy = archive.guideState === "loading";
   return (
     <div className="mt-6">
-      <h3 className="font-display text-[13px] tracking-[0.2em] text-parchment-dim">YOUR GUIDE LIBRARY</h3>
+      <h3 className="font-display text-[13px] tracking-[0.2em] text-parchment-dim">{t("YOUR GUIDE LIBRARY")}</h3>
       <ul className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {archive.savedGuides.map((saved) => {
           const open = saved.input === archive.guideInput;
@@ -39,18 +41,18 @@ function GuideLibrary({ archive }: { archive: Archive }) {
                 disabled={busy || open}
                 onClick={() => void archive.loadGuide(saved.input)}
                 className="min-w-0 flex-1 text-left disabled:cursor-default"
-                title={open ? "Open now" : "Open this guide"}
+                title={open ? t("Open now") : t("Open this guide")}
               >
                 <span className={`block truncate text-[16px] ${open ? "text-gold" : "text-parchment"}`}>{saved.title}</span>
                 <span className="block text-[13px] text-parchment-faint">
-                  {open ? "Open now" : `Opened ${new Date(saved.openedAt).toLocaleDateString()}`}
+                  {open ? t("Open now") : t("Opened {date}", { date: new Date(saved.openedAt).toLocaleDateString() })}
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => archive.removeSavedGuide(saved.input)}
                 aria-label={`Forget ${saved.title}`}
-                title="Forget this guide"
+                title={t("Forget this guide")}
                 className="shrink-0 px-1 text-[18px] leading-none text-parchment-faint hover:text-ember"
               >
                 ×
@@ -64,6 +66,7 @@ function GuideLibrary({ archive }: { archive: Archive }) {
 }
 
 function ImportPanel({ archive }: { archive: Archive }) {
+  const t = useT();
   const [input, setInput] = useState("");
   const guide = archive.result?.guide;
 
@@ -79,19 +82,19 @@ function ImportPanel({ archive }: { archive: Archive }) {
       >
         <label className="flex flex-col gap-1">
           <span className="font-display text-[13px] tracking-[0.18em] text-parchment-dim">
-            PATH OF BUILDING CODE OR LINK
+            {t("PATH OF BUILDING CODE OR LINK")}
           </span>
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
             rows={3}
             spellCheck={false}
-            placeholder="Paste a PoB code, or a link from pobb.in, Maxroll, poe.ninja, pastebin…"
+            placeholder={t("Paste a PoB code, or a link from pobb.in, Maxroll, poe.ninja, pastebin…")}
             className="resize-y border border-gold-dim/60 bg-black/50 px-3 py-2 font-mono text-[14px] text-parchment placeholder:font-body placeholder:text-[17px] placeholder:text-parchment-faint focus:border-gold focus:outline-none"
           />
         </label>
         <p className="text-[15px] text-parchment-faint">
-          On Maxroll, open the guide's Path of Building section and press Copy, then paste the code here.
+          {t("On Maxroll, open the guide's Path of Building section and press Copy, then paste the code here.")}
         </p>
         <div className="flex flex-wrap gap-3">
           <button
@@ -99,7 +102,7 @@ function ImportPanel({ archive }: { archive: Archive }) {
             disabled={!archive.isDesktopApp || archive.guideState === "loading" || !input.trim()}
             className="ui-button h-12 min-w-56 font-display text-[14px] tracking-[0.2em] text-parchment transition hover:brightness-125 disabled:opacity-50"
           >
-            {archive.guideState === "loading" ? "STUDYING THE GUIDE…" : "LOAD GUIDE"}
+            {archive.guideState === "loading" ? t("STUDYING THE GUIDE…") : t("LOAD GUIDE")}
           </button>
           {guide && (
             <button
@@ -107,12 +110,12 @@ function ImportPanel({ archive }: { archive: Archive }) {
               onClick={() => void archive.clearGuide()}
               className="border border-gold-dim/60 px-4 font-display text-[13px] tracking-[0.18em] text-parchment-dim hover:text-gold"
             >
-              REMOVE GUIDE
+              {t("REMOVE GUIDE")}
             </button>
           )}
         </div>
         {!archive.isDesktopApp && (
-          <p className="text-[16px] text-ember">Guides are calculated by the desktop app.</p>
+          <p className="text-[16px] text-ember">{t("Guides are calculated by the desktop app.")}</p>
         )}
         {archive.guideError && <ErrorNote>{archive.guideError}</ErrorNote>}
       </form>
@@ -122,16 +125,17 @@ function ImportPanel({ archive }: { archive: Archive }) {
 }
 
 function StageSelector({ archive, guide }: { archive: Archive; guide: EngineBuild }) {
+  const t = useT();
   const stages = guide.stages ?? [];
   if (stages.length < 2) return null;
   return (
     <AtlasFrame>
       <AtlasSectionHeader title="Guide Stages" icon={<SigilIcon className="h-7 w-7" />} />
       <p className="mb-4 text-[17px] text-parchment-dim">
-        The stage is picked from your level. Choose another one to plan ahead.
+        {t("The stage is picked from your level. Choose another one to plan ahead.")}
       </p>
       <ChipGroup
-        label="Guide stage"
+        label={t("Guide stage")}
         options={stages.map((stage) => ({ value: stage.index, label: stage.title }))}
         selected={stages.find((stage) => stage.active)?.index ?? stages[0].index}
         onSelect={(index) => void archive.selectStage(index)}
@@ -155,22 +159,23 @@ const COMPARE_ROWS: { key: keyof EngineStats; label: string; format?: (v: number
 ];
 
 function CompareTable({ you, guide }: { you: EngineBuild; guide: EngineBuild }) {
+  const t = useT();
   return (
     <AtlasFrame>
       <AtlasSectionHeader title="You and the Guide" icon={<SwordIcon className="h-6 w-6" />} />
       <div className="overflow-x-auto">
         <table className="w-full min-w-[520px] text-left text-[18px]">
-          <caption className="sr-only">Your character compared with the guide at the selected stage</caption>
+          <caption className="sr-only">{t("Your character compared with the guide at the selected stage")}</caption>
           <thead>
             <tr className="font-display text-[13px] tracking-[0.18em] text-parchment-dim">
-              <th scope="col" className="py-2 font-normal">STAT</th>
-              <th scope="col" className="py-2 font-normal">YOU (LV {you.character.level})</th>
-              <th scope="col" className="py-2 font-normal">GUIDE (LV {guide.character.level})</th>
+              <th scope="col" className="py-2 font-normal">{t("STAT")}</th>
+              <th scope="col" className="py-2 font-normal">{t("YOU (LV {level})", { level: you.character.level })}</th>
+              <th scope="col" className="py-2 font-normal">{t("GUIDE (LV {level})", { level: guide.character.level })}</th>
             </tr>
           </thead>
           <tbody>
             <tr className="border-t border-gold-dim/20">
-              <th scope="row" className="py-2 font-normal text-parchment-dim">Main skill</th>
+              <th scope="row" className="py-2 font-normal text-parchment-dim">{t("Main skill")}</th>
               <td className="py-2 text-parchment">{you.character.mainSkill ?? "—"}</td>
               <td className={`py-2 ${you.character.mainSkill === guide.character.mainSkill ? "text-parchment" : "text-ember"}`}>
                 {guide.character.mainSkill ?? "—"}
@@ -183,7 +188,7 @@ function CompareTable({ you, guide }: { you: EngineBuild; guide: EngineBuild }) 
               const behind = mine !== undefined && theirs !== undefined && mine < theirs;
               return (
                 <tr key={key} className="border-t border-gold-dim/20">
-                  <th scope="row" className="py-2 font-normal text-parchment-dim">{label}</th>
+                  <th scope="row" className="py-2 font-normal text-parchment-dim">{t(label)}</th>
                   <td className={`py-2 ${behind ? "text-ember" : "text-parchment"}`}>
                     {mine !== undefined ? format?.(mine) ?? mine : "—"}
                   </td>
@@ -201,6 +206,7 @@ function CompareTable({ you, guide }: { you: EngineBuild; guide: EngineBuild }) 
 const NEXT_LIMIT = 8;
 
 function PassivesPanel({ archive }: { archive: Archive }) {
+  const t = useT();
   const passives = archive.result?.passives;
   const yourClass = archive.result?.character?.character.class;
   const guideClass = archive.result?.guide?.character.class;
@@ -230,7 +236,7 @@ function PassivesPanel({ archive }: { archive: Archive }) {
                 {onMap ? (
                   <button
                     type="button"
-                    title="Show on the tree"
+                    title={t("Show on the tree")}
                     onClick={() => node.id !== undefined && setFocus({ id: node.id })}
                     className={`${chip} hover:border-gold hover:text-gold`}
                   >
@@ -252,12 +258,11 @@ function PassivesPanel({ archive }: { archive: Archive }) {
       {hasCharacter ? (
         <>
           <p className="text-[19px] text-parchment">
-            You have taken <span className="text-gold">{passives.shared}</span> of the guide's{" "}
-            <span className="text-gold">{passives.guidePoints}</span> points for this stage
-            {passives.extra > 0 ? `, plus ${passives.extra} the guide does not use` : ""}.
+            {t("You have taken {taken} of the guide's {total} points for this stage", { taken: passives.shared, total: passives.guidePoints })}
+            {passives.extra > 0 ? t(", plus {extra} the guide does not use", { extra: passives.extra }) : ""}.
           </p>
           <MetalMeter
-            label="Guide passive points taken"
+            label={t("Guide passive points taken")}
             value={passives.shared}
             max={passives.guidePoints}
             className="mt-3 max-w-xl"
@@ -265,14 +270,12 @@ function PassivesPanel({ archive }: { archive: Archive }) {
         </>
       ) : (
         <p className="text-[19px] text-parchment">
-          The guide takes <span className="text-gold">{passives.guidePoints}</span> points at this stage. Connect your
-          character on the Character page to see which ones you already have.
+          {t("The guide takes {points} points at this stage. Connect your character on the Character page to see which ones you already have.", { points: passives.guidePoints })}
         </p>
       )}
       {yourClass && guideClass && yourClass !== guideClass && (
         <ErrorNote className="mt-4">
-          This guide is for a {guideClass} and your character is a {yourClass}. Each class starts in a different part
-          of the tree, so the guide's passives are far from yours. Load a {yourClass} guide to follow it.
+          {t("This guide is for a {guideClass} and your character is a {yourClass}. Each class starts in a different part of the tree, so the guide's passives are far from yours. Load a {yourClass} guide to follow it.", { guideClass, yourClass })}
         </ErrorNote>
       )}
 
@@ -287,11 +290,11 @@ function PassivesPanel({ archive }: { archive: Archive }) {
             picks={tree.picks}
             focus={focus}
             icons={passiveIcons.icons}
-            label="Your passive tree compared with the guide's"
+            label={t("Your passive tree compared with the guide's")}
           />
           <MapLegend icons={Object.keys(passiveIcons.icons).length > 0} />
           <p className="mt-2 text-[14px] text-parchment-faint">
-            Passive tree {tree.graph.tree.version}. Ascendancy passives are listed below.
+            {t("Passive tree {version}. Ascendancy passives are listed below.", { version: tree.graph.tree.version })}
             {passiveIcons.note && ` ${passiveIcons.note}`}
           </p>
         </div>
@@ -304,12 +307,12 @@ function PassivesPanel({ archive }: { archive: Archive }) {
           </div>
         )}
         <div className="flex flex-col gap-4">
-          {group("ASCENDANCY", ascendancy, "text-[#f2d27a]")}
-          {group("KEYSTONES", keystones, "text-[#f2d27a]")}
-          {group("NOTABLES", notables, "text-parchment")}
-          {group("MASTERIES", masteries, "text-arcane")}
+          {group(t("ASCENDANCY"), ascendancy, "text-[#f2d27a]")}
+          {group(t("KEYSTONES"), keystones, "text-[#f2d27a]")}
+          {group(t("NOTABLES"), notables, "text-parchment")}
+          {group(t("MASTERIES"), masteries, "text-arcane")}
           {passives.missing.length === 0 && (
-            <p className="text-[18px] text-verdigris">You have every key passive of this stage.</p>
+            <p className="text-[18px] text-verdigris">{t("You have every key passive of this stage.")}</p>
           )}
         </div>
       </div>
@@ -340,6 +343,7 @@ function ownsItem(you: EngineBuild, item: EngineItem): boolean {
 }
 
 function GuidePage({ archive }: { archive: Archive }) {
+  const t = useT();
   const guide = archive.result?.guide;
   const you = archive.result?.character;
   const upgrades = archive.result?.upgrades ?? [];
@@ -352,8 +356,8 @@ function GuidePage({ archive }: { archive: Archive }) {
       {guide && (
         <>
           <p className="text-center text-[17px] text-parchment-dim">
-            Guide: {guide.character.ascendancy ?? guide.character.class} · {guide.character.mainSkill ?? "unknown skill"}
-            {!comparing && " — connect a character on the Character page to compare."}
+            {t("Guide: {who} · {skill}", { who: guide.character.ascendancy ?? guide.character.class, skill: guide.character.mainSkill ?? t("unknown skill") })}
+            {!comparing && t(" — connect a character on the Character page to compare.")}
           </p>
 
           <StageSelector archive={archive} guide={guide} />
@@ -363,14 +367,14 @@ function GuidePage({ archive }: { archive: Archive }) {
             title="Artifacts of this Stage"
             intro={[
               guide.itemsFromStage
-                ? `This stage has no gear of its own: this is the gear of "${guide.itemsFromStage}", the nearest stage that has it.`
-                : "The guide's gear for this stage.",
-              you ? "A gold mark is gear you already wear; an ember mark, gear still to find." : "",
+                ? t('This stage has no gear of its own: this is the gear of "{stage}", the nearest stage that has it.', { stage: guide.itemsFromStage })
+                : t("The guide's gear for this stage."),
+              you ? t("A gold mark is gear you already wear; an ember mark, gear still to find.") : "",
             ].join(" ")}
             owned={you ? (item) => ownsItem(you, item) : undefined}
             emptyNote={
               guide.noStageItems
-                ? "The guide lists no gear for this stage: wear what you find, with life and resistances first."
+                ? t("The guide lists no gear for this stage: wear what you find, with life and resistances first.")
                 : undefined
             }
           />
@@ -402,7 +406,7 @@ function GuidePage({ archive }: { archive: Archive }) {
                             </span>
                             <span className="block text-[18px] text-parchment">{upgrade.item.name}</span>
                             {upgrade.current && (
-                              <span className="block text-[15px] text-parchment-faint">instead of {upgrade.current}</span>
+                              <span className="block text-[15px] text-parchment-faint">{t("instead of {item}", { item: upgrade.current })}</span>
                             )}
                             </span>
                           </span>

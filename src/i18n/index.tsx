@@ -20,12 +20,12 @@ export function readLanguage(): Language | null {
 }
 
 /** "{name}" in a text is replaced by `vars.name`. */
-export type Vars = Record<string, string | number>;
+export type Vars = Record<string, string | number | undefined>;
 export type Translate = (text: string, vars?: Vars) => string;
 
 function fill(text: string, vars?: Vars): string {
   if (!vars) return text;
-  return text.replace(/\{(\w+)\}/g, (match, name: string) => (name in vars ? String(vars[name]) : match));
+  return text.replace(/\{(\w+)\}/g, (match, name: string) => (name in vars ? String(vars[name] ?? "") : match));
 }
 
 /** Translates without React: for code outside components (analysis, formatting). */
