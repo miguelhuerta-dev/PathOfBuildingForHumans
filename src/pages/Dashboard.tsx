@@ -84,7 +84,7 @@ function StatusBar({ archive }: { archive: Archive }) {
     );
   }
   return (
-    <div role="status" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[16px] text-parchment-dim">
+    <div role="status" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[16px] text-parchment-dim md:pl-56">
       <span>
         {archive.characterState === "loading"
           ? archive.result && archive.updatedAt

@@ -4,6 +4,7 @@ import type { BestPassives } from "../types/Engine";
 import AtlasFrame from "./AtlasFrame";
 import AtlasSectionHeader from "./AtlasSectionHeader";
 import { AtlasStarIcon } from "./icons";
+import { useT } from "../i18n";
 
 /**
  * The tree optimizer: the passives that would help this character most for the
@@ -11,6 +12,7 @@ import { AtlasStarIcon } from "./icons";
  * character, with the path to it, by Path of Building.
  */
 function BestPassivesPanel({ character }: { character: string }) {
+  const t = useT();
   const [state, setState] = useState<{ character: string; result?: BestPassives; error?: string; loading?: boolean } | null>(null);
   const current = state?.character === character ? state : null;
 
@@ -26,8 +28,7 @@ function BestPassivesPanel({ character }: { character: string }) {
     <AtlasFrame>
       <AtlasSectionHeader title="Best Next Passives" icon={<AtlasStarIcon className="h-7 w-7" />} />
       <p className="mb-4 text-[16px] leading-snug text-parchment-dim">
-        Every notable and keystone within reach is tried on your character, with the path to it, and ranked by what it adds for
-        each point you spend.
+        {t("Every notable and keystone within reach is tried on your character, with the path to it, and ranked by what it adds for each point you spend.")}
       </p>
 
       {!current?.result && (
@@ -37,7 +38,7 @@ function BestPassivesPanel({ character }: { character: string }) {
           disabled={current?.loading}
           className="ui-button h-12 w-full max-w-sm font-display text-[14px] tracking-[0.2em] text-parchment transition hover:brightness-125 disabled:opacity-60"
         >
-          {current?.loading ? "TRYING EVERY PATH…" : "FIND MY BEST NEXT POINTS"}
+          {current?.loading ? t("TRYING EVERY PATH…") : t("FIND MY BEST NEXT POINTS")}
         </button>
       )}
       {current?.error && <p className="mt-3 text-[15px] text-ember">{current.error}</p>}
@@ -46,7 +47,7 @@ function BestPassivesPanel({ character }: { character: string }) {
         <>
           {current.result.passives.length === 0 ? (
             <p className="text-[16px] text-parchment-dim">
-              Nothing within {current.result.reach} points would change your damage or defences much.
+              {t("Nothing within {reach} points would change your damage or defences much.", { reach: current.result.reach })}
             </p>
           ) : (
             <ol className="flex flex-col gap-2">
@@ -55,13 +56,13 @@ function BestPassivesPanel({ character }: { character: string }) {
                   <span className="w-5 font-display text-[14px] text-gold-dim">{index + 1}</span>
                   <span className="min-w-0 flex-1">
                     <span className={`text-[17px] ${passive.type === "Keystone" ? "text-gold" : "text-parchment"}`}>{passive.name}</span>
-                    <span className="ml-2 font-display text-[10px] tracking-[0.16em] text-parchment-faint">{passive.type.toUpperCase()}</span>
+                    <span className="ml-2 font-display text-[10px] tracking-[0.16em] text-parchment-faint">{t(passive.type).toUpperCase()}</span>
                     {passive.type === "Keystone" && (
-                      <span className="ml-2 text-[13px] italic text-parchment-faint">— a keystone changes how your build works: read its drawback first</span>
+                      <span className="ml-2 text-[13px] italic text-parchment-faint">{t("— a keystone changes how your build works: read its drawback first")}</span>
                     )}
                   </span>
                   <span className="font-display text-[12px] tracking-[0.1em] text-parchment-dim">
-                    {passive.points} {passive.points === 1 ? "POINT" : "POINTS"}
+                    {passive.points} {passive.points === 1 ? t("POINT") : t("POINTS")}
                   </span>
                   <span className="flex gap-3 font-display text-[13px]">
                     {Math.abs(passive.dps) >= 0.1 && (
@@ -82,9 +83,9 @@ function BestPassivesPanel({ character }: { character: string }) {
             </ol>
           )}
           <p className="mt-3 text-[13px] text-parchment-faint">
-            {current.result.tried} passives within {current.result.reach} points tried.{" "}
+            {t("{tried} passives within {reach} points tried.", { tried: current.result.tried, reach: current.result.reach })}{" "}
             <button type="button" onClick={run} className="underline decoration-dotted underline-offset-4 hover:text-gold">
-              Try again
+              {t("Try again")}
             </button>
           </p>
         </>

@@ -1,6 +1,7 @@
 import { leagueOfMod } from "../data/leagues";
 import type { EngineItem, ItemMod, ItemModSource } from "../types/Engine";
 import LeagueBadge from "./LeagueBadge";
+import { useT } from "../i18n";
 
 /**
  * An item's modifiers as the game separates them: enchantments, implicits,
@@ -54,6 +55,7 @@ const SOURCE_LABEL: Record<ItemModSource, string> = {
 };
 
 function ModLine({ mod }: { mod: ItemMod }) {
+  const t = useT();
   const kind = kindOf(mod);
   const special = mod.source && mod.source !== "bench" ? (mod.detail ?? SOURCE_LABEL[mod.source]) : null;
   const league = leagueOfMod(mod);
@@ -61,7 +63,7 @@ function ModLine({ mod }: { mod: ItemMod }) {
     <li className="flex items-start gap-2 text-left">
       {kind.mark ? (
         <abbr
-          title={kind.label}
+          title={t(kind.label)}
           className={`mt-[3px] grid h-4 w-4 shrink-0 place-items-center border font-display text-[9px] leading-none no-underline ${kind.markTone}`}
         >
           {kind.mark}
@@ -72,7 +74,7 @@ function ModLine({ mod }: { mod: ItemMod }) {
       <span className={`min-w-0 flex-1 ${kind.tone}`}>{mod.text}</span>
       {mod.tier && mod.tiers && (
         <span
-          title={`Tier ${mod.tier} of ${mod.tiers} on this base (1 is the best)`}
+          title={t("Tier {tier} of {tiers} on this base (1 is the best)", { tier: mod.tier, tiers: mod.tiers })}
           className={`mt-[2px] shrink-0 font-display text-[10px] tracking-[0.1em] ${mod.tier === 1 ? "text-gold" : "text-parchment-faint"}`}
         >
           T{mod.tier}/{mod.tiers}
@@ -81,10 +83,10 @@ function ModLine({ mod }: { mod: ItemMod }) {
       {league && <LeagueBadge league={league} variant="icon" />}
       {special && (
         <span
-          title={`Comes from: ${special}`}
+          title={t("Comes from: {source}", { source: t(special) })}
           className="mt-[2px] shrink-0 border border-gold-dim/45 px-1.5 font-display text-[9px] leading-4 tracking-[0.12em] text-gold-dim"
         >
-          {special.toUpperCase()}
+          {t(special).toUpperCase()}
         </span>
       )}
     </li>
@@ -105,8 +107,9 @@ function modsOf(item: EngineItem): ItemMod[] {
 
 /** The modifier list, grouped as in the game's tooltip. */
 export function ItemMods({ item }: { item: EngineItem }) {
+  const t = useT();
   const mods = modsOf(item);
-  if (mods.length === 0) return <p className="text-center text-parchment-faint">No modifiers.</p>;
+  if (mods.length === 0) return <p className="text-center text-parchment-faint">{t("No modifiers.")}</p>;
 
   const groups = [
     mods.filter((mod) => mod.kind === "enchant"),
@@ -126,13 +129,14 @@ export function ItemMods({ item }: { item: EngineItem }) {
           </ul>
         </div>
       ))}
-      {item.corrupted && <p className="text-center font-display text-[13px] tracking-[0.2em] text-[#e05a4a]">CORRUPTED</p>}
+      {item.corrupted && <p className="text-center font-display text-[13px] tracking-[0.2em] text-[#e05a4a]">{t("CORRUPTED")}</p>}
     </div>
   );
 }
 
 /** A key to the colours, down the side: only the kinds this item has. */
 export function ModLegend({ mods }: { mods: ItemMod[] }) {
+  const t = useT();
   const present = new Map<string, Kind>();
   for (const mod of mods) {
     const kind = kindOf(mod);
@@ -141,8 +145,8 @@ export function ModLegend({ mods }: { mods: ItemMod[] }) {
   const order = Object.keys(KINDS);
   const kinds = [...present.values()].sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
   return (
-    <aside aria-label="Colour key" className="flex w-24 shrink-0 flex-col gap-1.5 border-l border-[#3a2a26] pl-3">
-      <p className="font-display text-[9px] tracking-[0.2em] text-parchment-faint">KEY</p>
+    <aside aria-label={t("Colour key")} className="flex w-24 shrink-0 flex-col gap-1.5 border-l border-[#3a2a26] pl-3">
+      <p className="font-display text-[9px] tracking-[0.2em] text-parchment-faint">{t("KEY")}</p>
       {kinds.map((kind) => (
         <p key={kind.key} className={`flex items-center gap-1.5 font-display text-[10px] tracking-[0.12em] ${kind.tone}`}>
           {kind.mark ? (
@@ -150,7 +154,7 @@ export function ModLegend({ mods }: { mods: ItemMod[] }) {
           ) : (
             <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
           )}
-          {kind.label.toUpperCase()}
+          {t(kind.label).toUpperCase()}
         </p>
       ))}
     </aside>

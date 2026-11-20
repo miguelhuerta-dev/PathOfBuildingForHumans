@@ -4,6 +4,7 @@ import { formatNumber } from "../utils/formatNumber";
 import AtlasFrame from "./AtlasFrame";
 import AtlasSectionHeader from "./AtlasSectionHeader";
 import { QuillIcon } from "./icons";
+import { useT } from "../i18n";
 
 /**
  * The character's progress over the league: damage and survival, each on its
@@ -24,6 +25,7 @@ const shortDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
 function LineChart({ title, color, values, history }: { title: string; color: string; values: number[]; history: Snapshot[] }) {
+  const t = useT();
   const [hover, setHover] = useState<number | null>(null);
   const max = Math.max(1, ...values);
   const min = Math.min(...values, max);
@@ -49,23 +51,23 @@ function LineChart({ title, color, values, history }: { title: string; color: st
   return (
     <figure className="iron-card px-4 py-3">
       <figcaption className="flex items-baseline justify-between gap-3">
-        <span className="font-display text-[13px] tracking-[0.2em] text-parchment-dim">{title}</span>
+        <span className="font-display text-[13px] tracking-[0.2em] text-parchment-dim">{t(title)}</span>
         <span className="text-[14px] text-parchment-dim">
           <span className="font-display text-[20px] text-parchment">{formatNumber(values[shown])}</span>
           {hover === null && values.length > 1 && Math.abs(change) >= 0.5 && (
             <span className="ml-2 text-parchment-faint">
               {change > 0 ? "+" : "−"}
-              {Math.abs(Math.round(change))}% since the first entry
+              {t("{change}% since the first entry", { change: Math.abs(Math.round(change)) })}
             </span>
           )}
           {hover !== null && (
             <span className="ml-2 text-parchment-faint">
-              level {history[shown].level} · {shortDate(history[shown].at)}
+              {t("level {level}", { level: history[shown].level })} · {shortDate(history[shown].at)}
             </span>
           )}
         </span>
       </figcaption>
-      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="mt-2 w-full" role="img" aria-label={`${title} over time`}>
+      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="mt-2 w-full" role="img" aria-label={t("{title} over time", { title: t(title) })}>
         {ticks.map((tick, i) => (
           <g key={i}>
             <line x1={PAD.left} x2={WIDTH - PAD.right} y1={y(tick)} y2={y(tick)} stroke="rgb(170 160 150 / 0.12)" strokeWidth={1} />
@@ -103,29 +105,30 @@ function LineChart({ title, color, values, history }: { title: string; color: st
 }
 
 function ProgressPanel({ history }: { history: Snapshot[] }) {
+  const t = useT();
   if (history.length === 0) return null;
   return (
     <AtlasFrame>
       <AtlasSectionHeader title="Your Progress" icon={<QuillIcon className="h-7 w-7" />} />
       <p className="mb-4 text-[16px] text-parchment-dim">
         {history.length === 1
-          ? "The archive keeps a page each time your character changes. Come back after a few upgrades to see the line."
-          : `${history.length} entries since ${shortDate(history[0].at)}: one each time your damage, defences or level changed.`}
+          ? t("The archive keeps a page each time your character changes. Come back after a few upgrades to see the line.")
+          : t("{count} entries since {date}: one each time your damage, defences or level changed.", { count: history.length, date: shortDate(history[0].at) })}
       </p>
       <div className="grid gap-4 lg:grid-cols-2">
         <LineChart title="DPS" color={DPS_COLOR} values={history.map((s) => s.dps)} history={history} />
         <LineChart title="EFFECTIVE HP" color={EHP_COLOR} values={history.map((s) => s.ehp)} history={history} />
       </div>
       <details className="mt-3 text-[14px] text-parchment-dim">
-        <summary className="cursor-pointer font-display text-[12px] tracking-[0.18em] text-parchment-faint hover:text-gold">SHOW AS A TABLE</summary>
+        <summary className="cursor-pointer font-display text-[12px] tracking-[0.18em] text-parchment-faint hover:text-gold">{t("SHOW AS A TABLE")}</summary>
         <table className="mt-2 w-full text-left">
           <thead className="font-display text-[11px] tracking-[0.14em] text-parchment-faint">
             <tr>
-              <th className="py-1">WHEN</th>
-              <th>LEVEL</th>
+              <th className="py-1">{t("WHEN")}</th>
+              <th>{t("LEVEL")}</th>
               <th>DPS</th>
               <th>EHP</th>
-              <th>LIFE</th>
+              <th>{t("LIFE")}</th>
             </tr>
           </thead>
           <tbody>
