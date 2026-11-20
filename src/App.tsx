@@ -10,6 +10,7 @@ const GlossaryPage = lazy(() => import("./pages/GlossaryPage"));
 const AboutPage = lazy(() => import("./pages/InfoPages").then((module) => ({ default: module.AboutPage })));
 import { useArchive } from "./state/useArchive";
 import { GameLocation } from "./state/useItemArt";
+import { CurrentLeague } from "./state/currentLeague";
 
 /** Atlas progress is kept per league; without a character it goes to Standard. */
 const DEFAULT_LEAGUE = "Standard";
@@ -25,6 +26,7 @@ function App() {
   return (
     // Item icons read the game's art from where the player's game is.
     <GameLocation.Provider value={archive.clientLog || null}>
+      <CurrentLeague.Provider value={league}>
       <ArchiveShell page={page} onNavigate={setPage}>
         {page === "character" && <Dashboard archive={archive} onNavigate={setPage} />}
         <Suspense fallback={<p className="text-center text-[17px] text-parchment-faint">Opening the archive…</p>}>
@@ -34,6 +36,7 @@ function App() {
           {page === "about" && <AboutPage />}
         </Suspense>
       </ArchiveShell>
+      </CurrentLeague.Provider>
     </GameLocation.Provider>
   );
 }

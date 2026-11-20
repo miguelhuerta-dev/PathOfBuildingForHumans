@@ -1,7 +1,7 @@
 //! The commands the app's pages call, and the session they share: the last
 //! character and guide loaded, so a refresh can recompute the comparison.
 
-use crate::{client_log, engine, game_files, guide, item_icons, poe_api};
+use crate::{client_log, engine, game_files, guide, item_icons, poe_api, prices};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::sync::Mutex;
@@ -130,6 +130,23 @@ pub async fn select_guide_stage(
     evaluate_guide(&app, &session).await
 }
 
+/// Opens an item in the Forge: its base, the tier of each modifier, its free
+/// affixes and what else can roll on it; for a unique, its league and source.
+#[tauri::command]
+pub async fn forge_item(raw: String) -> Result<Value, String> {
+    if raw.trim().is_empty() || raw.len() > 20_000 {
+        return Err("This item can not be opened in the Forge.".into());
+    }
+    run_engine(json!({ "kind": "forge", "raw": raw })).await
+}
+
+/// What a unique sells for in a league, from poe.ninja (cheapest listing first).
+#[tauri::command]
+pub async fn unique_price(name: String, league: String) -> Result<Vec<prices::Price>, String> {
+    let league = if league.trim().is_empty() { "Standard".to_string() } else { league };
+    prices::unique_price(name.trim(), league.trim()).await
+}
+
 #[tauri::command]
 pub fn clear_guide(session: State<'_, Session>) {
     *session.guide.lock().unwrap() = None;
@@ -183,25 +200,30 @@ pub async fn item_art(
 /// The author's GitHub profile, linked from the footer.
 const PROFILE_URL: &str = "https://github.com/miguelhuerta-dev";
 
-/// Opens the author's GitHub profile in the system browser. Only this fixed
-/// address can be opened, so the page cannot use it to launch anything else.
-#[tauri::command]
-pub fn open_profile() -> Result<(), String> {
+/// Opens an address the app built itself in the system browser.
+fn open_in_browser(url: &str) -> Result<(), String> {
     let mut command = if cfg!(windows) {
         let mut command = std::process::Command::new("rundll32");
-        command.args(["url.dll,FileProtocolHandler", PROFILE_URL]);
+        command.args(["url.dll,FileProtocolHandler", url]);
         command
     } else if cfg!(target_os = "macos") {
         let mut command = std::process::Command::new("open");
-        command.arg(PROFILE_URL);
+        command.arg(url);
         command
     } else {
         let mut command = std::process::Command::new("xdg-open");
-        command.arg(PROFILE_URL);
+        command.arg(url);
         command
     };
     command
         .spawn()
         .map(|_| ())
         .map_err(|e| format!("Could not open the browser: {e}"))
+}
+
+/// Opens the author's GitHub profile in the system browser. Only this fixed
+/// address can be opened, so the page cannot use it to launch anything else.
+#[tauri::command]
+pub fn open_profile() -> Result<(), String> {
+    open_in_browser(PROFILE_URL)
 }

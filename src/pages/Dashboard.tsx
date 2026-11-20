@@ -193,7 +193,8 @@ interface DashboardProps {
 function Dashboard({ archive, onNavigate }: DashboardProps) {
   const build = archive.result?.character;
   const upgrades = archive.result?.upgrades;
-  const analysis = useMemo(() => (build ? analyze(build, upgrades) : null), [build, upgrades]);
+  const guideLoaded = Boolean(archive.result?.guide);
+  const analysis = useMemo(() => (build ? analyze(build, upgrades, guideLoaded) : null), [build, upgrades, guideLoaded]);
 
   return (
     <>
@@ -239,14 +240,16 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
               ) : (
                 <div className="flex flex-col items-center gap-4 py-10 text-center">
                   <p className="max-w-sm text-[19px] text-parchment-dim">
-                    Load the guide you are following and the archive will tell you which item to chase next.
+                    {guideLoaded
+                      ? "Nothing in your guide beats your gear at this stage. Pick a later stage to plan your next upgrades."
+                      : "Load the guide you are following and the archive will tell you which item to chase next."}
                   </p>
                   <button
                     type="button"
                     onClick={() => onNavigate("guide")}
                     className="ui-button h-14 w-full max-w-sm font-display text-[15px] tracking-[0.2em] text-parchment transition hover:brightness-125"
                   >
-                    LOAD A GUIDE
+                    {guideLoaded ? "OPEN THE GUIDE" : "LOAD A GUIDE"}
                   </button>
                 </div>
               )}

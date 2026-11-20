@@ -9,6 +9,61 @@ export interface EngineItem {
   icon?: string;
   implicits: string[];
   explicits: string[];
+  /** Every line with its kind, in the order the game shows them. */
+  mods?: ItemMod[];
+  corrupted?: boolean;
+  /** Shaper, Elder, Crusader, Redeemer, Hunter, Warlord. */
+  influences?: string[];
+  /** The item as Path of Building writes it, to open it in the Forge. */
+  raw?: string;
+}
+
+export type ItemModKind = "enchant" | "implicit" | "eldritch" | "corrupted" | "explicit" | "crafted" | "unique" | "scourge" | "crucible";
+
+/** Where a modifier comes from, when it is not an ordinary roll. */
+export type ItemModSource = "influence" | "essence" | "fossil" | "veiled" | "synthesis" | "eldritch" | "corruption" | "bench";
+
+export interface ItemMod {
+  text: string;
+  kind: ItemModKind;
+  /** Rolls as a prefix or a suffix (rares and magic items). */
+  affix?: "prefix" | "suffix";
+  source?: ItemModSource;
+  /** e.g. the influence ("Shaper") or eldritch power ("Searing Exarch"). */
+  detail?: string;
+  fractured?: boolean;
+  /** Forge only: its tier (1 = best) among the tiers that can roll on this base. */
+  tier?: number;
+  tiers?: number;
+}
+
+/** A modifier family that can roll on a base, with its tiers (best first). */
+export interface ForgePoolGroup {
+  text: string;
+  tiers: { tier: number; level: number; text: string }[];
+  /** Chance, in %, that a new random modifier of this kind (prefix or suffix) is this one. */
+  chance: number;
+  influence?: string;
+  owned?: boolean;
+}
+
+export interface ForgeResult {
+  name: string;
+  base: string;
+  itemClass: string;
+  rarity: string;
+  itemLevel?: number;
+  influences?: string[];
+  corrupted?: boolean;
+  mods: ItemMod[];
+  unique?: boolean;
+  /** Uniques: the league it came from and where it drops. */
+  league?: string;
+  source?: string;
+  slots?: { prefix: { used: number; max: number }; suffix: { used: number; max: number } };
+  pool?: { prefix: ForgePoolGroup[]; suffix: ForgePoolGroup[] };
+  essences?: { name: string; text: string; affix?: "prefix" | "suffix" }[];
+  bench?: { text: string; affix: "prefix" | "suffix" }[];
 }
 
 export interface EngineGem {
@@ -171,4 +226,13 @@ export interface CharacterSummary {
   league: string;
   level: number;
   realm?: string;
+}
+
+/** A unique's price on poe.ninja; variants and links can price it differently. */
+export interface MarketPrice {
+  chaos: number;
+  divine?: number | null;
+  listings?: number | null;
+  variant?: string | null;
+  links?: number | null;
 }

@@ -91,9 +91,15 @@ function NavMenu({ page, onNavigate }: NavProps) {
  * Top bar. In the desktop app it is also the window title bar:
  * empty areas drag the window and double-click maximizes.
  */
-function TopNav({ page, onNavigate }: NavProps) {
+function TopNav({ page, onNavigate, floating = false }: NavProps & { floating?: boolean }) {
   return (
-    <header data-tauri-drag-region className="nav-plate relative z-20 select-none px-5 py-2.5">
+    <header
+      data-tauri-drag-region
+      className={`nav-plate relative z-20 select-none px-5 py-2.5 ${
+        // Set into the outer frame: flush with its inner edge, not floating a few pixels inside it.
+        floating ? "" : "-mx-[13px] -mt-[10px]"
+      }`}
+    >
       <div data-tauri-drag-region className="flex items-center justify-between gap-6">
         <button
           type="button"

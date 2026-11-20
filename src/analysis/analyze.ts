@@ -226,7 +226,8 @@ function offenceFindings(build: EngineBuild): Finding[] {
 const SEVERITY_ORDER: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
 const SEVERITY_COST: Record<Severity, number> = { high: 2, medium: 1, low: 0.3 };
 
-export function analyze(build: EngineBuild, upgrades: Upgrade[] = []): Analysis {
+/** `guideLoaded`: a guide is open, so "no upgrades" means nothing better at this stage, not "no guide". */
+export function analyze(build: EngineBuild, upgrades: Upgrade[] = [], guideLoaded = false): Analysis {
   const level = build.character.level ?? 1;
   const stage = stageFor(level);
 
@@ -272,7 +273,13 @@ export function analyze(build: EngineBuild, upgrades: Upgrade[] = []): Analysis 
     verdict,
     damage,
     primaryWeakness: top ? top.title : "None found",
-    estimatedGain: bestUpgrade ? describeGain(bestUpgrade) || "Small" : "Load a guide",
-    recommendedAction: bestUpgrade ? `Replace ${bestUpgrade.slot}` : top ? top.remedy.split(",")[0] : "Load a guide",
+    estimatedGain: bestUpgrade ? describeGain(bestUpgrade) || "Small" : guideLoaded ? "Gear on track" : "Load a guide",
+    recommendedAction: bestUpgrade
+      ? `Replace ${bestUpgrade.slot}`
+      : top
+        ? top.remedy.split(",")[0]
+        : guideLoaded
+          ? "Follow your guide's next stage"
+          : "Load a guide",
   };
 }

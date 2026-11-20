@@ -13,6 +13,7 @@ import frameItem from "./frame-item.webp";
 import medallion from "./ui-medallion-iron.webp";
 import pendant from "./ui-pendant-iron.webp";
 import chain from "./chain-iron.webp";
+import texIron from "./tex-iron.webp";
 
 export const atlasArt = {
   starAtlas,
@@ -33,4 +34,6 @@ export const atlasArt = {
   pendant,
   /** A horizontal iron chain, for dividers. */
   chain,
+  /** Black iron, for the window's worn frame. */
+  texIron,
 };
