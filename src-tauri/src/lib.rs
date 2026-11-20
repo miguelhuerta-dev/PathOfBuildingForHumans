@@ -8,6 +8,7 @@ mod http;
 mod item_icons;
 mod jewel_data;
 mod poe_api;
+mod prices;
 #[cfg(windows)]
 mod window;
 
@@ -24,6 +25,7 @@ pub fn run() {
             commands::load_guide,
             commands::prepare_guide,
             commands::forge_item,
+            commands::unique_price,
             commands::select_guide_stage,
             commands::clear_guide,
             commands::detect_client_log,

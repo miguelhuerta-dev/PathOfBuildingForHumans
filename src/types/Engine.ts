@@ -227,3 +227,12 @@ export interface CharacterSummary {
   level: number;
   realm?: string;
 }
+
+/** A unique's price on poe.ninja; variants and links can price it differently. */
+export interface MarketPrice {
+  chaos: number;
+  divine?: number | null;
+  listings?: number | null;
+  variant?: string | null;
+  links?: number | null;
+}

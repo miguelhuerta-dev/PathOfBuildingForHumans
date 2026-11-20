@@ -1,7 +1,7 @@
 //! The commands the app's pages call, and the session they share: the last
 //! character and guide loaded, so a refresh can recompute the comparison.
 
-use crate::{client_log, engine, game_files, guide, item_icons, poe_api};
+use crate::{client_log, engine, game_files, guide, item_icons, poe_api, prices};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::sync::Mutex;
@@ -138,6 +138,13 @@ pub async fn forge_item(raw: String) -> Result<Value, String> {
         return Err("This item can not be opened in the Forge.".into());
     }
     run_engine(json!({ "kind": "forge", "raw": raw })).await
+}
+
+/// What a unique sells for in a league, from poe.ninja (cheapest listing first).
+#[tauri::command]
+pub async fn unique_price(name: String, league: String) -> Result<Vec<prices::Price>, String> {
+    let league = if league.trim().is_empty() { "Standard".to_string() } else { league };
+    prices::unique_price(name.trim(), league.trim()).await
 }
 
 #[tauri::command]

@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { desktop } from "../lib/desktop";
-import type { EngineItem, ForgePoolGroup, ForgeResult } from "../types/Engine";
+import { CurrentLeague } from "../state/currentLeague";
+import type { EngineItem, ForgePoolGroup, ForgeResult, MarketPrice } from "../types/Engine";
 import { rarityStyle } from "../utils/rarity";
 import AtlasFrame from "./AtlasFrame";
 import AtlasSectionHeader from "./AtlasSectionHeader";
@@ -71,6 +72,61 @@ function PoolList({ title, groups, tone, free }: { title: string; groups: ForgeP
   );
 }
 
+const formatPrice = (value: number) => (value >= 10 ? Math.round(value).toLocaleString() : String(Math.round(value * 10) / 10));
+
+/** What the unique sells for in the character's league, from poe.ninja. */
+function MarketValue({ name }: { name: string }) {
+  const league = useContext(CurrentLeague);
+  const [state, setState] = useState<{ key: string; prices?: MarketPrice[]; error?: string } | null>(null);
+  const key = `${league}|${name}`;
+
+  useEffect(() => {
+    let active = true;
+    desktop.uniquePrice(name, league).then(
+      (prices) => active && setState({ key, prices }),
+      (error: unknown) => active && setState({ key, error: error instanceof Error ? error.message : String(error) }),
+    );
+    return () => {
+      active = false;
+    };
+  }, [key, league, name]);
+
+  const current = state?.key === key ? state : null;
+  const cheapest = current?.prices?.[0];
+  return (
+    <div className="mt-4 border-t border-[#3a2a26] pt-4">
+      <h5 className="mb-2 font-display text-[12px] tracking-[0.2em] text-gold">MARKET PRICE · {league.toUpperCase()}</h5>
+      {!current && <p className="text-[15px] text-parchment-faint">Asking poe.ninja…</p>}
+      {current?.error && <p className="text-[15px] text-parchment-faint">Prices are not available right now.</p>}
+      {current?.prices && !cheapest && <p className="text-[15px] text-parchment-faint">Not listed in {league} on poe.ninja.</p>}
+      {cheapest && (
+        <>
+          <p className="flex flex-wrap items-baseline gap-x-3">
+            <span className="font-display text-[26px] text-parchment">{formatPrice(cheapest.chaos)}</span>
+            <span className="text-[15px] text-parchment-dim">chaos</span>
+            {cheapest.divine && cheapest.divine >= 0.1 && (
+              <span className="text-[15px] text-gold-dim">≈ {formatPrice(cheapest.divine)} divine</span>
+            )}
+          </p>
+          {current!.prices!.length > 1 && (
+            <ul className="mt-2 flex flex-col gap-0.5 text-[13px] text-parchment-faint">
+              {current!.prices!.slice(1, 5).map((price, index) => (
+                <li key={index}>
+                  {[price.variant, price.links ? `${price.links} links` : null].filter(Boolean).join(" · ") || "Other listing"}:{" "}
+                  {formatPrice(price.chaos)} chaos
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-2 text-[12px] text-parchment-faint">
+            {cheapest.listings ? `${cheapest.listings} listed · ` : ""}poe.ninja, updated hourly
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
 function UniqueBody({ forge }: { forge: ForgeResult }) {
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_1.1fr]">
@@ -89,6 +145,7 @@ function UniqueBody({ forge }: { forge: ForgeResult }) {
             It came with the {forge.league} league{forge.source ? "" : " and now drops in the core game"}.
           </p>
         )}
+        <MarketValue name={forge.name} />
       </section>
       <section className="iron-tooltip px-5 py-4">
         <ItemMods item={forge as unknown as EngineItem} />
