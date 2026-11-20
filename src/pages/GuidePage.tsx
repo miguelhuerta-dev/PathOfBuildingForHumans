@@ -86,7 +86,7 @@ function ImportPanel({ archive }: { archive: Archive }) {
             onChange={(event) => setInput(event.target.value)}
             rows={3}
             spellCheck={false}
-            placeholder="Paste a PoB code, or a pobb.in / pastebin link"
+            placeholder="Paste a PoB code, or a link from pobb.in, Maxroll, poe.ninja, pastebin…"
             className="resize-y border border-gold-dim/60 bg-black/50 px-3 py-2 font-mono text-[14px] text-parchment placeholder:font-body placeholder:text-[17px] placeholder:text-parchment-faint focus:border-gold focus:outline-none"
           />
         </label>

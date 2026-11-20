@@ -33,25 +33,53 @@ pub fn decode_code(code: &str) -> Result<String, String> {
     Ok(xml)
 }
 
-/// For share links, the address that returns the raw code.
+/// For share links, the address that returns the raw code. The same sites
+/// Path of Building imports from (its `BuildSiteTools.lua`), with or without
+/// "https://", and ignoring anything after "?" or "#".
 pub fn raw_url(input: &str) -> Option<String> {
-    let input = input.trim().trim_end_matches('/');
-    let rest = input
+    let input = input.trim();
+    let without_scheme = input
         .strip_prefix("https://")
-        .or_else(|| input.strip_prefix("http://"))?;
-    let (host, path) = rest.split_once('/')?;
-    let id = path.split('/').next()?.trim();
-    if id.is_empty() {
-        return None;
-    }
+        .or_else(|| input.strip_prefix("http://"))
+        .unwrap_or(input);
+    let link = without_scheme.split(['?', '#']).next()?.trim_end_matches('/');
+    let (host, path) = link.split_once('/')?;
+    let parts: Vec<&str> = path.split('/').filter(|part| !part.is_empty()).collect();
+    let valid = |id: &&str| !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
+    let after = |marker: &str| {
+        parts
+            .iter()
+            .position(|part| *part == marker)
+            .and_then(|at| parts.get(at + 1))
+            .copied()
+            .filter(valid)
+    };
+    let first = parts.first().copied().filter(valid);
     match host.trim_start_matches("www.") {
-        "pobb.in" => Some(format!("https://pobb.in/{id}/raw")),
+        "pobb.in" => {
+            let id = if first == Some("pob") { parts.get(1).copied().filter(valid)? } else { first? };
+            Some(format!("https://pobb.in/{id}/raw"))
+        }
         "pastebin.com" => {
-            let id = if id == "raw" { path.split('/').nth(1)? } else { id };
+            let id = if first == Some("raw") { parts.get(1).copied().filter(valid)? } else { first? };
             Some(format!("https://pastebin.com/raw/{id}"))
         }
+        "pastebinp.com" => Some(format!("https://pastebinp.com/raw/{}", first?)),
+        "maxroll.gg" => after("pob").map(|id| format!("https://maxroll.gg/poe/api/pob/{id}")),
+        "pob.codes" => after("b").map(|id| format!("https://api.pob.codes/{id}/raw")),
+        "poe.ninja" => after("pob").map(|id| format!("https://poe.ninja/poe1/pob/raw/{id}")),
+        "rentry.co" => Some(format!("https://rentry.co/paste/{}/raw", first?)),
+        "poedb.tw" => after("pob").map(|id| format!("https://poedb.tw/pob/{id}/raw")),
         _ => None,
     }
+}
+
+/// True when the input is a link (to any site), not a code.
+fn looks_like_link(input: &str) -> bool {
+    let input = input.trim();
+    input.starts_with("http://")
+        || input.starts_with("https://")
+        || input.split('/').next().is_some_and(|host| host.contains('.') && !host.contains(char::is_whitespace) && input.contains('/'))
 }
 
 /// Where a share link's code is kept, so a guide opened before needs no download.
@@ -90,8 +118,11 @@ pub async fn resolve(input: &str, cache_dir: Option<&std::path::Path>) -> Result
                 code
             }
         }
-    } else if input.trim_start().starts_with("http") {
-        return Err("Only pobb.in and pastebin links are supported. You can also paste the code directly.".into());
+    } else if looks_like_link(input) {
+        return Err(
+            "That site is not supported. Use a Path of Building code, or a link from pobb.in, Maxroll, poe.ninja, pastebin, pob.codes, rentry or poedb."
+                .into(),
+        );
     } else {
         input.to_string()
     };
@@ -136,5 +167,34 @@ mod tests {
             Some("https://pastebin.com/raw/xyz")
         );
         assert_eq!(raw_url("eNrtWl"), None);
+    }
+
+    #[test]
+    fn maps_the_sites_path_of_building_imports_from() {
+        let cases = [
+            ("pastebin.com/xyz", "https://pastebin.com/raw/xyz"),
+            ("https://pastebin.com/xyz?ref=guide#top", "https://pastebin.com/raw/xyz"),
+            ("https://maxroll.gg/poe/pob/abc12de3", "https://maxroll.gg/poe/api/pob/abc12de3"),
+            ("maxroll.gg/poe/pob/abc12de3/", "https://maxroll.gg/poe/api/pob/abc12de3"),
+            ("https://pobb.in/pob/AbC123", "https://pobb.in/AbC123/raw"),
+            ("https://poe.ninja/pob/a1b2", "https://poe.ninja/poe1/pob/raw/a1b2"),
+            ("https://poe.ninja/poe1/pob/a1b2", "https://poe.ninja/poe1/pob/raw/a1b2"),
+            ("https://pob.codes/b/Q9w", "https://api.pob.codes/Q9w/raw"),
+            ("https://rentry.co/mybuild", "https://rentry.co/paste/mybuild/raw"),
+            ("https://poedb.tw/pob/x7", "https://poedb.tw/pob/x7/raw"),
+        ];
+        for (input, expected) in cases {
+            assert_eq!(raw_url(input).as_deref(), Some(expected), "{input}");
+        }
+        assert_eq!(raw_url("https://example.com/build"), None);
+        assert!(looks_like_link("example.com/build"));
+        assert!(!looks_like_link("eNrtWl2T2jgW"));
+    }
+
+    #[test]
+    fn decodes_a_real_guide_code() {
+        // A long Maxroll guide code: it must decode, padding and URL-safe characters included.
+        let Ok(code) = std::fs::read_to_string(std::env::var("POBH_TEST_CODE").unwrap_or_default()) else { return };
+        assert!(decode_code(&code).unwrap().contains("<PathOfBuilding"));
     }
 }
