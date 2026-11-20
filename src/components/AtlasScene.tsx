@@ -15,7 +15,8 @@ function CandleGlow({ className }: { className: string }) {
 function AtlasScene({ cutout = false }: { cutout?: boolean }) {
   return (
     <>
-      <div className="pointer-events-none absolute inset-0 z-0 hidden lg:block" aria-hidden="true">
+      {/* A cut-out window is the iron frame alone: no pillars or props around it. */}
+      {!cutout && <div className="pointer-events-none absolute inset-0 z-0 hidden lg:block" aria-hidden="true">
         {/* Each pillar fills the margin beside the outer frame, whole and scaled down to fit
             it (never up, so it stays sharp); fixed to the window while the page scrolls. With
             no margin (a narrow window) there is no pillar, and the frame fills the window. */}
@@ -35,7 +36,7 @@ function AtlasScene({ cutout = false }: { cutout?: boolean }) {
         <img src={atlasArt.sceneCandles} alt="" className="absolute -left-10 top-[52%] h-60 opacity-80" />
           </>
         )}
-      </div>
+      </div>}
 
       {/* The desk props sink into the dark: muted so the black iron stays the main material. */}
       {!cutout && <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 hidden h-[34rem] brightness-[0.55] saturate-[0.6] lg:block" aria-hidden="true">

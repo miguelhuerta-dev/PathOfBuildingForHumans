@@ -522,3 +522,13 @@ html.cutout-window body {
   inset: 22px;
   border-radius: 6px;
 }
+/* Maximised, the frame fills the screen: no width limit, no margin around it. */
+html.window-maximized [data-window-frame] {
+  max-width: none;
+}
+html.window-maximized .archive-shell {
+  padding: 0;
+}
+html.window-maximized .floating-nav {
+  max-width: none;
+}

@@ -53,8 +53,6 @@ export const desktop = {
   },
   /** Opens the author's GitHub profile in the system browser. */
   openProfile: () => call<void>("open_profile"),
-  /** Clips the window to these pieces (polygons in physical pixels); none makes it a plain rectangle again. */
-  shapeWindow: (pieces: [number, number][][]) => call<void>("shape_window", { pieces }),
   onZoneEntered: (handler: (zone: string) => void): Promise<UnlistenFn> =>
     listen<string>("zone-entered", (event) => handler(event.payload)),
 };

@@ -79,7 +79,7 @@ function useIdleWhenUnfocused() {
 function ArchiveShell({ page, onNavigate, children }: ArchiveShellProps) {
   useIdleWhenUnfocused();
   return (
-    <div className="relative isolate min-h-screen overflow-hidden p-2">
+    <div className="archive-shell relative isolate min-h-screen overflow-hidden p-2">
       {/* In the desktop app the window is a cut-out: the backdrop lives inside the frame only. */}
       {!isDesktopApp && <AtlasBackground />}
       {!isDesktopApp && <div className="film-grain pointer-events-none absolute inset-0 z-30" aria-hidden="true" />}
