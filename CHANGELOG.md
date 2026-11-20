@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.5.0
+
+### New
+
+- **The Forge.** Open any item to see what its base can roll, with tiers, odds and free prefix and suffix slots,
+  essences and bench crafts, and how much DPS and EHP each modifier would add to your character, measured by
+  Path of Building. Uniques say which league they come from, how to get them and their poe.ninja market price.
+- **Modifiers by kind.** Item modifiers are coloured as prefix, suffix, crafted, fractured, implicit and more,
+  with their tier, a colour key beside them and league marks on league-specific mods. Items open on click.
+- **Best Next Passives.** Every notable and keystone within reach is tried on your character with the path to
+  it, and ranked by what it adds per point spent.
+- **Your Progress.** Your DPS, EHP and level over the league, charted from every change.
+- **Spanish.** The whole app in English or Spanish, chosen on first launch and switchable from the bar.
+- **A visual tour** after the language pick: connecting a character, making the profile public, what the app
+  keeps, loading a guide and reading your build. It can be seen again from About.
+- **More guide sites.** Links from Maxroll, poe.ninja, pob.codes, rentry and poedb, besides pobb.in and pastebin.
+
+### Changed
+
+- The window is the iron frame itself: no square window behind it, and maximised it fills the screen.
+- The navigation bar stays at hand when you scroll, inside the frame, with the window buttons.
+- The engine stays loaded: characters open in about a second, the last one of each account shows at once while
+  fresh numbers load, and the Best Next Passives search is about six times faster.
+- The Act 2 bandit is chosen per character (public profiles do not say it), so resistances are no longer 15% off.
+- The Threat Register uses each character's own resistance cap and checks more problems.
+- Error messages show in the chosen language.
+
+### Fixed
+
+- "Load a guide" no longer shows while a guide is already loaded.
+- Pasting a Maxroll Path of Building code works.
+
 ## v0.4.0
 
 ### New
