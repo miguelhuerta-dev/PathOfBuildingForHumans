@@ -295,7 +295,7 @@ function PassivesPanel({ archive }: { archive: Archive }) {
           <MapLegend icons={Object.keys(passiveIcons.icons).length > 0} />
           <p className="mt-2 text-[14px] text-parchment-faint">
             {t("Passive tree {version}. Ascendancy passives are listed below.", { version: tree.graph.tree.version })}
-            {passiveIcons.note && ` ${passiveIcons.note}`}
+            {passiveIcons.note && ` ${t(passiveIcons.note)}`}
           </p>
         </div>
       )}
