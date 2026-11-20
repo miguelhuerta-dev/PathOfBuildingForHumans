@@ -130,6 +130,16 @@ pub async fn select_guide_stage(
     evaluate_guide(&app, &session).await
 }
 
+/// Opens an item in the Forge: its base, the tier of each modifier, its free
+/// affixes and what else can roll on it; for a unique, its league and source.
+#[tauri::command]
+pub async fn forge_item(raw: String) -> Result<Value, String> {
+    if raw.trim().is_empty() || raw.len() > 20_000 {
+        return Err("This item can not be opened in the Forge.".into());
+    }
+    run_engine(json!({ "kind": "forge", "raw": raw })).await
+}
+
 #[tauri::command]
 pub fn clear_guide(session: State<'_, Session>) {
     *session.guide.lock().unwrap() = None;

@@ -1,4 +1,6 @@
+import { leagueOfMod } from "../data/leagues";
 import type { EngineItem, ItemMod, ItemModSource } from "../types/Engine";
+import LeagueBadge from "./LeagueBadge";
 
 /**
  * An item's modifiers as the game separates them: enchantments, implicits,
@@ -54,6 +56,7 @@ const SOURCE_LABEL: Record<ItemModSource, string> = {
 function ModLine({ mod }: { mod: ItemMod }) {
   const kind = kindOf(mod);
   const special = mod.source && mod.source !== "bench" ? (mod.detail ?? SOURCE_LABEL[mod.source]) : null;
+  const league = leagueOfMod(mod);
   return (
     <li className="flex items-start gap-2 text-left">
       {kind.mark ? (
@@ -67,6 +70,15 @@ function ModLine({ mod }: { mod: ItemMod }) {
         <span className="w-4 shrink-0" aria-hidden="true" />
       )}
       <span className={`min-w-0 flex-1 ${kind.tone}`}>{mod.text}</span>
+      {mod.tier && mod.tiers && (
+        <span
+          title={`Tier ${mod.tier} of ${mod.tiers} on this base (1 is the best)`}
+          className={`mt-[2px] shrink-0 font-display text-[10px] tracking-[0.1em] ${mod.tier === 1 ? "text-gold" : "text-parchment-faint"}`}
+        >
+          T{mod.tier}/{mod.tiers}
+        </span>
+      )}
+      {league && <LeagueBadge league={league} variant="icon" />}
       {special && (
         <span
           title={`Comes from: ${special}`}

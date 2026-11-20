@@ -23,6 +23,7 @@ pub fn run() {
             commands::load_character,
             commands::load_guide,
             commands::prepare_guide,
+            commands::forge_item,
             commands::select_guide_stage,
             commands::clear_guide,
             commands::detect_client_log,

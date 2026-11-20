@@ -6,6 +6,7 @@ import AtlasFrame from "./AtlasFrame";
 import AtlasSectionHeader from "./AtlasSectionHeader";
 import ItemIcon from "./ItemIcon";
 import { ItemMods, ModLegend } from "./ItemMods";
+import ForgeView from "./ForgeView";
 import { SkullIcon } from "./icons";
 
 /**
@@ -105,6 +106,7 @@ function Slot({ slot, item, owned, selected, onSelect, style, className = "" }: 
 
 /** The selected item read out like the game's tooltip. */
 function ItemDetails({ item }: { item?: EngineItem }) {
+  const [forging, setForging] = useState(false);
   if (!item) {
     return <p className="text-[17px] text-parchment-faint">Click an item to read its properties.</p>;
   }
@@ -118,6 +120,16 @@ function ItemDetails({ item }: { item?: EngineItem }) {
         {item.influences && item.influences.length > 0 && (
           <p className="mt-1 font-display text-[11px] tracking-[0.18em] text-gold-dim">{item.influences.join(" · ").toUpperCase()}</p>
         )}
+        {item.raw && (
+          <button
+            type="button"
+            onClick={() => setForging(true)}
+            className="mt-2 border border-gold-dim/60 px-3 py-1 font-display text-[11px] tracking-[0.18em] text-parchment-dim transition hover:border-gold hover:text-gold"
+          >
+            {item.rarity === "UNIQUE" || item.rarity === "RELIC" ? "HOW TO GET IT" : "OPEN IN THE FORGE"}
+          </button>
+        )}
+        {forging && <ForgeView item={item} onClose={() => setForging(false)} />}
       </header>
       <div className="flex gap-4 px-5 py-4 text-[15px] leading-snug">
         <div className="min-w-0 flex-1">

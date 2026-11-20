@@ -525,6 +525,8 @@ local function describeItem(item)
 		mods = describeMods(item),
 		corrupted = item.corrupted or nil,
 		influences = itemInfluences(item),
+		-- The item as Path of Building writes it, so the Forge can open it later.
+		raw = item:BuildRaw(),
 	}
 end
 
@@ -811,6 +813,218 @@ local function comparePassives(guideNodes, characterNodes)
 	}
 end
 
+-- ---------------------------------------------------------------------------
+-- The Forge: an item's base and everything around it, from Path of Building's
+-- own data (so it follows every league): the tier of each modifier it has, its
+-- free prefixes and suffixes, what else can roll on it at its item level, the
+-- essences and bench crafts that apply, and for uniques, their league and source.
+
+-- "Drops from unique{The Shaper}" -> "Drops from The Shaper".
+local function plainMarkup(text)
+	return (plainText(text or ""):gsub("%a+{([^}]*)}", "%1"))
+end
+
+local uniqueInfo
+local function uniqueDetails(name)
+	if not uniqueInfo then
+		uniqueInfo = {}
+		for _, list in pairs(data.uniques or {}) do
+			for _, raw in ipairs(type(list) == "table" and list or {}) do
+				if type(raw) == "string" then
+					local first = raw:match("^%s*([^\r\n]+)")
+					if first and not uniqueInfo[first] then
+						uniqueInfo[first] = {
+							league = raw:match("\nLeague: ([^\r\n]+)"),
+							source = plainMarkup(raw:match("\nSource: ([^\r\n]+)")),
+						}
+					end
+				end
+			end
+		end
+	end
+	local found = uniqueInfo[name] or {}
+	return found.league, found.source ~= "" and found.source or nil
+end
+
+-- The first range of a modifier line, e.g. "+(30-35)% to Fire Resistance" -> 30, 35.
+local function firstRange(text)
+	local low, high = text:match("%((%-?[%d%.]+)%-(%-?[%d%.]+)%)")
+	if low then
+		low, high = tonumber(low), tonumber(high)
+		return math.min(low, high), math.max(low, high)
+	end
+	local fixed = tonumber(text:match("%-?%d+%.?%d*"))
+	return fixed, fixed
+end
+
+local function lineText(mod)
+	local lines = {}
+	for _, line in ipairs(mod) do
+		if type(line) == "string" then lines[#lines + 1] = line end
+	end
+	return table.concat(lines, " / ")
+end
+
+local function influenceOf(mod)
+	for _, key in ipairs(mod.weightKey or {}) do
+		local tag = key:match("_(%a+)$")
+		if INFLUENCE_TAGS[tag] then return INFLUENCE_TAGS[tag] end
+	end
+end
+
+local function forge(raw)
+	local item = new("Item", raw)
+	assert(item.base, "The archive does not know this item's base type.")
+	local name = item.title or item.name
+	local unique = item.rarity == "UNIQUE" or item.rarity == "RELIC"
+	local info = {
+		name = name,
+		base = item.baseName,
+		itemClass = item.type,
+		rarity = item.rarity,
+		itemLevel = item.itemLevel,
+		influences = itemInfluences(item),
+		corrupted = item.corrupted or nil,
+		mods = describeMods(item),
+		unique = unique or nil,
+	}
+	if unique then
+		info.league, info.source = uniqueDetails(name)
+		return info
+	end
+
+	-- Everything that can roll on this base at this item level, grouped by modifier family.
+	local itemLevel = tonumber(item.itemLevel) or 100
+	local groups, byKey = {}, {}
+	for modId, mod in pairs(data.itemMods.Explicit or {}) do
+		if (mod.type == "Prefix" or mod.type == "Suffix") and (mod.level or 1) <= itemLevel then
+			local weight = item:GetModSpawnWeight(mod) or 0
+			if weight > 0 then
+				local key = (mod.group or modId) .. "|" .. mod.type .. "|" .. (influenceOf(mod) or "")
+				local group = byKey[key]
+				if not group then
+					group = { affix = mod.type:lower(), influence = influenceOf(mod), tiers = {}, weight = 0 }
+					byKey[key] = group
+					groups[#groups + 1] = group
+				end
+				group.weight = group.weight + weight
+				group.tiers[#group.tiers + 1] = { level = mod.level or 1, text = lineText(mod), weight = weight, mod = mod }
+			end
+		end
+	end
+	local totals = { prefix = 0, suffix = 0 }
+	for _, group in ipairs(groups) do
+		table.sort(group.tiers, function(a, b) return a.level > b.level end)
+		group.text = group.tiers[1].text
+		totals[group.affix] = totals[group.affix] + group.weight
+	end
+
+	-- The tier of each modifier the item has, and the families it already uses.
+	local used = { prefix = 0, suffix = 0 }
+	local owned = {}
+	for _, entry in ipairs(info.mods) do
+		if entry.kind == "explicit" or entry.kind == "crafted" then
+			local template = modTemplate(entry.text)
+			local value = tonumber(entry.text:match("%-?%d+%.?%d*"))
+			for _, group in ipairs(groups) do
+				for index, tier in ipairs(group.tiers) do
+					local matches = false
+					for _, line in ipairs(tier.mod) do
+						if type(line) == "string" and modTemplate(line) == template then
+							local low, high = firstRange(line)
+							if not value or not low or (value >= low and value <= high) then matches = true end
+						end
+					end
+					if matches and entry.kind == "explicit" and (not entry.affix or entry.affix == group.affix) then
+						entry.tier, entry.tiers, entry.affix = index, #group.tiers, group.affix
+						if not owned[group] then
+							owned[group] = true
+							group.owned = true
+							used[group.affix] = used[group.affix] + 1
+						end
+						break
+					end
+				end
+				if entry.tier then break end
+			end
+			-- A bench craft takes an affix of its own.
+			if entry.kind == "crafted" and entry.affix and not entry.counted then
+				entry.counted = true
+				used[entry.affix] = used[entry.affix] + 1
+			end
+		end
+	end
+
+	local limit = item.rarity == "MAGIC" and 1 or ((item.affixLimit and item.affixLimit > 0) and item.affixLimit / 2 or 3)
+	if item.rarity == "NORMAL" then limit = 0 end
+	info.slots = {
+		prefix = { used = used.prefix, max = limit },
+		suffix = { used = used.suffix, max = limit },
+	}
+
+	local pool = { prefix = {}, suffix = {} }
+	for _, group in ipairs(groups) do
+		local tiers = {}
+		for index, tier in ipairs(group.tiers) do
+			tiers[index] = { tier = index, level = tier.level, text = tier.text }
+		end
+		pool[group.affix][#pool[group.affix] + 1] = {
+			text = group.text,
+			tiers = tiers,
+			chance = totals[group.affix] > 0 and math.floor(group.weight / totals[group.affix] * 1000 + 0.5) / 10 or 0,
+			influence = group.influence,
+			owned = group.owned or nil,
+		}
+	end
+	for _, list in pairs(pool) do
+		table.sort(list, function(a, b)
+			if (a.owned or false) ~= (b.owned or false) then return a.owned or false end
+			return a.chance > b.chance
+		end)
+	end
+	info.pool = pool
+
+	-- Essences that guarantee a modifier on this kind of item: the strongest of each.
+	local essences, bestOf = {}, {}
+	for _, essence in pairs(data.essences or {}) do
+		local modId = essence.mods and essence.mods[item.type]
+		local mod = modId and data.itemMods.Item[modId]
+		if mod then
+			local family = essence.name:match("of (.+)$") or essence.name
+			local best = bestOf[family]
+			if not best or (essence.tier or 0) > (best.tier or 0) then
+				bestOf[family] = { name = essence.name, tier = essence.tier or 0, text = lineText(mod), affix = mod.type and mod.type:lower() or nil }
+			end
+		end
+	end
+	for _, essence in pairs(bestOf) do
+		essences[#essences + 1] = { name = essence.name, text = essence.text, affix = essence.affix }
+	end
+	table.sort(essences, function(a, b) return a.name < b.name end)
+	info.essences = essences
+
+	-- Crafting bench options for this kind of item: the strongest of each family.
+	local bench, benchBest = {}, {}
+	for _, mod in pairs(data.masterMods or {}) do
+		if type(mod) == "table" and mod.types and mod.types[item.type] and (mod.type == "Prefix" or mod.type == "Suffix") then
+			local key = (mod.group or lineText(mod)) .. "|" .. mod.type
+			local best = benchBest[key]
+			if not best or (mod.level or 0) > (best.level or 0) then
+				benchBest[key] = { level = mod.level or 0, text = lineText(mod), affix = mod.type:lower() }
+			end
+		end
+	end
+	for _, craft in pairs(benchBest) do
+		bench[#bench + 1] = { text = craft.text, affix = craft.affix }
+	end
+	table.sort(bench, function(a, b)
+		if a.affix ~= b.affix then return a.affix < b.affix end
+		return a.text < b.text
+	end)
+	info.bench = bench
+	return info
+end
+
 local function handle(request)
 local result
 if request.kind == "character" then
@@ -826,6 +1040,8 @@ elseif request.kind == "build" then
 	passives.guideNodes, passives.guideMasteries = treeSnapshot(guideNodes)
 	passives.characterNodes, passives.characterMasteries = {}, setmetatable({}, { __jsontype = "object" })
 	result.passives = passives
+elseif request.kind == "forge" then
+	result = forge(assert(request.raw, "No item to open in the Forge."))
 elseif request.kind == "compare" then
 	local level = request.character and request.character.level
 	local characterTree = request.character and request.character.passives

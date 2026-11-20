@@ -437,3 +437,51 @@ body {
     transition: none;
   }
 }
+
+/* A league's mark: the game's Atlas icon in a small black-iron medallion with a blood rim. */
+.league-medal {
+  background: radial-gradient(circle at 50% 35%, rgb(40 32 28), rgb(8 6 6));
+  box-shadow:
+    inset 0 0 0 1px rgb(110 24 18 / 0.85),
+    0 0 0 1px rgb(30 26 24),
+    0 1px 3px rgb(0 0 0 / 0.8);
+}
+.league-plate {
+  color: rgb(216 180 106 / 0.85);
+  border: 1px solid rgb(138 109 59 / 0.55);
+  background: linear-gradient(180deg, rgb(26 20 18), rgb(10 8 8));
+}
+
+/* ---------- The Forge ---------- */
+.forge-overlay {
+  background: radial-gradient(ellipse at 50% 30%, rgb(30 8 6 / 0.82), rgb(0 0 0 / 0.92));
+  backdrop-filter: blur(3px);
+  animation: forge-in 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes forge-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .forge-overlay { animation: none; }
+}
+.forge-pip {
+  width: 14px;
+  height: 14px;
+  transform: rotate(45deg);
+  border: 1px solid rgb(110 90 70 / 0.7);
+  background: rgb(10 8 8);
+}
+.forge-pip--used {
+  border-color: rgb(210 70 50 / 0.9);
+  background: linear-gradient(135deg, rgb(255 110 90), rgb(120 20 14));
+  box-shadow: 0 0 6px rgb(210 50 40 / 0.5);
+}
+.forge-row {
+  background: linear-gradient(90deg, rgb(20 15 14 / 0.9), rgb(8 6 6 / 0.6));
+  border-left: 2px solid rgb(58 42 38);
+}
+.forge-row--owned {
+  border-left-color: rgb(201 147 63);
+  background: linear-gradient(90deg, rgb(48 34 18 / 0.75), rgb(8 6 6 / 0.6));
+}

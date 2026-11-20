@@ -1,6 +1,6 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { Bandit, CharacterSummary, EngineResult } from "../types/Engine";
+import type { Bandit, CharacterSummary, EngineResult, ForgeResult } from "../types/Engine";
 
 /** True when running inside the desktop app rather than a browser tab. */
 export const isDesktopApp = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -27,6 +27,8 @@ export const desktop = {
   loadGuide: (input: string) => call<EngineResult>("load_guide", { input }),
   /** Opens a guide without calculating it; the next character load compares both. */
   prepareGuide: (input: string) => call<void>("prepare_guide", { input }),
+  /** An item's base, tiers, free affixes and what can roll on it; a unique's league and source. */
+  forgeItem: (raw: string) => call<ForgeResult>("forge_item", { raw }),
   selectGuideStage: (stage: number | null) => call<EngineResult>("select_guide_stage", { stage }),
   clearGuide: () => call<void>("clear_guide"),
   detectClientLog: () => call<string | null>("detect_client_log"),
