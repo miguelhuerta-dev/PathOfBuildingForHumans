@@ -138,7 +138,10 @@ character, the guide and a screenshot.
 | Guide library with the last guide restored | v0.4.0 |
 | Glossary | v0.4.0 |
 | Item art read from the installed game (magic flasks and more) | v0.4.0 |
-| League meta and prices (poe.ninja) | Planned |
+| The Forge: what an item can roll and what each mod adds; unique sources and poe.ninja prices | v0.5.0 |
+| Modifiers coloured by kind with tiers; Best Next Passives; progress over the league | v0.5.0 |
+| English and Spanish, with a visual tour on first launch | v0.5.0 |
+| League meta | Planned |
 | Official OAuth account connection | Planned |
 
 ## Visual identity: the Atlas Archivist
@@ -158,6 +161,7 @@ The full guide lives in [`docs/visual_language.md`](docs/visual_language.md).
 - **v0.2.0** Live character, Path of Building engine, guides with stages, upgrade advisor
 - **v0.3.0** Atlas and passive tree maps with the game's own icons, single-file portable app
 - **v0.4.0** Guide tracking per stage: gear, gem links and sources, ascension, bandits, pantheon, glossary
+- **v0.5.0** The Forge, modifiers by kind, Best Next Passives, progress, Spanish and a visual tour
 - **Next** League meta and prices, official OAuth
 
 See [`CHANGELOG.md`](CHANGELOG.md), [`docs/roadmap.md`](docs/roadmap.md) and the RFCs in [`rfc/`](rfc).
