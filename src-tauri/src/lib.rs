@@ -25,6 +25,7 @@ pub fn run() {
             commands::load_guide,
             commands::prepare_guide,
             commands::forge_item,
+            commands::best_passives,
             commands::unique_price,
             commands::select_guide_stage,
             commands::clear_guide,

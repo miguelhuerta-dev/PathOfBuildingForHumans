@@ -35,6 +35,62 @@ function Slots({ label, used, max, tone }: { label: string; used: number; max: n
   );
 }
 
+/** "+3.2% DPS" in ember, "+1.1% EHP" in verdigris; nothing when it changes nothing measurable. */
+function Impact({ group, large = false }: { group: ForgePoolGroup; large?: boolean }) {
+  const parts: { text: string; tone: string }[] = [];
+  if (group.dps !== undefined && Math.abs(group.dps) >= 0.1) parts.push({ text: `${group.dps > 0 ? "+" : "−"}${Math.abs(group.dps)}% DPS`, tone: group.dps > 0 ? "text-ember" : "text-[#c9645a]" });
+  if (group.ehp !== undefined && Math.abs(group.ehp) >= 0.1) parts.push({ text: `${group.ehp > 0 ? "+" : "−"}${Math.abs(group.ehp)}% EHP`, tone: group.ehp > 0 ? "text-verdigris" : "text-[#c9645a]" });
+  if (parts.length === 0) return null;
+  return (
+    <span className={`flex shrink-0 gap-2 font-display ${large ? "text-[14px]" : "text-[11px]"} tracking-[0.06em]`}>
+      {parts.map((part) => (
+        <span key={part.text} className={part.tone}>
+          {part.text}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** How much a modifier helps the build: damage and survival, defence weighted a little higher. */
+const impactScore = (group: ForgePoolGroup) => (group.dps ?? 0) + (group.ehp ?? 0) * 1.2;
+
+/** The modifiers worth chasing on this item, best first, measured on the character. */
+function BestForBuild({ forge, freePrefix, freeSuffix }: { forge: ForgeResult; freePrefix: number; freeSuffix: number }) {
+  if (!forge.measured || !forge.pool) return null;
+  const candidates = [
+    ...forge.pool.prefix.map((group) => ({ group, affix: "prefix" as const, free: freePrefix })),
+    ...forge.pool.suffix.map((group) => ({ group, affix: "suffix" as const, free: freeSuffix })),
+  ]
+    .filter(({ group }) => !group.owned && impactScore(group) > 0.2)
+    .sort((a, b) => impactScore(b.group) - impactScore(a.group))
+    .slice(0, 5);
+  return (
+    <section className="iron-card px-5 py-4">
+      <h4 className="mb-1 font-display text-[13px] tracking-[0.2em] text-gold">BEST FOR YOUR BUILD</h4>
+      <p className="mb-3 text-[13px] leading-snug text-parchment-faint">
+        Each modifier tried on this item, on your character, by Path of Building: the best tier this item can roll, at a middle roll.
+      </p>
+      {candidates.length === 0 ? (
+        <p className="text-[15px] text-parchment-dim">No modifier this base can roll would change your damage or defences much.</p>
+      ) : (
+        <ol className="flex flex-col gap-2">
+          {candidates.map(({ group, affix, free }, index) => (
+            <li key={index} className="flex items-start gap-3">
+              <span className="mt-0.5 font-display text-[13px] text-gold-dim">{index + 1}</span>
+              <span className={`min-w-0 flex-1 text-[15px] leading-snug ${AFFIX_TONE[affix]}`}>
+                {group.tiers[0]?.text ?? group.text}
+                {free === 0 && <span className="ml-2 font-display text-[10px] tracking-[0.14em] text-parchment-faint">NO {affix.toUpperCase()} FREE</span>}
+              </span>
+              <Impact group={group} large />
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
 function PoolList({ title, groups, tone, free }: { title: string; groups: ForgePoolGroup[]; tone: string; free: number }) {
   const best = Math.max(1, ...groups.map((group) => group.chance));
   return (
@@ -52,6 +108,7 @@ function PoolList({ title, groups, tone, free }: { title: string; groups: ForgeP
             <div className="flex items-start gap-2">
               <span className={`min-w-0 flex-1 text-[14px] leading-snug ${group.owned ? "text-parchment" : tone}`}>{group.text}</span>
               {group.influence && <LeagueBadge league={["Shaper", "Elder"].includes(group.influence) ? "Shaper and Elder" : "Conquerors"} variant="icon" />}
+              <Impact group={group} />
               <span className="shrink-0 font-display text-[10px] tracking-[0.1em] text-parchment-faint">{group.tiers.length} {group.tiers.length === 1 ? "TIER" : "TIERS"}</span>
             </div>
             <div className="mt-1 flex items-center gap-2">
@@ -162,6 +219,7 @@ function CraftedBody({ forge }: { forge: ForgeResult }) {
   const benchFits = bench.filter((craft) => (craft.affix === "prefix" ? freePrefix : freeSuffix) > 0);
   return (
     <div className="flex flex-col gap-6">
+      <BestForBuild forge={forge} freePrefix={freePrefix} freeSuffix={freeSuffix} />
       <div className="grid gap-6 lg:grid-cols-[1fr_1.15fr]">
         <section className="flex flex-col gap-4">
           <div className="iron-tooltip flex gap-4 px-5 py-4 text-[15px] leading-snug">
@@ -234,20 +292,20 @@ function CraftedBody({ forge }: { forge: ForgeResult }) {
 }
 
 /** The Forge over the page: opens on an item, closes with the button, Escape or a click outside. */
-function ForgeView({ item, onClose }: { item: EngineItem; onClose: () => void }) {
+function ForgeView({ item, slot, onClose }: { item: EngineItem; slot?: string; onClose: () => void }) {
   const [state, setState] = useState<{ raw: string; forge?: ForgeResult; error?: string } | null>(null);
 
   useEffect(() => {
     if (!item.raw) return;
     let active = true;
-    desktop.forgeItem(item.raw).then(
+    desktop.forgeItem(item.raw, slot).then(
       (forge) => active && setState({ raw: item.raw!, forge }),
       (error: unknown) => active && setState({ raw: item.raw!, error: error instanceof Error ? error.message : String(error) }),
     );
     return () => {
       active = false;
     };
-  }, [item.raw]);
+  }, [item.raw, slot]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -285,7 +343,11 @@ function ForgeView({ item, onClose }: { item: EngineItem; onClose: () => void })
             ))}
           </header>
 
-          {!current && <p className="py-10 text-center text-[17px] text-parchment-dim">Heating the forge…</p>}
+          {!current && (
+            <p className="py-10 text-center text-[17px] text-parchment-dim">
+              {slot ? "Heating the forge and testing every modifier on your character…" : "Heating the forge…"}
+            </p>
+          )}
           {current?.error && <p className="py-10 text-center text-[17px] text-ember">{current.error}</p>}
           {forge && (forge.unique ? <UniqueBody forge={forge} /> : <CraftedBody forge={forge} />)}
         </AtlasFrame>

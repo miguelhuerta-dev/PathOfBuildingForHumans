@@ -8,6 +8,7 @@ import AtlasSectionHeader from "../components/AtlasSectionHeader";
 import AnalysisCard from "../components/AnalysisCard";
 import ConnectPanel from "../components/ConnectPanel";
 import EquipmentPanel from "../components/EquipmentPanel";
+import BestPassivesPanel from "../components/BestPassivesPanel";
 import { ScoreCard, StatCard } from "../components/StatCard";
 import IssueCard from "../components/IssueCard";
 import UpgradeCard from "../components/UpgradeCard";
@@ -214,7 +215,7 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
             <StatCard title="EHP" value={formatNumber(build.stats.TotalEHP ?? 0)} icon={<ShieldIcon className="h-4 w-4" />} />
           </section>
 
-          <EquipmentPanel items={build.items} />
+          <EquipmentPanel items={build.items} measure />
 
           <div className="mt-4 grid items-stretch gap-x-5 gap-y-10 lg:grid-cols-[1.12fr_1fr]">
             <AtlasFrame className="flex flex-col" contentClassName="flex flex-1 flex-col">
@@ -256,6 +257,7 @@ function Dashboard({ archive, onNavigate }: DashboardProps) {
             </AtlasFrame>
           </div>
 
+          {archive.isDesktopApp && archive.selected && <BestPassivesPanel character={archive.selected} />}
         </>
       )}
 

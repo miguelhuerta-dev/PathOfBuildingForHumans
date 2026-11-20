@@ -105,7 +105,7 @@ function Slot({ slot, item, owned, selected, onSelect, style, className = "" }: 
 }
 
 /** The selected item read out like the game's tooltip. */
-function ItemDetails({ item }: { item?: EngineItem }) {
+function ItemDetails({ item, measure }: { item?: EngineItem; measure?: boolean }) {
   const [forging, setForging] = useState(false);
   if (!item) {
     return <p className="text-[17px] text-parchment-faint">Click an item to read its properties.</p>;
@@ -137,7 +137,7 @@ function ItemDetails({ item }: { item?: EngineItem }) {
             )}
           </button>
         )}
-        {forging && <ForgeView item={item} onClose={() => setForging(false)} />}
+        {forging && <ForgeView item={item} slot={measure ? item.slot : undefined} onClose={() => setForging(false)} />}
       </header>
       <div className="flex gap-4 px-5 py-4 text-[15px] leading-snug">
         <div className="min-w-0 flex-1">
@@ -197,6 +197,8 @@ const slotRank = (slot: string) => {
 /** The character's worn gear, flasks and socketed jewels, with official icons when available. */
 interface EquipmentPanelProps {
   items: EngineItem[];
+  /** The character's own gear: the Forge measures each modifier on the character. */
+  measure?: boolean;
   title?: string;
   /** A line under the title. */
   intro?: string;
@@ -206,7 +208,7 @@ interface EquipmentPanelProps {
   emptyNote?: string;
 }
 
-function EquipmentPanel({ items, title = "Equipped Artifacts", intro, owned, emptyNote }: EquipmentPanelProps) {
+function EquipmentPanel({ items, measure, title = "Equipped Artifacts", intro, owned, emptyNote }: EquipmentPanelProps) {
   const bySlot = new Map(items.map((item) => [item.slot, item]));
   const jewels = items.filter((item) => isJewel(item.slot));
   const firstFilled = [...CORE_SLOTS, ...FLASKS].find((slot) => bySlot.has(slot)) ?? jewels[0]?.slot;
@@ -291,7 +293,7 @@ function EquipmentPanel({ items, title = "Equipped Artifacts", intro, owned, emp
           {/* Fixed height: a longer item must not push the ledger, or the row under the
               pointer changes and the read-out flickers between items. */}
           <div aria-live="polite" className="iron-scroll h-[19rem] overflow-y-auto">
-            <ItemDetails item={current} />
+            <ItemDetails item={current} measure={measure} />
           </div>
           <GearLedger
             items={[...items].sort((a, b) => slotRank(a.slot) - slotRank(b.slot))}
