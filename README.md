@@ -14,7 +14,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/releases/latest"><strong>Download for Windows</strong></a>
+  <a href="https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/releases/download/v0.5.0/PathOfBuildingForHumans-v0.5.0-windows.exe"><strong>Download v0.5.0 for Windows</strong></a>
+  ·
+  <a href="https://miguelhuerta-dev.github.io/path-of-building-for-humans/">Website</a>
   ·
   <a href="#español">Español</a>
   ·
@@ -49,7 +51,8 @@ guide you are following.
 ### Your character, read at a glance
 
 Connect your public pathofexile.com profile and pick a character. The archive calculates it with Path of
-Building and refreshes it every time you change zone in the game.
+Building and refreshes it every time you change zone in the game. The last character of each account opens at
+once while fresh numbers load.
 
 - **Scholar's Verdict:** where your build stands and its main weakness, in one sentence.
 - **Atlas Rating, DPS and EHP:** how ready the build is for its stage of the game.
@@ -58,13 +61,27 @@ Building and refreshes it every time you change zone in the game.
 
 <img src="docs/assets/screenshots/threats.webp" alt="Threat Register and Recommended Artifact panels" width="900" />
 
-**Equipped Artifacts.** Your gear laid out like the in-game inventory; hover a piece to read it.
+**Equipped Artifacts.** Your gear laid out like the in-game inventory. Click a piece to read its modifiers,
+coloured by kind (prefix, suffix, crafted, fractured, implicit and more) with their tier, a colour key beside them
+and a league mark on league-specific mods.
 
-<img src="docs/assets/screenshots/armoury.gif" alt="Hovering each piece of gear in the Equipped Artifacts panel shows its modifiers" width="900" />
+<img src="docs/assets/screenshots/equipment.webp" alt="Equipped Artifacts with the selected item's modifiers coloured by kind and a colour key" width="900" />
+
+**The Forge.** Open any item to see what its base can roll, with tiers, odds, free prefix and suffix slots,
+essences and bench crafts, and how much DPS and EHP each modifier would add to your character, tried by Path of
+Building. Uniques say which league they come from, how to get them and their poe.ninja market price.
+
+<img src="docs/assets/screenshots/forge.webp" alt="The Forge: the item's modifier pool with odds and what each modifier adds to the character" width="900" />
+
+**Best Next Passives and Your Progress.** Every notable and keystone within reach is tried on your character with
+the path to it, and ranked by what it adds per point spent. Your DPS, EHP and level are charted over the league.
+
+<img src="docs/assets/screenshots/passives.webp" alt="Best Next Passives ranked by DPS and EHP gained per point" width="900" />
 
 ### Follow a guide, step by step
 
-Paste a Path of Building code, a pobb.in or pastebin link. Guides with stages (levelling trees, early and late
+Paste a Path of Building code or a link from pobb.in, Maxroll, poe.ninja, pob.codes, pastebin, rentry or poedb.
+Guides with stages (levelling trees, early and late
 gear, Maxroll-style) open on the stage that fits your character, and every stage you pick updates the whole page.
 Your guides are kept in a library, and the last one opens by itself.
 
@@ -107,6 +124,14 @@ Path of Exile's words, and the archive's own, explained plainly and searchable.
 
 <img src="docs/assets/screenshots/glossary.gif" alt="Searching the glossary as you type" width="900" />
 
+### English or Spanish, with a tour
+
+On first launch you choose English or Spanish (switchable any time from the bar), and a visual tour explains how
+to connect a character, why the profile must be public, what the app keeps, how to load a guide and how to read
+your build. It can be seen again from About.
+
+<img src="docs/assets/screenshots/tutorial.webp" alt="The visual tour: making the profile public" width="900" />
+
 ### The game's own art, never copied
 
 Passive and Atlas icons, and the art of items without an official icon, are **read from your own Path of Exile
@@ -115,9 +140,10 @@ Grinding Gear Games' art; item icons that do come from the web are the official 
 
 ## Download
 
-1. Go to [Releases](https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/releases/latest) and download
-   `PathOfBuildingForHumans-vX.Y.Z-windows.exe`.
-2. Run it. There is nothing to install: it is one file, for Windows 10 and 11.
+1. Download [`PathOfBuildingForHumans-v0.5.0-windows.exe`](https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/releases/download/v0.5.0/PathOfBuildingForHumans-v0.5.0-windows.exe)
+   (all versions are in [Releases](https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/releases)).
+2. Run it. There is nothing to install: it is one file, for Windows 10 and 11. Windows SmartScreen may warn the
+   first time because the app is not signed yet: choose "More info", then "Run anyway".
 3. Enter your account name (`Name#1234`), make sure your characters are public on pathofexile.com, and pick one.
 
 Found a bug? [Open an issue](https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/issues/new) with your
@@ -129,7 +155,7 @@ character, the guide and a screenshot.
 |---|---|
 | Public pathofexile.com profile, character list, refresh on zone change (`Client.txt`) | v0.2.0 |
 | Dashboard calculated by Path of Building: Atlas Rating, DPS, EHP, Verdict, Threat Register | v0.2.0 |
-| Guides from PoB codes, pobb.in or pastebin, with stages; Recommended Artifact by measured gain | v0.2.0 |
+| Guides from PoB codes and guide links, with stages; Recommended Artifact by measured gain | v0.2.0 |
 | Passive tree and Atlas maps with the game's own icons | v0.3.0 |
 | Single-file portable Windows app | v0.3.0 |
 | Every guide stage updates gear, gems, tree and comparison; nearest-stage gear | v0.4.0 |
@@ -140,7 +166,9 @@ character, the guide and a screenshot.
 | Item art read from the installed game (magic flasks and more) | v0.4.0 |
 | The Forge: what an item can roll and what each mod adds; unique sources and poe.ninja prices | v0.5.0 |
 | Modifiers coloured by kind with tiers; Best Next Passives; progress over the league | v0.5.0 |
+| Guide links from Maxroll, poe.ninja, pob.codes, rentry and poedb | v0.5.0 |
 | English and Spanish, with a visual tour on first launch | v0.5.0 |
+| Cut-out window shaped by the iron frame; engine kept loaded for one-second reloads | v0.5.0 |
 | League meta | Planned |
 | Official OAuth account connection | Planned |
 
@@ -162,7 +190,7 @@ The full guide lives in [`docs/visual_language.md`](docs/visual_language.md).
 - **v0.3.0** Atlas and passive tree maps with the game's own icons, single-file portable app
 - **v0.4.0** Guide tracking per stage: gear, gem links and sources, ascension, bandits, pantheon, glossary
 - **v0.5.0** The Forge, modifiers by kind, Best Next Passives, progress, Spanish and a visual tour
-- **Next** League meta and prices, official OAuth
+- **Next** League meta, official OAuth
 
 See [`CHANGELOG.md`](CHANGELOG.md), [`docs/roadmap.md`](docs/roadmap.md) and the RFCs in [`rfc/`](rfc).
 
@@ -229,8 +257,8 @@ debug mode and opens the executable in Visual Studio (F5 to run under the native
 `portable/PathOfBuildingForHumans.exe`, one file with the engine packed inside. Timeless and
 abyss jewel tables (about 170 MB) are downloaded the first time a build needs one.
 
-**Releases:** push a version tag such as `v0.4.0`. The **Desktop app (Windows portable)** workflow builds
-`PathOfBuildingForHumans-v0.4.0-windows.exe` and `release-notes-v0.4.0.md` (that version's section of
+**Releases:** push a version tag such as `v0.5.0`. The **Desktop app (Windows portable)** workflow builds
+`PathOfBuildingForHumans-v0.5.0-windows.exe` and `release-notes-v0.5.0.md` (that version's section of
 `CHANGELOG.md`) as a 7-day artifact, then deletes the artifacts of earlier runs. Releases are published by hand
 and never touched by the workflow.
 
@@ -240,8 +268,9 @@ and never touched by the workflow.
 src/                   React + TypeScript + Vite + Tailwind app
   analysis/            Diagnostic rules (the Threat Register)
   assets/atlas/        Original painted art, frames and textures (WebP)
-  components/          Atlas frames, armoury, guide panels, shared controls
-  data/                Diagnostic rules, glossary, passive and Atlas trees, gem sources
+  components/          Atlas frames, armoury, the Forge, guide panels, tutorial, shared controls
+  data/                Diagnostic rules, glossary (English and Spanish), passive and Atlas trees, gem sources, leagues
+  i18n/                English and Spanish texts
   guide/               Guide helpers (which item each gem group goes in)
   pages/               Character, Guide, Atlas, Glossary and About pages
   state/               Account, character, guide library and game art state
@@ -256,10 +285,11 @@ rfc/                   Design proposals (MVP, dashboard, visual identity)
 
 ## Licence and code signing
 
-Published under the [MIT licence](LICENSE). Windows releases are signed through SignPath:
-free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by
-[SignPath Foundation](https://signpath.org/). See the [code signing policy](CODE_SIGNING_POLICY.md),
-which also says what the app connects to and when.
+Published under the [MIT licence](LICENSE). The release build is ready to be signed through SignPath (free code
+signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/));
+until the project is accepted, releases are unsigned. See the [code signing policy](CODE_SIGNING_POLICY.md), which
+also says what the app connects to and when. Terms, privacy and cookie notices are on the
+[project website](https://miguelhuerta-dev.github.io/path-of-building-for-humans/).
 
 ## Disclaimer
 
@@ -278,7 +308,8 @@ trademark of Grinding Gear Games.
 Un compañero para Path of Exile que convierte los números de Path of Building en respuestas y te guía paso a
 paso por tu guía mientras juegas.
 
-**[Descargar para Windows](https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/releases/latest)** ·
+**[Descargar la v0.5.0 para Windows](https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/releases/download/v0.5.0/PathOfBuildingForHumans-v0.5.0-windows.exe)** ·
+**[Sitio web](https://miguelhuerta-dev.github.io/path-of-building-for-humans/)** ·
 **[Reportar un error](https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/issues/new)**
 
 ### Por qué existe
@@ -302,15 +333,24 @@ guía que sigues.
 ### Qué hace
 
 **Tu personaje, de un vistazo.** Conecta tu perfil público de pathofexile.com y elige un personaje. El archivo
-lo calcula con Path of Building y se actualiza cada vez que cambias de zona en el juego.
+lo calcula con Path of Building y se actualiza cada vez que cambias de zona en el juego. El último personaje de
+cada cuenta se abre al instante mientras cargan los números nuevos.
 
 - **Scholar's Verdict:** cómo está tu build y su debilidad principal, en una frase.
 - **Atlas Rating, DPS y EHP:** qué tan lista está la build para su etapa del juego.
 - **Threat Register:** los problemas encontrados, del peor al menor, con lo que te cuestan y cómo arreglarlos.
 - **Recommended Artifact:** el item de la guía que más te ayudaría, medido por Path of Building.
-- **Equipped Artifacts:** tu equipo como en el inventario del juego; pasa el mouse por una pieza para leerla.
+- **Equipped Artifacts:** tu equipo como en el inventario del juego. Haz clic en una pieza para leer sus
+  modificadores, coloreados por tipo (prefijo, sufijo, crafteado, fracturado, implícito y más) con su tier, una
+  leyenda al lado y la marca de la liga en los mods de liga.
+- **La Forja:** abre cualquier item para ver qué puede salir en su base, con tiers, probabilidades, huecos libres
+  de prefijo y sufijo, esencias y crafteos de banco, y cuánto DPS y EHP sumaría cada modificador a tu personaje,
+  probado por Path of Building. En los únicos dice de qué liga vienen, cómo conseguirlos y su precio en poe.ninja.
+- **Best Next Passives y Your Progress:** cada notable y keystone a tu alcance se prueba en tu personaje con su
+  camino y se ordena por lo que suma por punto. Tu DPS, EHP y nivel se grafican durante la liga.
 
-**Sigue una guía paso a paso.** Pega un código de Path of Building o un enlace de pobb.in o pastebin. Las guías
+**Sigue una guía paso a paso.** Pega un código de Path of Building o un enlace de pobb.in, Maxroll, poe.ninja,
+pob.codes, pastebin, rentry o poedb. Las guías
 con stages (árboles de leveo, equipo temprano y final, al estilo Maxroll) abren en el stage que corresponde a tu
 personaje, y cada stage que eliges actualiza toda la página. Tus guías se guardan en una biblioteca y la última
 se abre sola.
@@ -331,6 +371,10 @@ guía, marca las pasivas que tienes y mira qué sigue, guardado por liga.
 
 **Glosario.** Los términos de Path of Exile y de la app, explicados de forma sencilla y con buscador.
 
+**En español o inglés, con tutorial.** Eliges el idioma al abrirla por primera vez (y lo cambias cuando quieras
+desde la barra), y un tutorial visual explica cómo conectar tu personaje, por qué tu perfil debe ser público, qué
+guarda la app, cómo cargar una guía y cómo leer tu build. Se puede volver a ver desde About.
+
 **El arte del juego, nunca copiado.** Los iconos de las pasivas y del Atlas, y el arte de los items sin icono
 oficial, **se leen de tu propia instalación de Path of Exile** (Steam o Epic) y se guardan solo en tu
 computadora. La app nunca incluye ni descarga el arte de Grinding Gear Games; los iconos de items que vienen de
@@ -340,9 +384,10 @@ Las capturas de arriba muestran cada una de estas secciones.
 
 ### Descarga
 
-1. Entra en [Releases](https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/releases/latest) y descarga
-   `PathOfBuildingForHumans-vX.Y.Z-windows.exe`.
-2. Ábrelo. No hay nada que instalar: es un solo archivo, para Windows 10 y 11.
+1. Descarga [`PathOfBuildingForHumans-v0.5.0-windows.exe`](https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/releases/download/v0.5.0/PathOfBuildingForHumans-v0.5.0-windows.exe)
+   (todas las versiones están en [Releases](https://github.com/miguelhuerta-dev/PathOfBuildingForHumans/releases)).
+2. Ábrelo. No hay nada que instalar: es un solo archivo, para Windows 10 y 11. Windows SmartScreen puede avisar la
+   primera vez porque la app aún no está firmada: elige "Más información" y luego "Ejecutar de todos modos".
 3. Escribe tu nombre de cuenta (`Nombre#1234`), asegúrate de que tus personajes sean públicos en
    pathofexile.com y elige uno.
 
@@ -355,7 +400,7 @@ con tu personaje, la guía y una captura.
 |---|---|
 | Perfil público de pathofexile.com, lista de personajes, actualización al cambiar de zona (`Client.txt`) | v0.2.0 |
 | Dashboard calculado por Path of Building: Atlas Rating, DPS, EHP, Verdict, Threat Register | v0.2.0 |
-| Guías desde códigos de PoB, pobb.in o pastebin, con stages; Recommended Artifact por ganancia medida | v0.2.0 |
+| Guías desde códigos de PoB y enlaces de guías, con stages; Recommended Artifact por ganancia medida | v0.2.0 |
 | Mapas del árbol de pasivas y del Atlas con los iconos del propio juego | v0.3.0 |
 | App portable de Windows en un solo archivo | v0.3.0 |
 | Cada stage de la guía actualiza equipo, gemas, árbol y comparación; equipo del stage más cercano | v0.4.0 |
@@ -364,7 +409,12 @@ con tu personaje, la guía y una captura.
 | Biblioteca de guías, con la última guía restaurada | v0.4.0 |
 | Glosario | v0.4.0 |
 | Arte de items leído del juego instalado (frascos mágicos y más) | v0.4.0 |
-| Meta de la liga y precios (poe.ninja) | Planeado |
+| La Forja: qué puede salir en un item y cuánto suma cada mod; origen de los únicos y precios de poe.ninja | v0.5.0 |
+| Mods coloreados por tipo con su tier; Best Next Passives; progreso durante la liga | v0.5.0 |
+| Enlaces de guías de Maxroll, poe.ninja, pob.codes, rentry y poedb | v0.5.0 |
+| Español e inglés, con tutorial visual al empezar | v0.5.0 |
+| Ventana recortada con la forma del marco de hierro; motor siempre cargado para recargar en un segundo | v0.5.0 |
+| Meta de la liga | Planeado |
 | Conexión oficial de cuenta con OAuth | Planeado |
 
 ### Identidad visual: el Archivista del Atlas
@@ -396,15 +446,16 @@ Y abre http://localhost:5173. Pruebas: `npm test` (frontend) y `cargo test` en `
   (Linux/macOS) o `./scripts/setup-engine.ps1` (Windows, con Visual Studio y **Desktop development with C++**).
   Luego `npm run desktop:dev`.
 - **Build portable:** `./scripts/build-portable.ps1` genera un solo `.exe` con el motor dentro.
-- **Versiones:** al subir un tag como `v0.4.0`, GitHub Actions compila el `.exe` y sus notas como artifact de
+- **Versiones:** al subir un tag como `v0.5.0`, GitHub Actions compila el `.exe` y sus notas como artifact de
   7 días y borra los artifacts anteriores. La Release se publica a mano.
 
 ### Licencia y firma de código
 
-Publicado bajo la [licencia MIT](LICENSE). Las versiones para Windows se firman con SignPath:
-firma de código gratuita de [SignPath.io](https://about.signpath.io/), certificado de
-[SignPath Foundation](https://signpath.org/). Consulta la [política de firma](CODE_SIGNING_POLICY.md),
-que también explica a qué se conecta la app y cuándo.
+Publicado bajo la [licencia MIT](LICENSE). La compilación de versiones ya está lista para firmarse con SignPath
+(firma de código gratuita de [SignPath.io](https://about.signpath.io/), certificado de
+[SignPath Foundation](https://signpath.org/)); mientras el proyecto no sea aceptado, las versiones salen sin firma.
+Consulta la [política de firma](CODE_SIGNING_POLICY.md), que también explica a qué se conecta la app y cuándo. Los
+términos, la privacidad y las cookies están en el [sitio del proyecto](https://miguelhuerta-dev.github.io/path-of-building-for-humans/).
 
 ### Aviso
 
