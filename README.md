@@ -192,7 +192,7 @@ The full guide lives in [`docs/visual_language.md`](docs/visual_language.md).
 - **v0.5.0** The Forge, modifiers by kind, Best Next Passives, progress, Spanish and a visual tour
 - **Next** League meta, official OAuth
 
-See [`CHANGELOG.md`](CHANGELOG.md), [`docs/roadmap.md`](docs/roadmap.md) and the RFCs in [`rfc/`](rfc).
+See [`CHANGELOG.md`](CHANGELOG.md). The first design notes and RFCs are kept in [`docs/archive/`](docs/archive).
 
 ## For developers
 
@@ -204,6 +204,10 @@ npm run dev
 ```
 
 Then open http://localhost:5173. Tests: `npm test` (frontend) and `cargo test` in `src-tauri` (desktop).
+`npm run check` runs everything the **Quality checks** workflow runs on each push: both test suites, the lint, the
+type check, the build and clippy.
+
+Each new league, follow [`docs/new-league.md`](docs/new-league.md): engine, trees, rules, gem sources and game files.
 
 ### How the calculations work
 
@@ -277,10 +281,10 @@ src/                   React + TypeScript + Vite + Tailwind app
 src-tauri/             Desktop app (Tauri, Rust): profiles, guides, Client.txt watcher, game files
   engine/              Path of Building bridge and pinned engine versions
 scripts/               Engine setup, portable build, data updates, VS debugging
-tests/                 Frontend tests (node --test)
-docs/                  Vision, roadmap, competitor analysis, visual language, screenshots
-rfc/                   Design proposals (MVP, dashboard, visual identity)
-.github/workflows/     Windows portable build
+tests/                 Frontend tests (node --test): rules, i18n, tree links, progress, numbers
+docs/                  New league checklist, visual language, screenshots
+  archive/             First design notes and RFCs, kept for history
+.github/workflows/     Quality checks on each push; Windows portable build
 ```
 
 ## Licence and code signing
