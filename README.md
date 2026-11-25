@@ -169,8 +169,9 @@ character, the guide and a screenshot.
 | Guide links from Maxroll, poe.ninja, pob.codes, rentry and poedb | v0.5.0 |
 | English and Spanish, with a visual tour on first launch | v0.5.0 |
 | Cut-out window shaped by the iron frame; engine kept loaded for one-second reloads | v0.5.0 |
-| League meta | Planned |
-| Official OAuth account connection | Planned |
+| Faster Atlas marking: a guide's link applies when pasted, one click marks a whole path | Planned |
+| Reading your Atlas through GGG's official login | Waiting on GGG |
+| League meta | Later |
 
 ## Visual identity: the Atlas Archivist
 
@@ -190,9 +191,12 @@ The full guide lives in [`docs/visual_language.md`](docs/visual_language.md).
 - **v0.3.0** Atlas and passive tree maps with the game's own icons, single-file portable app
 - **v0.4.0** Guide tracking per stage: gear, gem links and sources, ascension, bandits, pantheon, glossary
 - **v0.5.0** The Forge, modifiers by kind, Best Next Passives, progress, Spanish and a visual tour
-- **Next** League meta, official OAuth
+- **Next** Faster Atlas marking; reading the Atlas through GGG's official login once GGG allows it
 
-See [`CHANGELOG.md`](CHANGELOG.md). The first design notes and RFCs are kept in [`docs/archive/`](docs/archive).
+See [`docs/roadmap.md`](docs/roadmap.md) for what comes next, [`docs/vision.md`](docs/vision.md) for what the app
+promises and [`docs/competitor-analysis.md`](docs/competitor-analysis.md) for how it fits with the tools players
+already use. Version details are in [`CHANGELOG.md`](CHANGELOG.md); the first RFCs are kept in
+[`docs/archive/`](docs/archive).
 
 ## For developers
 
@@ -282,8 +286,8 @@ src-tauri/             Desktop app (Tauri, Rust): profiles, guides, Client.txt w
   engine/              Path of Building bridge and pinned engine versions
 scripts/               Engine setup, portable build, data updates, VS debugging
 tests/                 Frontend tests (node --test): rules, i18n, tree links, progress, numbers
-docs/                  New league checklist, visual language, screenshots
-  archive/             First design notes and RFCs, kept for history
+docs/                  Vision, roadmap, competitor analysis, new league checklist, visual language, screenshots
+  archive/             The first RFCs, kept for history
 .github/workflows/     Quality checks on each push; Windows portable build
 ```
 
@@ -418,8 +422,9 @@ con tu personaje, la guía y una captura.
 | Enlaces de guías de Maxroll, poe.ninja, pob.codes, rentry y poedb | v0.5.0 |
 | Español e inglés, con tutorial visual al empezar | v0.5.0 |
 | Ventana recortada con la forma del marco de hierro; motor siempre cargado para recargar en un segundo | v0.5.0 |
-| Meta de la liga | Planeado |
-| Conexión oficial de cuenta con OAuth | Planeado |
+| Atlas más rápido de marcar: el enlace de la guía se aplica al pegarlo, un clic marca todo el camino | Planeado |
+| Leer tu Atlas con el login oficial de GGG | Esperando a GGG |
+| Meta de la liga | Más adelante |
 
 ### Identidad visual: el Archivista del Atlas
 
