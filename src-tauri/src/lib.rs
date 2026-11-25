@@ -34,6 +34,7 @@ pub fn run() {
             commands::stop_watching_client_log,
             commands::passive_icons,
             commands::item_art,
+            commands::class_art,
             commands::open_profile,
             commands::open_privacy_settings,
         ])

@@ -2,7 +2,7 @@ import rules from "../data/rules/poe1.json";
 import type { EngineBuild, Upgrade } from "../types/Engine";
 import { formatNumber } from "../utils/formatNumber";
 import { extraDamageTaken, signedPercent } from "./numbers";
-import { translator, type Translate } from "../i18n";
+import { translator, type Translate } from "../i18n/translate";
 
 export type Severity = "high" | "medium" | "low";
 

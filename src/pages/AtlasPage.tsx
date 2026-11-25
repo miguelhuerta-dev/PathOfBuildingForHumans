@@ -93,9 +93,30 @@ function LinkForm({ atlas }: { atlas: AtlasProgressState }) {
 
       {atlas.linkError && <ErrorNote className="mt-3">{atlas.linkError}</ErrorNote>}
       <p className="mt-4 text-[15px] text-parchment-faint">
-        {t("Path of Exile does not share your Atlas tree publicly, so mark the passives you have by clicking them on the map. Your marks are kept per league.")}
+        {t("Mark the passives you have by clicking them on the map. Your marks are kept per league.")}
       </p>
     </AtlasFrame>
+  );
+}
+
+/** Why the player's own Atlas is marked by hand while their passive tree is read from their profile. */
+function AtlasNotice() {
+  const t = useT();
+  return (
+    <section
+      aria-labelledby="atlas-notice-title"
+      className="border border-gold-dim/60 border-l-4 border-l-gold bg-black/50 px-4 py-3"
+    >
+      <h2 id="atlas-notice-title" className="font-display text-[14px] tracking-[0.18em] text-gold">
+        {t("WHY YOUR ATLAS IS NOT READ AUTOMATICALLY")}
+      </h2>
+      <p className="mt-2 text-[16px] text-parchment-dim">
+        {t("Your passive tree comes from your public profile, but Grinding Gear Games keeps the Atlas tree out of it. The only allowed way to read it is signing in with your Path of Exile account through GGG's official login, and GGG is not accepting new applications for it right now. The app will offer it as soon as they do.")}
+      </p>
+      <p className="mt-2 text-[16px] text-parchment-dim">
+        {t("Until then, paste your guide's Atlas link and mark your passives on the map. The app never reads the game's memory or network traffic: that breaks GGG's rules and can get your account banned.")}
+      </p>
+    </section>
   );
 }
 
@@ -208,6 +229,7 @@ export default function AtlasPage({ league, clientLog }: AtlasPageProps) {
       </AtlasFrame>
 
       <div className="flex flex-col gap-6">
+        <AtlasNotice />
         {atlas.progress && (
           <ProgressPanel progress={atlas.progress} onFocus={(id) => setFocus({ id })} onToggle={atlas.toggleOwned} />
         )}

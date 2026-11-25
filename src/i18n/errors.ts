@@ -1,4 +1,4 @@
-import type { Translate } from "./index";
+import type { Translate } from "./translate";
 
 /**
  * Error messages come from the desktop side (Rust, the engine) and from

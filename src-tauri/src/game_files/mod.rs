@@ -370,9 +370,166 @@ pub fn item_art(
     Ok(art)
 }
 
+/// Largest side kept for class art: it is shown about 112 px wide, twice that on sharp screens.
+const CLASS_ART_SIZE: u32 = 256;
+/// Cache folder of ascendancy art, inside the game version's folder.
+const CLASS_ART_DIR: &str = "class-art";
+/// Where the ascendancy pictures of the passive tree live.
+const CLASS_ART_ROOT: &str = "art/textures/interface/2d/2dart/uiimages/ingame/classes/";
+
+/// The game's folder for an ascendancy, by the name public profiles give it.
+/// A fixed table: only these pictures can ever be read.
+fn class_art_folder(ascendancy: &str) -> Option<&'static str> {
+    Some(match ascendancy.trim().to_lowercase().as_str() {
+        "juggernaut" => "str/juggernaut",
+        "berserker" => "str/berserker",
+        "chieftain" => "str/chieftain",
+        "deadeye" => "dex/deadeye",
+        "pathfinder" => "dex/pathfinder",
+        // The Warden took the Raider's place in 3.25; the game kept the old folder.
+        "warden" | "raider" => "dex/raider",
+        "occultist" => "int/occultist",
+        "elementalist" => "int/elementalist",
+        "necromancer" => "int/necromancer",
+        "slayer" => "strdex/slayer",
+        "gladiator" => "strdex/gladiator",
+        "champion" => "strdex/champion",
+        "inquisitor" => "strint/inquisitor",
+        "hierophant" => "strint/hierophant",
+        "guardian" => "strint/guardian",
+        "assassin" => "dexint/assassin",
+        "trickster" => "dexint/trickster",
+        "saboteur" => "dexint/saboteur",
+        "ascendant" => "strdexint/ascendant",
+        _ => return None,
+    })
+}
+
+/// The game's folder for a base class: its start on the passive tree.
+fn base_class_folder(class: &str) -> Option<&'static str> {
+    Some(match class.trim().to_lowercase().as_str() {
+        "marauder" => "str",
+        "ranger" => "dex",
+        "witch" => "int",
+        "duelist" => "strdex",
+        "templar" => "strint",
+        "shadow" => "dexint",
+        "scion" => "strdexint",
+        _ => return None,
+    })
+}
+
+/// The class start emblem has claws and ornaments around a disc; only the
+/// disc (the class's face between the three attribute gems) is kept, as a
+/// square around its centre: (centre x, centre y, half side) as parts of the width.
+const BASE_CLASS_DISC: (f32, f32, f32) = (0.498, 0.47, 0.32);
+
+/// A square cut out of RGBA pixels, clamped to the picture.
+fn crop_square(width: u32, height: u32, rgba: &[u8], (cx, cy, half): (f32, f32, f32)) -> (u32, u32, Vec<u8>) {
+    let w = width as f32;
+    let side = ((2.0 * half * w).round() as u32).clamp(1, width.min(height));
+    let left = ((cx * w - half * w).round().max(0.0) as u32).min(width - side);
+    let top = ((cy * w - half * w).round().max(0.0) as u32).min(height - side);
+    let mut out = Vec::with_capacity((side * side * 4) as usize);
+    for row in top..top + side {
+        let start = ((row * width + left) * 4) as usize;
+        out.extend_from_slice(&rgba[start..start + (side * 4) as usize]);
+    }
+    (side, side, out)
+}
+
+/// The class picture of a character, read from the player's game: its
+/// ascendancy's round picture from the passive tree once it has one, otherwise
+/// its base class's emblem. `None` for names the game has no picture for.
+pub fn class_art(
+    name: &str,
+    client_log: Option<&Path>,
+    cache_dir: Option<PathBuf>,
+) -> Result<Option<String>, String> {
+    let (path, file, disc) = if let Some(folder) = class_art_folder(name) {
+        (
+            format!("{CLASS_ART_ROOT}{folder}/passiveskillscreenbackground.dds"),
+            format!("{}.png", folder.replace('/', "~")),
+            None,
+        )
+    } else if let Some(folder) = base_class_folder(name) {
+        (
+            format!("{CLASS_ART_ROOT}{folder}/passiveskillscreenstartnodebackground.dds"),
+            format!("class~{folder}.png"),
+            Some(BASE_CLASS_DISC),
+        )
+    } else {
+        return Ok(None);
+    };
+    let bundles_dir = game_bundles(client_log)?;
+    let cache = version_cache(cache_dir, &bundles_dir);
+    let dir = open_cache(cache.as_ref(), CLASS_ART_DIR);
+    if let Some(cached) = dir.as_ref().map(|dir| dir.join(&file)).filter(|path| path.is_file()) {
+        return Ok(Some(cached.display().to_string()));
+    }
+
+    let files = bundles::read_files(&bundles_dir, std::slice::from_ref(&path))?;
+    let Some(texture) = files.get(&path) else {
+        return Ok(None);
+    };
+    let (width, height, rgba) = dds::decode(texture)?;
+    let (width, height, rgba) = match disc {
+        Some(disc) => crop_square(width, height, &rgba, disc),
+        None => (width, height, rgba),
+    };
+    let (width, height, rgba) = dds::shrink(width, height, rgba, CLASS_ART_SIZE);
+    let png = dds::to_png(width, height, &rgba)?;
+    Ok(Some(store_png(dir.as_deref(), &file, &png)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn knows_every_ascendancy_folder() {
+        assert_eq!(class_art_folder("Juggernaut"), Some("str/juggernaut"));
+        assert_eq!(class_art_folder(" hierophant "), Some("strint/hierophant"));
+        assert_eq!(class_art_folder("Warden"), Some("dex/raider"));
+        assert_eq!(class_art_folder("None"), None);
+        assert_eq!(class_art_folder("Witch"), None, "base classes have no ascendancy picture");
+        assert_eq!(class_art_folder("../../x"), None);
+        assert_eq!(base_class_folder("Witch"), Some("int"));
+        assert_eq!(base_class_folder("Scion"), Some("strdexint"));
+        assert_eq!(base_class_folder("Hierophant"), None);
+    }
+
+    #[test]
+    fn crops_the_class_disc() {
+        // 4×2 pixels, each pixel's red value is its index.
+        let rgba: Vec<u8> = (0..8u8).flat_map(|i| [i, 0, 0, 255]).collect();
+        let (w, h, out) = crop_square(4, 2, &rgba, (0.5, 0.25, 0.25));
+        assert_eq!((w, h), (2, 2));
+        assert_eq!(out.chunks(4).map(|p| p[0]).collect::<Vec<_>>(), [1, 2, 5, 6]);
+        // A square larger than the picture is clamped to it.
+        let (w, h, _) = crop_square(4, 2, &rgba, (0.5, 0.5, 2.0));
+        assert_eq!((w, h), (2, 2));
+    }
+
+    /// Every ascendancy picture, read from the installed game:
+    /// `cargo test --release game_files -- --ignored --nocapture`.
+    #[test]
+    #[ignore = "needs Path of Exile installed"]
+    fn reads_every_ascendancy_picture_from_the_installed_game() {
+        let names = [
+            "Juggernaut", "Berserker", "Chieftain", "Deadeye", "Pathfinder", "Warden", "Occultist",
+            "Elementalist", "Necromancer", "Slayer", "Gladiator", "Champion", "Inquisitor", "Hierophant",
+            "Guardian", "Assassin", "Trickster", "Saboteur", "Ascendant", "Marauder", "Ranger", "Witch",
+            "Duelist", "Templar", "Shadow", "Scion",
+        ];
+        let cache = tempfile::tempdir().unwrap();
+        for name in names {
+            let art = class_art(name, None, Some(cache.path().to_path_buf())).unwrap();
+            let path = art.unwrap_or_else(|| panic!("{name} has a picture"));
+            assert!(fs::read(&path).unwrap().starts_with(b"\x89PNG"), "{name} is a PNG");
+            assert_eq!(class_art(name, None, Some(cache.path().to_path_buf())).unwrap(), Some(path), "{name} cached");
+        }
+    }
 
     #[test]
     fn accepts_only_icon_keys() {
