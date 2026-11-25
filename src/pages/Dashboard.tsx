@@ -19,11 +19,13 @@ import type { Bandit, EngineBuild } from "../types/Engine";
 import type { Analysis } from "../analysis/analyze";
 import { AtlasStarIcon, ShieldIcon, SigilIcon, SkullIcon, SwordIcon } from "../components/icons";
 import { useT } from "../i18n";
+import { useClassArt } from "../state/useClassArt";
 
 function BuildHeader({ build, analysis }: { build: EngineBuild; analysis: Analysis }) {
   const t = useT();
   const { character } = build;
   const title = character.ascendancy && character.ascendancy !== "None" ? character.ascendancy : character.class;
+  const classArt = useClassArt(character.ascendancy, character.class);
 
   return (
     <AtlasFrame pendant>
@@ -37,16 +39,26 @@ function BuildHeader({ build, analysis }: { build: EngineBuild; analysis: Analys
           />
         </div>
 
-        <div className="min-w-0">
-          <h1 className="title-text truncate font-display text-[clamp(32px,4vw,54px)] font-semibold leading-tight">
-            {character.name ?? t("Unknown Exile")}
-          </h1>
-          <p className="mt-1 font-display text-[17px] tracking-[0.16em] text-gold-dim">
-            {(title ?? "").toUpperCase()} • {t("LEVEL")} {character.level}
-            {character.league ? ` • ${character.league.toUpperCase()}` : ""}
-          </p>
-          {character.mainSkill && (
-            <p className="mt-3 text-[18px] italic leading-snug text-gold-dim">{t("Main skill: {skill}", { skill: character.mainSkill })}</p>
+        <div className="flex min-w-0 items-center gap-6">
+          <div className="min-w-0 flex-1">
+            <h1 className="title-text truncate font-display text-[clamp(32px,4vw,54px)] font-semibold leading-tight">
+              {character.name ?? t("Unknown Exile")}
+            </h1>
+            <p className="mt-1 font-display text-[17px] tracking-[0.16em] text-gold-dim">
+              {(title ?? "").toUpperCase()} • {t("LEVEL")} {character.level}
+              {character.league ? ` • ${character.league.toUpperCase()}` : ""}
+            </p>
+            {character.mainSkill && (
+              <p className="mt-3 text-[18px] italic leading-snug text-gold-dim">{t("Main skill: {skill}", { skill: character.mainSkill })}</p>
+            )}
+          </div>
+          {classArt && (
+            <img
+              src={classArt}
+              alt={title ?? ""}
+              title={title ?? undefined}
+              className="class-medal hidden h-28 w-28 shrink-0 rounded-full lg:block"
+            />
           )}
         </div>
 

@@ -53,6 +53,11 @@ export const desktop = {
       Object.entries(art).map(([base, source]) => [base, source.startsWith("data:") ? source : convertFileSrc(source)]),
     );
   },
+  /** A class's or ascendancy's picture read from the installed game, or null when there is none. */
+  classArt: async (name: string, clientLog: string | null) => {
+    const source = await call<string | null>("class_art", { name, clientLog });
+    return source && (source.startsWith("data:") ? source : convertFileSrc(source));
+  },
   /** Opens the author's GitHub profile in the system browser. */
   openProfile: () => call<void>("open_profile"),
   /** Opens pathofexile.com's privacy settings, where the profile is made public. */
